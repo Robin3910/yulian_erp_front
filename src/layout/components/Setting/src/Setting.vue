@@ -244,8 +244,8 @@ const clear = () => {
       <ColorRadioPicker
         v-model="headerTheme"
         :schema="[
-          '#fff',
           '#151515',
+          '#fff',
           '#5172dc',
           '#e74c3c',
           '#24292e',
