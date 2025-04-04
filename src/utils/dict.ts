@@ -108,6 +108,7 @@ export const getDictLabel = (dictType: string, value: any): string => {
 }
 
 export enum DICT_TYPE {
+  TEMU_ORDER_STATUS = 'temu_order_status',
   USER_TYPE = 'user_type',
   COMMON_STATUS = 'common_status',
   TERMINAL = 'terminal', // 终端

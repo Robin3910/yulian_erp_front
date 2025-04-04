@@ -31,6 +31,9 @@ setDefaultTheme()
   </ConfigGlobal>
 </template>
 <style lang="scss">
+.bt1{
+  border: 1px solid red;
+}
 $prefix-cls: #{$namespace}-app;
 
 .size {
