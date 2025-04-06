@@ -28,5 +28,9 @@ export const OrderApi = {
   // 查询订单分页
   getOrderPage: async (params: any) => {
     return await request.get({ url: `/temu/order/page`, params })
+  },
+  //批量修改订单状态
+  updateOrderStatus: async (data: any) => {
+    return await request.post({ url: `/temu/order/beatch_update_status`, data })
   }
 }

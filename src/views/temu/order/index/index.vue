@@ -10,14 +10,15 @@
     >
       <el-row :gutter="20">
         <el-col :span="24" :lg="6">
-          <el-form-item label="店铺ID" prop="shopId" class="w-full">
-            <el-input
-              v-model="queryParams.shopId"
-              placeholder="请输入店铺ID"
-              clearable
-              @keyup.enter="handleQuery"
-
-            />
+          <el-form-item label="店铺" prop="shopId" class="w-full">
+            <el-select v-model="queryParams.shopId" placeholder="请选择店铺ID" clearable>
+              <el-option
+                v-for="(item, index) in shopList"
+                :key="index"
+                :label="item.shopName"
+                :value="item.shopId"
+              />
+            </el-select>
           </el-form-item>
         </el-col>
         <el-col :span="24" :lg="6">
@@ -27,7 +28,6 @@
               placeholder="请输入SKU编号"
               clearable
               @keyup.enter="handleQuery"
-
             />
           </el-form-item>
         </el-col>
@@ -38,7 +38,6 @@
               placeholder="请输入SKC编号"
               clearable
               @keyup.enter="handleQuery"
-
             />
           </el-form-item>
         </el-col>
@@ -52,8 +51,8 @@
             />
           </el-form-item>
         </el-col>
-        <el-col :span="24" :lg="6" >
-          <el-form-item label="订单状态" prop="orderStatus"  class="w-full">
+        <el-col :span="24" :lg="6">
+          <el-form-item label="订单状态" prop="orderStatus" class="w-full">
             <el-select v-model="queryParams.orderStatus" placeholder="请选择订单状态" clearable>
               <el-option
                 v-for="dict in getStrDictOptions(DICT_TYPE.TEMU_ORDER_STATUS)"
@@ -64,73 +63,109 @@
             </el-select>
           </el-form-item>
         </el-col>
-        <el-col :span="24" :lg="6" >
-          <el-form-item label="类目" prop="orderStatus"  class="w-full">
-            <el-select
-              v-model="queryParams.categoryId"
-              placeholder="请选择类目"
-              clearable
-
-            >
-              <el-option v-for="(item,index) in categoryList" :key="index" :label="item.categoryName" :value="item.id"/>
+        <el-col :span="24" :lg="6">
+          <el-form-item label="类目" prop="orderStatus" class="w-full">
+            <el-select v-model="queryParams.categoryId" placeholder="请选择类目" clearable>
+              <el-option
+                v-for="(item, index) in categoryList"
+                :key="index"
+                :label="item.categoryName"
+                :value="item.id"
+              />
             </el-select>
           </el-form-item>
         </el-col>
         <el-col :span="24" :lg="6">
-
-          <el-form-item>
-            <el-button @click="handleQuery"><Icon icon="ep:search" class="mr-5px" /> 搜索</el-button>
-            <el-button @click="resetQuery"><Icon icon="ep:refresh" class="mr-5px" /> 重置</el-button>
-
+          <el-form-item label="创建时间" prop="bookingTime" class="w-full">
+            <el-date-picker
+              v-model="queryParams.bookingTime"
+              value-format="YYYY-MM-DD HH:mm:ss"
+              type="daterange"
+              start-placeholder="开始日期"
+              end-placeholder="结束日期"
+              :default-time="[new Date('1 00:00:00'), new Date('1 23:59:59')]"
+            />
           </el-form-item>
-
+        </el-col>
+        <el-col :span="24" :lg="6">
+          <el-form-item>
+            <el-button @click="handleQuery">
+              <Icon icon="ep:search" class="mr-5px" />
+              搜索
+            </el-button>
+            <el-button @click="resetQuery">
+              <Icon icon="ep:refresh" class="mr-5px" />
+              重置
+            </el-button>
+            <el-button @click="handleBatchSetStatus">
+              <Icon icon="ep:refresh" class="mr-5px" />
+              批量设置状态
+            </el-button>
+          </el-form-item>
         </el-col>
       </el-row>
-
-
-
-
-
-
-
-
     </el-form>
   </ContentWrap>
 
   <!-- 列表 -->
   <ContentWrap>
-    <el-table v-loading="loading" :data="list" :stripe="true" :show-overflow-tooltip="true">
-      <el-table-column label="店铺ID" align="center" prop="shopId" min-width="150" />
+    <el-table
+      v-loading="loading"
+      :data="list"
+      :stripe="true"
+      :show-overflow-tooltip="true"
+      @selection-change="handleSelectionChange"
+    >
+      <!--选择-->
+      <el-table-column type="selection" width="55" align="center" />
+      <el-table-column label="店铺ID" align="center" prop="shopId" min-width="150">
+        <template #default="{ row }">
+          <div class="text-left">
+            <div>{{ row.shopName }}</div>
+            <div>{{ row.shopId }}</div>
+          </div>
+        </template>
+      </el-table-column>
       <el-table-column label="订单编号" align="center" prop="orderNo" />
-      <el-table-column label="商品图片" align="center" prop="productImgUrl" >
-        <template #default="{row}">
-          <el-image :preview-teleported="true" :src="row.productImgUrl" :preview-src-list="[row.productImgUrl]"/>
+      <el-table-column label="商品图片" align="center" prop="productImgUrl">
+        <template #default="{ row }">
+          <el-image
+            :hide-on-click-modal="true"
+            :preview-teleported="true"
+            :src="row.productImgUrl"
+            :preview-src-list="[row.productImgUrl]"
+          />
         </template>
       </el-table-column>
       <el-table-column label="商品标题" align="center" prop="productTitle" min-width="200" />
-      <el-table-column label="SKU信息" align="center" prop="productTitle" min-width="200" >
-        <template #default="{row}">
-         <div class="text-left">
-           <div>SKU编号:{{row.sku}}</div>
-           <div>SKC编号:{{row.skc}}</div>
-           <div>定制SKU:{{row.customSku}}</div>
-         </div>
+      <el-table-column label="SKU信息" align="center" prop="productTitle" min-width="200">
+        <template #default="{ row }">
+          <div class="text-left">
+            <div>SKU编号:{{ row.sku }}</div>
+            <div>SKC编号:{{ row.skc }}</div>
+            <div>定制SKU:{{ row.customSku }}</div>
+          </div>
         </template>
       </el-table-column>
       <el-table-column label="类目名称" align="center" prop="categoryName" min-width="150" />
-      <el-table-column label="定制图片列表" align="center" prop="customImageUrls" >
-        <template #default="{row}">
+      <el-table-column label="定制图片列表" align="center" prop="customImageUrls">
+        <template #default="{ row }">
           <div class="text-left" v-if="row.customImageUrls">
-            <div v-for="(item,index) in row.customImageUrls.split(',')" :key="index">
-              <el-image :preview-teleported="true" :src="item" :preview-src-list="[item]"/>
+            <div v-for="(item, index) in row.customImageUrls.split(',')" :key="index">
+              <el-image
+                :hide-on-click-modal="true"
+                :preview-teleported="true"
+                :src="item"
+                :preview-src-list="[item]"
+              />
             </div>
           </div>
         </template>
       </el-table-column>
       <el-table-column label="定制文字列表" align="center" prop="customTextList" />
 
-      <el-table-column label="订单状态" align="center" prop="orderStatus" min-width="150" >
-        <template #default="{row}">
+      <el-table-column label="订单状态" align="center" prop="orderStatus" min-width="150">
+        <template #default="{ row }">
           <dict-tag :type="DICT_TYPE.TEMU_ORDER_STATUS" :value="row.orderStatus" />
         </template>
       </el-table-column>
@@ -143,15 +178,8 @@
         width="180px"
       />
 
-      <el-table-column
-        label="创建时间"
-        align="center"
-        prop="createTime"
-        :formatter="dateFormatter"
-        width="180px"
-      />
       <el-table-column label="物流信息" align="center" prop="shippingInfo" />
-      <el-table-column label="操作" fixed="right" align="center" min-width="120px"/>
+      <el-table-column label="操作" fixed="right" align="center" min-width="120px" />
     </el-table>
     <!-- 分页 -->
     <Pagination
@@ -161,24 +189,32 @@
       @pagination="getList"
     />
   </ContentWrap>
-
+  <!--状态修改确认弹窗-->
+  <OrderStatusPopup ref="orderStatusPopup" @confirm="handleUpdateStatus" />
 </template>
 
 <script setup lang="ts">
-import {DICT_TYPE} from "@/utils/dict";
+import { DICT_TYPE } from '@/utils/dict'
 import { dateFormatter } from '@/utils/formatTime'
 import { OrderApi, OrderVO } from '@/api/temu/order'
-import {TemuCommonApi} from "@/api/temu/ommon";
-import {getStrDictOptions} from "@/utils/dict";
+import { TemuCommonApi } from '@/api/temu/ommon'
+import { getStrDictOptions } from '@/utils/dict'
+import { ElMessage } from 'element-plus'
 
 /** 订单 列表 */
 defineOptions({ name: 'TemuOrderIndex' })
-
 
 const loading = ref(true) // 列表的加载中
 const list = ref<OrderVO[]>([]) // 列表的数据
 const total = ref(0) // 列表的总页数
 const categoryList = ref<any[]>([])
+
+// 店铺列表
+const shopList = ref<any[]>([])
+// 多选
+const selectedRows = ref<any[]>([])
+// 批量修改弹窗引用
+const orderStatusPopup = useTemplateRef('orderStatusPopup')
 const queryParams = reactive({
   pageNo: 1,
   pageSize: 10,
@@ -200,7 +236,7 @@ const queryParams = reactive({
   categoryId: undefined,
   categoryName: undefined,
   shippingInfo: undefined,
-  originalInfo: undefined,
+  originalInfo: undefined
 })
 const queryFormRef = ref() // 搜索的表单
 
@@ -218,7 +254,12 @@ const getList = async () => {
 //获取分类列表
 const getProductCategoryList = async () => {
   const data = await TemuCommonApi.getProductCategoryList()
-  categoryList.value =  data.list
+  categoryList.value = data.list
+}
+// 获取店铺列表
+const getShopList = async () => {
+  const data = await TemuCommonApi.getShopList()
+  shopList.value = data.list
 }
 
 /** 搜索按钮操作 */
@@ -233,12 +274,45 @@ const resetQuery = () => {
   handleQuery()
 }
 
-
-
+// 处理多选
+const handleSelectionChange = (selection: OrderVO[]) => {
+  console.log(selection)
+  selectedRows.value = selection
+}
+// 批量设置状态
+const handleBatchSetStatus = async () => {
+  if (selectedRows.value.length === 0) {
+    ElMessage.warning('请选择要操作的订单')
+    return
+  }
+  if (orderStatusPopup && orderStatusPopup.value) {
+    orderStatusPopup.value.setVisible(true)
+  }
+}
+// 处理状态修改确认弹窗的回调
+const handleUpdateStatus = async (status: number) => {
+  //检查所有已经选择的订单状态是否一致
+  if (selectedRows.value.length > 0) {
+    const statusList = selectedRows.value.map((item) => item.orderStatus)
+    if (new Set(statusList).size > 1) {
+      ElMessage.warning('已选择的订单状态不一致，请重新选择')
+      return
+    }
+  }
+  await OrderApi.updateOrderStatus(selectedRows.value.map((item) => {
+    return {
+      id: item.id,
+      orderStatus: status
+    }
+  }))
+  ElMessage.success('操作成功')
+  getList()
+}
 
 /** 初始化 **/
 onMounted(() => {
   getList()
   getProductCategoryList()
+  getShopList()
 })
 </script>
