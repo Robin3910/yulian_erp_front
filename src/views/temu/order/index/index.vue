@@ -11,7 +11,7 @@
       <el-row :gutter="20">
         <el-col :span="24" :lg="6">
           <el-form-item label="店铺" prop="shopId" class="w-full">
-            <el-select v-model="queryParams.shopId" placeholder="请选择店铺ID" clearable>
+            <el-select v-model="queryParams.shopId" placeholder="请选择店铺" clearable>
               <el-option
                 v-for="(item, index) in shopList"
                 :key="index"
@@ -179,7 +179,36 @@
       />
 
       <el-table-column label="物流信息" align="center" prop="shippingInfo" />
-      <el-table-column label="操作" fixed="right" align="center" min-width="120px" />
+      <el-table-column label="操作" fixed="right" align="center" min-width="120px">
+        <template #default="{ row }">
+          <el-button
+            v-if="row.orderStatus===0"
+            size="small"
+            type="primary"
+            @click="
+              handleUpdateRowStatus({
+                id: row.id,
+                orderStatus: 1
+              })
+            "
+          >
+            生产中
+          </el-button>
+          <el-button
+            v-if="row.orderStatus===1"
+            size="small"
+            type="primary"
+            @click="
+              handleUpdateRowStatus({
+                id: row.id,
+                orderStatus: 2
+              })
+            "
+          >
+            已生产
+          </el-button>
+        </template>
+      </el-table-column>
     </el-table>
     <!-- 分页 -->
     <Pagination
@@ -194,6 +223,7 @@
 </template>
 
 <script setup lang="ts">
+import OrderStatusPopup from '@/views/temu/order/index/components/OrderStatusPopup.vue'
 import { DICT_TYPE } from '@/utils/dict'
 import { dateFormatter } from '@/utils/formatTime'
 import { OrderApi, OrderVO } from '@/api/temu/order'
@@ -286,6 +316,7 @@ const handleBatchSetStatus = async () => {
     return
   }
   if (orderStatusPopup && orderStatusPopup.value) {
+    console.log('>>>>>>>>orderStatusPopup.value', orderStatusPopup.value)
     orderStatusPopup.value.setVisible(true)
   }
 }
@@ -299,12 +330,20 @@ const handleUpdateStatus = async (status: number) => {
       return
     }
   }
-  await OrderApi.updateOrderStatus(selectedRows.value.map((item) => {
-    return {
-      id: item.id,
-      orderStatus: status
-    }
-  }))
+  await OrderApi.updateOrderStatus(
+    selectedRows.value.map((item) => {
+      return {
+        id: item.id,
+        orderStatus: status
+      }
+    })
+  )
+  ElMessage.success('操作成功')
+  getList()
+}
+// 更新单个订单状态
+const handleUpdateRowStatus = async (row: { id: number; orderStatus: number }) => {
+  await OrderApi.updateOrderStatus([row])
   ElMessage.success('操作成功')
   getList()
 }

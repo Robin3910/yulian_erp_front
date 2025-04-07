@@ -41,19 +41,13 @@ const dialogVisible = ref(false)
 const formData = reactive({
   orderStatus: ''
 })
-
-watch(dialogVisible, (val) => {
-  if (val){
-    formData.orderStatus = ''
-    if(formEl&&formEl.value){
-      formEl.value.clearValidate()
-
-    }
-  }
-})
 const setVisible = (visible: boolean) => {
   dialogVisible.value = visible
 }
+defineExpose({
+  dialogVisible,
+  setVisible
+})
 const handleClose = () => {
   dialogVisible.value = false
 }
@@ -68,9 +62,15 @@ const handleConfirm = () => {
     return
   }
 }
-defineExpose({
-  dialogVisible,
-  setVisible
+
+watch(dialogVisible, (val) => {
+  if (val){
+    formData.orderStatus = ''
+    if(formEl&&formEl.value){
+      formEl.value.clearValidate()
+
+    }
+  }
 })
 </script>
 
