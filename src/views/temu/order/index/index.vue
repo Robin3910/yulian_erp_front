@@ -11,7 +11,7 @@
       <el-row :gutter="20">
         <el-col :span="24" :lg="6">
           <el-form-item label="店铺" prop="shopId" class="w-full">
-            <el-select v-model="queryParams.shopId" placeholder="请选择店铺" clearable>
+            <el-select filterable v-model="queryParams.shopId" placeholder="请选择店铺" clearable>
               <el-option
                 v-for="(item, index) in shopList"
                 :key="index"
@@ -65,7 +65,7 @@
         </el-col>
         <el-col :span="24" :lg="6">
           <el-form-item label="类目" prop="orderStatus" class="w-full">
-            <el-select v-model="queryParams.categoryId" placeholder="请选择类目" clearable>
+            <el-select filterable v-model="queryParams.categoryId" placeholder="请选择类目" clearable>
               <el-option
                 v-for="(item, index) in categoryList"
                 :key="index"
@@ -138,6 +138,7 @@
         </template>
       </el-table-column>
       <el-table-column label="商品标题" align="center" prop="productTitle" min-width="200" />
+      <el-table-column label="商品属性" align="center" prop="productProperties" min-width="200" />
       <el-table-column label="SKU信息" align="center" prop="productTitle" min-width="200">
         <template #default="{ row }">
           <div class="text-left">
