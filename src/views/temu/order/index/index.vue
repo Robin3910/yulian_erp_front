@@ -228,7 +228,7 @@ import OrderStatusPopup from '@/views/temu/order/index/components/OrderStatusPop
 import { DICT_TYPE } from '@/utils/dict'
 import { dateFormatter } from '@/utils/formatTime'
 import { OrderApi, OrderVO } from '@/api/temu/order'
-import { TemuCommonApi } from '@/api/temu/ommon'
+import { TemuCommonApi } from '@/api/temu/common'
 import { getStrDictOptions } from '@/utils/dict'
 import { ElMessage } from 'element-plus'
 

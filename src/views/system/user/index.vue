@@ -175,6 +175,13 @@
                       >
                         <Icon icon="ep:circle-check" />分配角色
                       </el-dropdown-item>
+                    <!-- 绑定店铺-->
+                    <el-dropdown-item
+                      command="handleBindShop"
+                      v-if="checkPermi(['system:permission:assign-user-role'])"
+                    >
+                      <Icon icon="ep:circle-check" />绑定店铺
+                    </el-dropdown-item>
                     </el-dropdown-menu>
                   </template>
                 </el-dropdown>
@@ -198,6 +205,8 @@
   <UserImportForm ref="importFormRef" @success="getList" />
   <!-- 分配角色 -->
   <UserAssignRoleForm ref="assignRoleFormRef" @success="getList" />
+  <!--绑定店铺-->
+  <SelectShopDialog ref="selectShopDialogRef" @success="getList" />
 </template>
 <script lang="ts" setup>
 import { DICT_TYPE, getIntDictOptions } from '@/utils/dict'
@@ -317,6 +326,9 @@ const handleCommand = (command: string, row: UserApi.UserVO) => {
     case 'handleRole':
       handleRole(row)
       break
+    case 'handleBindShop':
+      handleBindShop(row)
+      break
     default:
       break
   }
@@ -354,6 +366,12 @@ const handleResetPwd = async (row: UserApi.UserVO) => {
 const assignRoleFormRef = ref()
 const handleRole = (row: UserApi.UserVO) => {
   assignRoleFormRef.value.open(row)
+}
+
+/** 绑定店铺 */
+const selectShopDialogRef = ref()
+const handleBindShop = (row: UserApi.UserVO) => {
+  selectShopDialogRef.value.open(row)
 }
 
 /** 初始化 */
