@@ -272,7 +272,7 @@ import { getStrDictOptions } from '@/utils/dict'
 import { ElMessage } from 'element-plus'
 
 /** 订单 列表 */
-defineOptions({ name: 'TemuOrderIndex' })
+defineOptions({ name: 'TemuOrderAdmin' })
 
 const loading = ref(true) // 列表的加载中
 const list = ref<OrderVO[]>([]) // 列表的数据
@@ -312,9 +312,10 @@ const queryFormRef = ref() // 搜索的表单
 
 /** 查询列表 */
 const getList = async () => {
+  console.log('>>>>>>>>>>>>>我是管理员')
   loading.value = true
   try {
-    const data = await OrderApi.getOrderPage(queryParams)
+    const data = await OrderApi.getOrderPageByAdmin(queryParams)
     list.value = data.list
     total.value = data.total
   } finally {

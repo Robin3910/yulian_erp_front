@@ -57,7 +57,8 @@ export const useUserStore = defineStore('admin-user', {
       if (!userInfo) {
         userInfo = await getInfo()
       }
-      this.permissions = new Set(userInfo.permissions)
+
+      this.permissions = new Set(userInfo.permissions||[])
       this.roles = userInfo.roles
       this.user = userInfo.user
       this.isSetUser = true
