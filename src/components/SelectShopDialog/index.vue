@@ -36,7 +36,7 @@ import { TemuCommonApi } from '@/api/temu/common'
 import {UserApi} from "@/api/temu/user";
 import { ElMessage } from 'element-plus'
 
-
+const emit = defineEmits(['success'])
 defineOptions({
   name: 'SelectShopDialog'
 })
@@ -65,6 +65,7 @@ const submitForm = async () => {
     }))
     ElMessage.success('绑定成功')
     dialogVisible.value = false
+    emit('success')
   })
 }
 // 获取店铺列表
@@ -80,6 +81,11 @@ const open = (row: any) => {
   dialogVisible.value = true
   formData.userId = row.id
   formData.tenant_id = row.tenantId
+  if(row.shopList&&row.shopList.length>0){
+    formData.shopId =row.shopList.map((item: any) => {
+      return item.shopId
+    })
+  }
 }
 defineExpose({
   open

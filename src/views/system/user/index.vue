@@ -110,6 +110,17 @@
             :show-overflow-tooltip="true"
           />
           <el-table-column
+            label="已绑定的店铺"
+            align="center"
+            key="avatar"
+            prop="avatar"
+            :show-overflow-tooltip="true"
+          >
+            <template #default="scope">
+              <span v-if="scope.row.shopList && scope.row.shopList.length>0">{{scope.row.shopList.map(item => item.shopName).join('、')}}</span>
+            </template>
+          </el-table-column>
+          <el-table-column
             label="部门"
             align="center"
             key="deptName"
