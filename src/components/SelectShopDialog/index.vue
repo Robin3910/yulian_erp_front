@@ -15,7 +15,7 @@
           }
         ]"
       >
-        <el-select v-model="formData.shopId" filterable placeholder="请选择要关联的店铺" clearable>
+        <el-select v-model="formData.shopId" multiple filterable placeholder="请选择要关联的店铺" clearable>
           <el-option
             v-for="(item, index) in shopList"
             :key="index"
@@ -46,7 +46,7 @@ const shopList = ref<any[]>([])
 const userInfo = ref<any>(null)
 const formRef = ref()
 const formData = reactive({
-  shopId: '',
+  shopId: [],
   userId: '',
   tenant_id:""
 })
@@ -55,7 +55,14 @@ const submitForm = async () => {
   formRef.value.validate(async (valid: boolean) => {
     console.log(valid)
     if (!valid) return
-    await  UserApi.bindShop(formData)
+
+    await  UserApi.bindShop(formData.shopId.map((item: any) => {
+      return {
+        shopId: item,
+        userId: formData.userId,
+        tenantId: formData.tenant_id
+      }
+    }))
     ElMessage.success('绑定成功')
     dialogVisible.value = false
   })
