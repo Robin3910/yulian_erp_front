@@ -206,7 +206,6 @@
             :src="row.effectiveImgUrl"
             :preview-src-list="[row.effectiveImgUrl]"
           />
-          <span v-else>暂无预览图</span>
         </template>
       </el-table-column>
       <el-table-column label="订单状态" align="center" prop="orderStatus" min-width="150">
