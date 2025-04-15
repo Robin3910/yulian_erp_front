@@ -121,20 +121,24 @@
       :stripe="true"
       :show-overflow-tooltip="true"
       @selection-change="handleSelectionChange"
+
     >
+
       <!--选择-->
       <el-table-column type="selection" width="55" align="center" />
-      <el-table-column label="店铺ID" align="center" prop="shopId" min-width="150">
+      <el-table-column label="店铺信息" align="center" prop="shopId" min-width="150">
         <template #default="{ row }">
           <div class="text-left">
+            <div>订单编号:{{row.orderNo}}</div>
             <div>{{ row.shopName }}</div>
             <div>{{ row.shopId }}</div>
           </div>
         </template>
       </el-table-column>
-      <el-table-column label="订单编号" align="center" prop="orderNo" />
-      <el-table-column label="商品图片" align="center" prop="productImgUrl">
+      <!--<el-table-column label="订单编号" align="center" prop="orderNo" />-->
+      <el-table-column label="商品信息" align="center" prop="productImgUrl" min-width="200">
         <template #default="{ row }">
+          <div class="truncate">{{row.productTitle}}</div>
           <el-image
             :hide-on-click-modal="true"
             :preview-teleported="true"
@@ -143,7 +147,10 @@
           />
         </template>
       </el-table-column>
-      <el-table-column label="商品标题" align="center" prop="productTitle" min-width="200" />
+      <el-table-column label="单价" align="center" prop="unitPrice" />
+      <el-table-column label="总价" align="center" prop="totalPrice" />
+      <el-table-column label="数量" align="center" prop="quantity" />
+      <!--<el-table-column label="商品标题" align="center" prop="productTitle" min-width="200" />-->
       <el-table-column label="商品属性" align="center" prop="productProperties" min-width="200" />
       <el-table-column label="SKU信息" align="center" prop="productTitle" min-width="200">
         <template #default="{ row }">
@@ -215,9 +222,7 @@
           <dict-tag :type="DICT_TYPE.TEMU_ORDER_STATUS" :value="row.orderStatus" />
         </template>
       </el-table-column>
-      <el-table-column label="单价" align="center" prop="unitPrice" />
-      <el-table-column label="总价" align="center" prop="totalPrice" />
-      <el-table-column label="数量" align="center" prop="quantity" />
+
       <el-table-column
         label="预定单创建时间"
         align="center"
