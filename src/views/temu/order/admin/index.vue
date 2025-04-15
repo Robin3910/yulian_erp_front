@@ -198,7 +198,17 @@
         </template>
       </el-table-column>
       <el-table-column label="定制文字列表" align="center" prop="customTextList" />
-
+      <el-table-column label="合成预览图" align="center" prop="effectiveImgUrl">
+        <template #default="{ row }">
+          <el-image
+            v-if="row.effectiveImgUrl"
+            :hide-on-click-modal="true"
+            :preview-teleported="true"
+            :src="row.effectiveImgUrl"
+            :preview-src-list="[row.effectiveImgUrl]"
+          />
+        </template>
+      </el-table-column>
       <el-table-column label="订单状态" align="center" prop="orderStatus" min-width="150">
         <template #default="{ row }">
           <dict-tag :type="DICT_TYPE.TEMU_ORDER_STATUS" :value="row.orderStatus" />
