@@ -33,6 +33,10 @@ export const OrderApi = {
   getOrderPageByAdmin: async (params: any) => {
     return await request.get({ url: `/temu/order/admin-page`, params })
   },
+  // 查询待发货订单分页
+  getShippingOrderPage: async (params: any) => {
+    return await request.get({ url: `/temu/order-shipping/page`, params })
+  },
   //批量修改订单状态
   updateOrderStatus: async (data: any) => {
     return await request.post({ url: `/temu/order/beatch_update_status`, data })
