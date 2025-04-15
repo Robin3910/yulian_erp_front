@@ -40,5 +40,9 @@ export const OrderApi = {
   //修改订单分类
   updateOrderCategory: async (data: any) => {
     return await request.post({ url: `/temu/order/update-category`, data })
-  }
+  },
+  //批量下单
+  batchCreateOrder: async (data: any) => {
+    return await request.post({ url: `/temu/order/batch-save-order`, data })
+  },
 }

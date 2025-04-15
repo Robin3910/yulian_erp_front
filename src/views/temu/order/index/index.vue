@@ -92,7 +92,7 @@
             />
           </el-form-item>
         </el-col>
-        <el-col :span="24" :lg="6">
+        <el-col :span="24" :lg="24">
           <el-form-item>
             <el-button @click="handleQuery">
               <Icon icon="ep:search" class="mr-5px" />
@@ -106,6 +106,8 @@
               <Icon icon="ep:refresh" class="mr-5px" />
               批量设置状态
             </el-button>
+            <el-button @click="handleBatchOrder"> 批量下单</el-button>
+
           </el-form-item>
         </el-col>
       </el-row>
@@ -226,23 +228,7 @@
       <el-table-column label="操作" fixed="right" align="center" min-width="120px">
         <template #default="{ row }">
           <el-popconfirm
-            title="确认是否修改当前订单状态?"
-            placement="top-start"
-            @confirm="
-              handleUpdateRowStatus({
-                id: row.id,
-                orderStatus: 1
-              })
-            "
-          >
-            <template #reference>
-              <el-button v-if="row.orderStatus === 0" size="small" type="primary">
-                生产中
-              </el-button>
-            </template>
-          </el-popconfirm>
-          <el-popconfirm
-            title="确认是否修改当前订单状态?"
+            title="确认是否修改当前订单状态为已送产待生产?"
             placement="top-start"
             @confirm="
               handleUpdateRowStatus({
@@ -253,7 +239,39 @@
           >
             <template #reference>
               <el-button v-if="row.orderStatus === 1" size="small" type="primary">
-                已生产
+                已送产待生产
+              </el-button>
+            </template>
+          </el-popconfirm>
+          <el-popconfirm
+            title="确认是否修改当前订单状态为已生产待发货?"
+            placement="top-start"
+            @confirm="
+              handleUpdateRowStatus({
+                id: row.id,
+                orderStatus: 3
+              })
+            "
+          >
+            <template #reference>
+              <el-button v-if="row.orderStatus === 2" size="small" type="primary">
+                已生产待发货
+              </el-button>
+            </template>
+          </el-popconfirm>
+          <el-popconfirm
+            title="确认是否修改当前订单状态为已发货?"
+            placement="top-start"
+            @confirm="
+              handleUpdateRowStatus({
+                id: row.id,
+                orderStatus: 4
+              })
+            "
+          >
+            <template #reference>
+              <el-button v-if="row.orderStatus === 3" size="small" type="primary">
+                已发货
               </el-button>
             </template>
           </el-popconfirm>
@@ -270,6 +288,18 @@
   </ContentWrap>
   <!--状态修改确认弹窗-->
   <OrderStatusPopup ref="orderStatusPopup" @confirm="handleUpdateStatus" />
+  <!--批量下单组件-->
+  <BatchOrderPopup
+    ref="batchOrderPopup"
+    @visible-event="
+      (v: boolean) => {
+        batchOrderPopup = v
+      }
+    "
+    :visible="batchOrderPopup"
+    v-if="batchOrderPopup"
+    @confirm="getList"
+  />
 </template>
 
 <script setup lang="ts">
@@ -280,6 +310,7 @@ import { OrderApi, OrderVO } from '@/api/temu/order'
 import { TemuCommonApi } from '@/api/temu/common'
 import { getStrDictOptions } from '@/utils/dict'
 import { ElMessage } from 'element-plus'
+import BatchOrderPopup from "@/views/temu/order/index/components/BatchOrderPopup.vue";
 
 /** 订单 列表 */
 defineOptions({ name: 'TemuOrderIndex' })
@@ -288,13 +319,15 @@ const loading = ref(true) // 列表的加载中
 const list = ref<OrderVO[]>([]) // 列表的数据
 const total = ref(0) // 列表的总页数
 const categoryList = ref<any[]>([])
-
+const batchOrderPopup = ref(false)
 // 店铺列表
 const shopList = ref<any[]>([])
 // 多选
 const selectedRows = ref<any[]>([])
 // 批量修改弹窗引用
 const orderStatusPopup = useTemplateRef('orderStatusPopup')
+// 批量下单弹窗引用
+const batchOrderPopupRef = useTemplateRef('batchOrderPopup')
 const queryParams = reactive({
   pageNo: 1,
   pageSize: 10,
@@ -405,7 +438,20 @@ const handleUpdateCategory = async (row: { id: number; categoryId: number }) => 
   ElMessage.success('操作成功')
   getList()
 }
-
+const handleBatchOrder = () => {
+  if (selectedRows.value.length === 0) {
+    ElMessage.warning('请选择要操作的订单')
+    return
+  }
+  if(selectedRows.value.some(item=>!item.categoryId)){
+    ElMessage.error('存在未设置分类的订单请先设置分类');
+    return
+  }
+  batchOrderPopup.value = true
+  nextTick(() => {
+    batchOrderPopupRef.value?.setOrderList(selectedRows.value)
+  })
+}
 /** 初始化 **/
 onMounted(() => {
   getList()

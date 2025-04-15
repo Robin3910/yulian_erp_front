@@ -14,6 +14,7 @@
         <el-select v-model="formData.orderStatus" placeholder="请选择订单状态" clearable>
           <el-option
             v-for="dict in getStrDictOptions(DICT_TYPE.TEMU_ORDER_STATUS)"
+            :disabled="['0','1'].includes(dict.value)"
             :key="dict.value"
             :label="dict.label"
             :value="dict.value"

@@ -201,6 +201,7 @@
       <el-table-column label="合成预览图" align="center" prop="effectiveImgUrl">
         <template #default="{ row }">
           <el-image
+            class="w-10 h-10"
             v-if="row.effectiveImgUrl"
             :hide-on-click-modal="true"
             :preview-teleported="true"
@@ -214,7 +215,9 @@
           <dict-tag :type="DICT_TYPE.TEMU_ORDER_STATUS" :value="row.orderStatus" />
         </template>
       </el-table-column>
-
+      <el-table-column label="单价" align="center" prop="unitPrice" />
+      <el-table-column label="总价" align="center" prop="totalPrice" />
+      <el-table-column label="数量" align="center" prop="quantity" />
       <el-table-column
         label="预定单创建时间"
         align="center"
@@ -227,23 +230,7 @@
       <el-table-column label="操作" fixed="right" align="center" min-width="120px">
         <template #default="{ row }">
           <el-popconfirm
-            title="确认是否修改当前订单状态?"
-            placement="top-start"
-            @confirm="
-              handleUpdateRowStatus({
-                id: row.id,
-                orderStatus: 1
-              })
-            "
-          >
-            <template #reference>
-              <el-button v-if="row.orderStatus === 0" size="small" type="primary">
-                生产中
-              </el-button>
-            </template>
-          </el-popconfirm>
-          <el-popconfirm
-            title="确认是否修改当前订单状态?"
+            title="确认是否修改当前订单状态为已送产待生产?"
             placement="top-start"
             @confirm="
               handleUpdateRowStatus({
@@ -254,7 +241,39 @@
           >
             <template #reference>
               <el-button v-if="row.orderStatus === 1" size="small" type="primary">
-                已生产
+                已送产待生产
+              </el-button>
+            </template>
+          </el-popconfirm>
+          <el-popconfirm
+            title="确认是否修改当前订单状态为已生产待发货?"
+            placement="top-start"
+            @confirm="
+              handleUpdateRowStatus({
+                id: row.id,
+                orderStatus: 3
+              })
+            "
+          >
+            <template #reference>
+              <el-button v-if="row.orderStatus === 2" size="small" type="primary">
+                已生产待发货
+              </el-button>
+            </template>
+          </el-popconfirm>
+          <el-popconfirm
+            title="确认是否修改当前订单状态为已发货?"
+            placement="top-start"
+            @confirm="
+              handleUpdateRowStatus({
+                id: row.id,
+                orderStatus: 4
+              })
+            "
+          >
+            <template #reference>
+              <el-button v-if="row.orderStatus === 3" size="small" type="primary">
+                已发货
               </el-button>
             </template>
           </el-popconfirm>
@@ -281,7 +300,7 @@
     "
     :visible="batchOrderPopup"
     v-if="batchOrderPopup"
-    @confirm="handleBatchOrder"
+    @confirm="getList"
   />
 </template>
 
