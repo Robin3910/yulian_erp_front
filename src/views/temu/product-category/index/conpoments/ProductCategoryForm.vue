@@ -7,6 +7,7 @@
       label-width="100px"
       v-loading="formLoading"
     >
+
       <el-form-item label="商品品类ID" prop="categoryId">
         <el-input @input="filterInput" v-model="formData.categoryId" placeholder="请输入商品品类ID" clearable />
       </el-form-item>
@@ -27,6 +28,43 @@
       </el-form-item>
       <el-form-item label="主图URL" prop="mainImageUrl">
         <upload-img :file-size="10"  v-model="formData.mainImageUrl" />
+      </el-form-item>
+      <el-form-item label="单位价格" prop="unitPrice" :rules="[{
+        required: true,
+        message: '请输入单位价格规则',
+        trigger: 'blur'
+      }]">
+        <div class="flex flex-col ">
+          <div><el-button type="primary" @click="addPriceRule">添加规则</el-button></div>
+          <div v-for="(item,index) in formData.unitPrice" :key="index" class="flex  items-center  mt-2">
+            <el-form-item label="数量:" :prop="'unitPrice.'+index+ `.max`" label-width="60px" class="" :rules="[
+              {
+                required: true,
+                message: '请输入数量',
+                trigger: 'blur'
+              }
+            ]">
+              <el-input type="text"  v-model.number="item.max" placeholder="请输入单位价格" clearable />
+            </el-form-item>
+            <el-form-item label="价格:" :prop="'unitPrice.'+index+ `.price`" label-width="60px"  class="" :rules="[
+              {
+                required: true,
+                message: '请输入价格',
+                trigger: 'blur'
+              }
+            ]">
+              <el-input type="text"  v-model.number="item.price" placeholder="请输入价格" clearable />
+            </el-form-item>
+            <el-button class="ml-2" type="danger" @click="formData.unitPrice.splice(index,1)">删除</el-button>
+          </div>
+        </div>
+      </el-form-item>
+      <el-form-item label="默认价格" prop="defaultPrice" :rules="[{
+        required: true,
+        message: '请输入默认价格',
+        trigger: 'blur'
+      }]">
+        <el-input type="number"  v-model.number="formData.defaultPrice" placeholder="请输入默认价格" clearable />
       </el-form-item>
     </el-form>
     <template #footer>
@@ -56,7 +94,9 @@ const formData = ref({
   width: undefined,
   height: undefined,
   weight: undefined,
-  mainImageUrl: undefined
+  mainImageUrl: undefined,
+  unitPrice:[] as any[],
+  defaultPrice:undefined
 })
 const formRules = reactive({
   categoryId: [{ required: true, message: '商品品类ID不能为空', trigger: 'blur' }],
@@ -85,7 +125,21 @@ const open = async (type: string, id?: number) => {
   }
 }
 defineExpose({ open }) // 提供 open 方法，用于打开弹窗
+// 添加价格规则
+const addPriceRule=()=>{
+  if(!formData.value.unitPrice){
+    formData.value.unitPrice=[{
+      max:"",
+      price:""
+    }]
+  }else {
+    formData.value.unitPrice.push({
+      max:"",
+      price:""
+    })
+  }
 
+}
 /** 提交表单 */
 const emit = defineEmits(['success']) // 定义 success 事件，用于操作成功后的回调
 const submitForm = async () => {
@@ -120,7 +174,9 @@ const resetForm = () => {
     width: undefined,
     height: undefined,
     weight: undefined,
-    mainImageUrl: undefined
+    mainImageUrl: undefined,
+    unitPrice:[] as any[],
+    defaultPrice:undefined
   }
   formRef.value?.resetFields()
 }

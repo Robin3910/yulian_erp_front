@@ -92,7 +92,7 @@
             />
           </el-form-item>
         </el-col>
-        <el-col :span="24" :lg="6">
+        <el-col :span="24" :lg="24">
           <el-form-item>
             <el-button @click="handleQuery">
               <Icon icon="ep:search" class="mr-5px" />
@@ -106,6 +106,7 @@
               <Icon icon="ep:refresh" class="mr-5px" />
               批量设置状态
             </el-button>
+            <el-button @click="handleBatchOrder"> 批量下单</el-button>
           </el-form-item>
         </el-col>
       </el-row>
@@ -260,10 +261,23 @@
   </ContentWrap>
   <!--状态修改确认弹窗-->
   <OrderStatusPopup ref="orderStatusPopup" @confirm="handleUpdateStatus" />
+  <!--批量下单组件-->
+  <BatchOrderPopup
+    ref="batchOrderPopup"
+    @visible-event="
+      (v: boolean) => {
+        batchOrderPopup = v
+      }
+    "
+    :visible="batchOrderPopup"
+    v-if="batchOrderPopup"
+    @confirm="handleBatchOrder"
+  />
 </template>
 
 <script setup lang="ts">
-import OrderStatusPopup from '@/views/temu/order/index/components/OrderStatusPopup.vue'
+import OrderStatusPopup from '@/views/temu/order/admin/components/OrderStatusPopup.vue'
+import BatchOrderPopup from '@/views/temu/order/admin/components/BatchOrderPopup.vue'
 import { DICT_TYPE } from '@/utils/dict'
 import { dateFormatter } from '@/utils/formatTime'
 import { OrderApi, OrderVO } from '@/api/temu/order'
@@ -278,6 +292,7 @@ const loading = ref(true) // 列表的加载中
 const list = ref<OrderVO[]>([]) // 列表的数据
 const total = ref(0) // 列表的总页数
 const categoryList = ref<any[]>([])
+const batchOrderPopup = ref(false)
 
 // 店铺列表
 const shopList = ref<any[]>([])
@@ -285,6 +300,8 @@ const shopList = ref<any[]>([])
 const selectedRows = ref<any[]>([])
 // 批量修改弹窗引用
 const orderStatusPopup = useTemplateRef('orderStatusPopup')
+// 批量下单弹窗引用
+const batchOrderPopupRef = useTemplateRef('batchOrderPopup')
 const queryParams = reactive({
   pageNo: 1,
   pageSize: 10,
@@ -395,6 +412,21 @@ const handleUpdateCategory = async (row: { id: number; categoryId: number }) => 
   })
   ElMessage.success('操作成功')
   getList()
+}
+
+const handleBatchOrder = () => {
+  if (selectedRows.value.length === 0) {
+    ElMessage.warning('请选择要操作的订单')
+    return
+  }
+  if(selectedRows.value.some(item=>!item.categoryId)){
+    ElMessage.error('存在未设置分类的订单请先设置分类');
+    return
+  }
+  batchOrderPopup.value = true
+  nextTick(() => {
+    batchOrderPopupRef.value?.setOrderList(selectedRows.value)
+  })
 }
 
 /** 初始化 **/
