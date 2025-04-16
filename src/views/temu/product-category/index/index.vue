@@ -61,10 +61,31 @@
       <el-table-column label="主键ID" align="center" prop="id" />
       <el-table-column label="商品品类ID" align="center" prop="categoryId" />
       <el-table-column label="商品名称" align="center" prop="categoryName" />
-      <el-table-column label="长度(cm)" align="center" prop="length" />
-      <el-table-column label="宽度(cm)" align="center" prop="width" />
-      <el-table-column label="高度(cm)" align="center" prop="height" />
-      <el-table-column label="重量(g)" align="center" prop="weight" />
+      <el-table-column label="定价规则" align="center" prop="unitPrice" min-width="200" >
+        <template #default="scope">
+          <div v-if="scope.row.unitPrice">
+          <div v-for="(item,index) in scope.row.unitPrice.sort((a,b)=>a.max-b.max)" :key="index" class="mb-2 text-left flex">
+            <div class="mr-2">数量小于等于：<el-tag type="success">{{item.max}}</el-tag></div>
+            <div>价格：<el-tag type="success">{{item.price}}</el-tag></div>
+          </div>
+          </div>
+        </template>
+      </el-table-column>
+      <el-table-column label="默认价格" align="center" prop="defaultPrice" >
+        <template #default="scope">
+          <el-tag type="success">{{scope.row.defaultPrice||'暂未设置'}}</el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column label="商品尺寸" align="center" min-width="200">
+        <template #default="scope">
+          <div class="flex flex-col gap-1">
+            <div>长度：<el-tag size="small">{{scope.row.length}}cm</el-tag></div>
+            <div>宽度：<el-tag size="small">{{scope.row.width}}cm</el-tag></div>
+            <div>高度：<el-tag size="small">{{scope.row.height}}cm</el-tag></div>
+            <div>重量：<el-tag size="small">{{scope.row.weight}}g</el-tag></div>
+          </div>
+        </template>
+      </el-table-column>
       <el-table-column label="主图URL" align="center" prop="mainImageUrl" >
         <template #default="scope">
           <el-image
@@ -146,7 +167,6 @@ const queryParams = reactive({
   createTime: [],
 })
 const queryFormRef = ref() // 搜索的表单
-const exportLoading = ref(false) // 导出的加载中
 
 /** 查询列表 */
 const getList = async () => {
@@ -189,21 +209,6 @@ const handleDelete = async (id: number) => {
     // 刷新列表
     await getList()
   } catch {}
-}
-
-/** 导出按钮操作 */
-const handleExport = async () => {
-  try {
-    // 导出的二次确认
-    await message.exportConfirm()
-    // 发起导出
-    exportLoading.value = true
-    const data = await ProductCategoryApi.exportProductCategory(queryParams)
-    download.excel(data, '商品品类.xls')
-  } catch {
-  } finally {
-    exportLoading.value = false
-  }
 }
 
 /** 初始化 **/

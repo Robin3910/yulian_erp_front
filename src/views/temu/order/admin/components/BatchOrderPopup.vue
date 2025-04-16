@@ -1,6 +1,6 @@
 <template>
   <el-dialog v-model="dialogVisible" title="批量下单" width="60%" :before-close="handleClose">
-    <div class="max-h-40vh overflow-y-auto overflow-x-hidden">
+    <div class="max-h-50vh overflow-y-auto overflow-x-hidden">
       <el-form :model="formData" ref="formRef">
         <el-form-item label="" v-for="(item, index) in formData.orderList" :key="index">
           <div class="flex flex-col">
@@ -21,28 +21,16 @@
               <!--  定制图片-->
               <el-form-item label="定制图片：" class="mb-2 cursor-pointer">
                 <div class="text-left flex" v-if="item.customImageUrls">
-                  <div
-                    v-for="(_item, _index) in item.customImageUrls.split(',')"
-                    :key="_index"
-                    class="mr-1"
-                  >
+                  <div v-for="(_item, _index) in item.customImageUrls.split(',')" :key="_index" class="mr-1">
                     <el-image
-                      class="w-10 h-10"
-                      :hide-on-click-modal="true"
-                      :preview-teleported="true"
-                      :src="_item"
-                      :preview-src-list="[_item]"
-                    />
+class="w-10 h-10" :hide-on-click-modal="true" :preview-teleported="true" :src="_item"
+                      :preview-src-list="[_item]" />
                   </div>
                 </div>
               </el-form-item>
               <!--  定制文字-->
               <el-form-item label="定制文字：" class="mb-2 cursor-pointer">
-                <div
-                  class="text-left truncate"
-                  :title="item.customTextList"
-                  v-if="item.customTextList"
-                >
+                <div class="text-left truncate" :title="item.customTextList" v-if="item.customTextList">
                   {{ item.customTextList }}
                 </div>
               </el-form-item>
@@ -52,14 +40,39 @@
                   {{ item.categoryName }}
                 </div>
               </el-form-item>
+              <!-- 默认价格 -->
+              <el-form-item label="默认价格：" class="mb-2 cursor-pointer">
+                <div class="text-left" v-if="item.defaultPrice">
+                  {{ item.defaultPrice }}
+                </div>
+              </el-form-item>
+              <!-- 分类价格 -->
+              <el-form-item label="分类价格：" class="mb-2 cursor-pointer">
+                <div class="text-left" v-if="item.categoryPriceRule">
+                  <div v-for="(_rule, _index) in item.categoryPriceRule.sort((a, b) => a.max - b.max)" :key="_index">
+                    <div>数量小于等于：<el-tag size="small">{{ _rule.max }}</el-tag>--价格：<el-tag size="small">{{ _rule.price }}</el-tag></div>
+                  </div>
+                </div>
+              </el-form-item>
               <!--  数量-->
               <el-form-item
-                label="数量："
-                class="mb-2 cursor-pointer"
-                :prop="`orderList.${index}.quantity`"
-                :rules="[{ required: true, message: '请输入数量', trigger: 'blur' }]"
-              >
+label="数量：" class="mb-2 cursor-pointer" :prop="`orderList.${index}.quantity`"
+                :rules="[{ required: true, message: '请输入数量', trigger: 'blur' }]">
                 <el-input v-model.number="item.quantity" class="!w-240px" clearable />
+              </el-form-item>
+              <!-- 单价 -->
+              <el-form-item label="单价：" class="mb-2 cursor-pointer">
+                <div class="text-left" >
+                  {{ calculateUnitPrice(item) }}
+                </div>
+
+              </el-form-item>
+
+              <!-- 总价 -->
+              <el-form-item label="总价：" class="mb-2 cursor-pointer">
+                <div class="text-left" >
+                  {{ (calculateUnitPrice(item)*item.quantity).toFixed(2) }}
+                </div>
               </el-form-item>
             </div>
           </div>
@@ -69,17 +82,25 @@
     </div>
 
     <template #footer>
-      <span class="dialog-footer">
-        <el-button @click="dialogVisible = false">取消</el-button>
+      <div class="dialog-footer flex items-center justify-between">
+        <!-- 订单数 -->
+        <div class="text-left text-orange-500" >
+          <span>订单数：{{ formData.orderList.length||0 }} </span>
+          <span class="ml-2">总价：{{ formData.orderList.reduce((acc, item) => acc + (calculateUnitPrice(item)*item.quantity), 0).toFixed(2) }}</span>
+        </div>
+        <div>
+          <el-button @click="dialogVisible = false">取消</el-button>
         <el-button type="primary" @click="handleConfirm"> 确认 </el-button>
-      </span>
+        </div>
+      </div>
     </template>
   </el-dialog>
 </template>
 <script setup lang="ts">
 import { ref } from 'vue'
 import { OrderApi } from '@/api/temu/order'
-import {ElMessage} from "element-plus";
+import { ElMessage } from "element-plus";
+import _ from 'lodash'
 // ##########################变量区###################################################
 
 const formEl = useTemplateRef('formRef')
@@ -111,11 +132,31 @@ const filterOrderQuantity = (list: any[]) => {
     }
   })
 }
+// 根据传入的规则计算单价
+const calculateUnitPrice = computed(() => {
+  return (item) => {
+
+   // 设置默认价格
+   let unitPrice = item.defaultPrice
+    // 分类价格按照数量从小到大排序
+    item.categoryPriceRule.sort((a, b) => a.max - b.max)
+    //检查分类定价规则
+    for (let index = 0; index < item.categoryPriceRule.length; index++) {
+      const rule = item.categoryPriceRule[index]
+      if (item.quantity <= rule.max) {
+        unitPrice = rule.price
+        break
+      }
+    }
+    console.log('>>>>>>>>>>>>>计算单价',item.orderNo, item.unitPrice)
+    return unitPrice.toFixed(2)
+}
+})
 // 传入订单数据
-const setOrderList = (list: any[]) => {
-  console.log('>>>>>>>>>>>>>订单数据', list)
-  filterOrderQuantity(list)
-  formData.orderList = list
+const setOrderList =  (list: any[]) => {
+  let newList = _.cloneDeep(list)
+  filterOrderQuantity(newList)
+  formData.orderList = newList
 }
 const props = defineProps({
   visible: {

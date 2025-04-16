@@ -102,10 +102,7 @@
               <Icon icon="ep:refresh" class="mr-5px" />
               重置
             </el-button>
-            <el-button @click="handleBatchSetStatus">
-              <Icon icon="ep:refresh" class="mr-5px" />
-              批量设置状态
-            </el-button>
+      
             <el-button @click="handleBatchOrder"> 批量下单</el-button>
 
           </el-form-item>
@@ -137,21 +134,61 @@
         </template>
       </el-table-column>
       <!--<el-table-column label="订单编号" align="center" prop="orderNo" />-->
-      <el-table-column label="商品信息" align="center" prop="productImgUrl" min-width="200">
+      <el-table-column label="商品信息" align="center" prop="productImgUrl" min-width="250">
         <template #default="{ row }">
-          <div class="truncate">{{row.productTitle}}</div>
-          <el-image
+        <div class="text-left">
+          <div class="truncate mb-2">产品标题：{{row.productTitle}}</div>
+          <div class="flex items-start mb-2">
+            <div>产品图片：</div>
+            <el-image
+              class="w-60px h-60px"
+              :hide-on-click-modal="true"
+              :preview-teleported="true"
+              :src="row.productImgUrl"
+              :preview-src-list="[row.productImgUrl]"
+            />
+          </div>
+          <div class="flex items-start mb-2">
+            <div>定制图片：</div>
+            <div class="text-left" v-if="row.customImageUrls">
+            <div v-for="(item, index) in row.customImageUrls.split(',')" :key="index">
+              <el-image
+                class="w-60px h-60px"
+                :hide-on-click-modal="true"
+                :preview-teleported="true"
+                :src="item"
+                :preview-src-list="[item]"
+              />
+            </div>
+          </div>
+          </div>
+          <div class="flex items-start mb-2">
+            <div>合成预览：</div>
+            <el-image
+            class="w-60px h-60px"
+            v-if="row.effectiveImgUrl"
             :hide-on-click-modal="true"
             :preview-teleported="true"
-            :src="row.productImgUrl"
-            :preview-src-list="[row.productImgUrl]"
+            :src="row.effectiveImgUrl"
+            :preview-src-list="[row.effectiveImgUrl]"
           />
+          </div>
+        </div>
         </template>
       </el-table-column>
-      <el-table-column label="单价" align="center" prop="unitPrice" />
-      <el-table-column label="总价" align="center" prop="totalPrice" />
-      <el-table-column label="数量" align="center" prop="quantity" />
-      <!--<el-table-column label="商品标题" align="center" prop="productTitle" min-width="200" />-->
+      <el-table-column label="定制文字列表" align="center" prop="customTextList" />
+      <el-table-column label="价格信息"  min-width="80">
+        <template #default="{ row }">
+          <div>
+            <div>
+              <div>单价：{{row.unitPrice||'--'}}</div>
+              <div>数量：{{row.quantity||'--'}}</div>
+              <div>总价：{{row.totalPrice||'--'}}</div>
+            </div>
+          </div>
+        </template>
+      </el-table-column>
+
       <el-table-column label="商品属性" align="center" prop="productProperties" min-width="200" />
       <el-table-column label="SKU信息" align="center" prop="productTitle" min-width="200">
         <template #default="{ row }">
@@ -191,32 +228,8 @@
           </div>
         </template>
       </el-table-column>
-      <el-table-column label="定制图片列表" align="center" prop="customImageUrls">
-        <template #default="{ row }">
-          <div class="text-left" v-if="row.customImageUrls">
-            <div v-for="(item, index) in row.customImageUrls.split(',')" :key="index">
-              <el-image
-                :hide-on-click-modal="true"
-                :preview-teleported="true"
-                :src="item"
-                :preview-src-list="[item]"
-              />
-            </div>
-          </div>
-        </template>
-      </el-table-column>
-      <el-table-column label="定制文字列表" align="center" prop="customTextList" />
-      <el-table-column label="合成预览图" align="center" prop="effectiveImgUrl">
-        <template #default="{ row }">
-          <el-image
-            v-if="row.effectiveImgUrl"
-            :hide-on-click-modal="true"
-            :preview-teleported="true"
-            :src="row.effectiveImgUrl"
-            :preview-src-list="[row.effectiveImgUrl]"
-          />
-        </template>
-      </el-table-column>
+
+
       <el-table-column label="订单状态" align="center" prop="orderStatus" min-width="150">
         <template #default="{ row }">
           <dict-tag :type="DICT_TYPE.TEMU_ORDER_STATUS" :value="row.orderStatus" />

@@ -8,9 +8,7 @@
       v-loading="formLoading"
     >
 
-      <el-form-item label="商品品类ID" prop="categoryId">
-        <el-input @input="filterInput" v-model="formData.categoryId" placeholder="请输入商品品类ID" clearable />
-      </el-form-item>
+     
       <el-form-item label="商品名称" prop="categoryName">
         <el-input v-model="formData.categoryName" placeholder="请输入商品名称" clearable />
       </el-form-item>
@@ -29,7 +27,8 @@
       <el-form-item label="主图URL" prop="mainImageUrl">
         <upload-img :file-size="10"  v-model="formData.mainImageUrl" />
       </el-form-item>
-      <el-form-item label="单位价格" prop="unitPrice" :rules="[{
+      <el-form-item
+label="单位价格" prop="unitPrice" :rules="[{
         required: true,
         message: '请输入单位价格规则',
         trigger: 'blur'
@@ -37,7 +36,8 @@
         <div class="flex flex-col ">
           <div><el-button type="primary" @click="addPriceRule">添加规则</el-button></div>
           <div v-for="(item,index) in formData.unitPrice" :key="index" class="flex  items-center  mt-2">
-            <el-form-item label="数量:" :prop="'unitPrice.'+index+ `.max`" label-width="60px" class="" :rules="[
+            <el-form-item
+label="数量:" :prop="'unitPrice.'+index+ `.max`" label-width="60px" class="" :rules="[
               {
                 required: true,
                 message: '请输入数量',
@@ -46,7 +46,8 @@
             ]">
               <el-input type="text"  v-model.number="item.max" placeholder="请输入单位价格" clearable />
             </el-form-item>
-            <el-form-item label="价格:" :prop="'unitPrice.'+index+ `.price`" label-width="60px"  class="" :rules="[
+            <el-form-item
+label="价格:" :prop="'unitPrice.'+index+ `.price`" label-width="60px"  class="" :rules="[
               {
                 required: true,
                 message: '请输入价格',
@@ -59,7 +60,8 @@
           </div>
         </div>
       </el-form-item>
-      <el-form-item label="默认价格" prop="defaultPrice" :rules="[{
+      <el-form-item
+label="默认价格" prop="defaultPrice" :rules="[{
         required: true,
         message: '请输入默认价格',
         trigger: 'blur'
