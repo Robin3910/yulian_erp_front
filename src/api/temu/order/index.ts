@@ -49,4 +49,9 @@ export const OrderApi = {
   batchCreateOrder: async (data: any) => {
     return await request.post({ url: `/temu/order/batch-save-order`, data })
   },
+  // 更新订单发货状态
+  updateOrderShipping: async (data: { orderId: number; orderStatus: number }) => {
+    return await request.put({ url: `/temu/order-shipping/update`, data })
+  }
+
 }
