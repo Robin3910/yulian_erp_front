@@ -58,6 +58,14 @@
           </el-form-item>
         </el-col>
         <el-col :span="24" :lg="6">
+          <el-form-item label="订单状态" prop="orderStatus" class="w-full">
+            <el-select v-model="queryParams.orderStatus" placeholder="请选择订单状态" clearable>
+              <el-option :label="'已生产待发货'" :value="3" />
+              <el-option :label="'已发货'" :value="4" />
+            </el-select>
+          </el-form-item>
+        </el-col>
+        <el-col :span="24" :lg="6">
           <el-form-item>
             <el-button @click="handleQuery">
               <Icon icon="ep:search" class="mr-5px" />
@@ -65,7 +73,7 @@
             </el-button>
             <el-button @click="resetQuery">
               <Icon icon="ep:refresh" class="mr-5px" />
-              刷新
+              重置
             </el-button>
           </el-form-item>
         </el-col>
@@ -125,38 +133,55 @@
         </template>
       </el-table-column>
 
-      <!-- 4. 商品标题 -->
+      <!-- 4. 商品信息 -->
       <el-table-column 
-        label="商品标题" 
-        prop="productTitle" 
+        label="商品信息" 
         min-width="200" 
-        show-overflow-tooltip
-        class-name="text-left-column" 
-      />
-
-      <!-- 5. 商品属性 -->
-      <el-table-column label="商品属性" prop="productProperties" align="center" min-width="150" show-overflow-tooltip>
+        class-name="text-left-column"
+      >
         <template #default="{ row }">
-          <div v-if="row.productProperties">{{ row.productProperties }}</div>
-          <span v-else>-</span>
-        </template>
-      </el-table-column>
-
-      <!-- 6. SKU信息 -->
-      <el-table-column label="SKU信息" align="center" min-width="200">
-        <template #default="{ row }">
-          <div class="sku-info">
-            <div>SKU编号：{{ row.sku || '-' }}</div>
-            <div>SKC编号：{{ row.skc || '-' }}</div>
-            <div>定制SKU：{{ row.customSku || '-' }}</div>
+          <div class="product-info">
+            <div class="product-title">
+              <span class="label">标题：</span>
+              <span>{{ row.productTitle || '-' }}</span>
+            </div>
+            <div class="product-props" v-if="row.productProperties">
+              <span class="label">属性：</span>
+              <span>{{ row.productProperties }}</span>
+            </div>
+            <div class="product-quantity">
+              <span class="label">数量：</span>
+              <span>{{ row.quantity }}</span>
+            </div>
           </div>
         </template>
       </el-table-column>
 
-      <!-- 7. 数量 -->
-      <el-table-column label="数量" align="center" prop="quantity" min-width="80" />
+      <!-- 5. SKU信息 -->
+      <el-table-column 
+        label="SKU信息" 
+        min-width="200"
+        class-name="text-left-column"
+      >
+        <template #default="{ row }">
+          <div class="sku-info">
+            <div class="sku-item">
+              <span class="label">SKU编号：</span>
+              <span>{{ row.sku || '-' }}</span>
+            </div>
+            <div class="sku-item">
+              <span class="label">SKC编号：</span>
+              <span>{{ row.skc || '-' }}</span>
+            </div>
+            <div class="sku-item">
+              <span class="label">定制SKU：</span>
+              <span>{{ row.customSku || '-' }}</span>
+            </div>
+          </div>
+        </template>
+      </el-table-column>
 
-      <!-- 8. 定制图片列表 -->
+      <!-- 6. 定制图片列表 -->
       <el-table-column label="定制图片列表" align="center" prop="customImageUrls" min-width="200">
         <template #default="{ row }">
           <div class="custom-images-container" v-if="row.customImageUrls">
@@ -175,7 +200,7 @@
         </template>
       </el-table-column>
 
-      <!-- 9. 定制文字列表 -->
+      <!-- 7. 定制文字列表 -->
       <el-table-column label="定制文字列表" prop="customTextList" align="center" min-width="150" show-overflow-tooltip>
         <template #default="{ row }">
           <div v-if="row.customTextList">{{ row.customTextList }}</div>
@@ -183,7 +208,7 @@
         </template>
       </el-table-column>
 
-      <!-- 10. 合成预览图 -->
+      <!-- 8. 合成预览图 -->
       <el-table-column label="合成预览图" prop="effectiveImgUrl" align="center" min-width="100">
         <template #default="{ row }">
           <el-image
@@ -199,19 +224,23 @@
         </template>
       </el-table-column>
 
-      <!-- 11. 订单状态 -->
+      <!-- 9. 订单状态 -->
       <el-table-column label="订单状态" prop="orderStatus" align="center" min-width="100">
         <template #default="{ row }">
-          <el-tag :type="getOrderStatusType(row.orderStatus)">
+          <el-tag :type="getOrderStatusType(row.orderStatus)" class="status-tag">
             {{ getOrderStatusText(row.orderStatus) }}
           </el-tag>
         </template>
       </el-table-column>
 
-      <!-- 12. 预订单创建时间 -->
-      <el-table-column label="待发货订单创建时间" prop="createTime" align="center" min-width="150">
+      <!-- 10. 预订单创建时间 -->
+      <el-table-column label="发货订单创建时间" prop="createTime" align="center" min-width="180">
         <template #default="{ row }">
-          {{ row.createTime ? formatDate(row.createTime) : '-' }}
+          <div class="create-time" v-if="row.createTime">
+            <div class="date">{{ formatDate(row.createTime, 'YYYY-MM-DD') }}</div>
+            <div class="time">{{ formatDate(row.createTime, 'HH:mm:ss') }}</div>
+          </div>
+          <span v-else>-</span>
         </template>
       </el-table-column>
 
@@ -237,6 +266,15 @@
               <el-icon><Printer /></el-icon>
               打印商品条码
             </el-button>
+            <el-button
+              v-if="row.orderStatus === 3"
+              size="small"
+              type="success"
+              @click.stop="handleShip(row)"
+            >
+              <el-icon><Van /></el-icon>
+              发货
+            </el-button>
           </div>
         </template>
       </el-table-column>
@@ -256,9 +294,9 @@
 import { ref, reactive } from 'vue'
 import { OrderApi, OrderVO } from '@/api/temu/order'
 import { TemuCommonApi } from '@/api/temu/common'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import PrintPreview from './components/PrintPreview.vue'
-import { Printer } from '@element-plus/icons-vue'
+import { Printer, Van } from '@element-plus/icons-vue'
 import { formatDate } from '@/utils/formatTime'
 
 /** 订单 列表 */
@@ -279,7 +317,8 @@ const queryParams = reactive({
   orderNo: undefined,
   trackingNumber: undefined,
   shopId: undefined,
-  createTime: []
+  createTime: [],
+  orderStatus: undefined
 })
 const queryFormRef = ref() // 搜索的表单
 const spanArr = ref<number[]>([]) // 用于存储合并信息
@@ -555,6 +594,10 @@ const getOrderStatusType = (status: number) => {
       return 'warning'
     case 2:
       return 'success'
+    case 3:
+      return 'warning'
+    case 4:
+      return 'success'
     default:
       return 'info'
   }
@@ -569,8 +612,34 @@ const getOrderStatusText = (status: number) => {
       return '生产中'
     case 2:
       return '已生产'
+    case 3:
+      return '已生产待发货'
+    case 4:
+      return '已发货'
     default:
       return '未知状态'
+  }
+}
+
+// 处理发货
+const handleShip = async (row: OrderVO) => {
+  try {
+    await ElMessageBox.confirm('确认发货吗？该操作确认后无法撤回', '提示', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    })
+    
+    await OrderApi.updateOrderShipping({
+      orderId: row.orderId,
+      orderStatus: 4
+    })
+    ElMessage.success('发货成功')
+    getList()
+  } catch (error) {
+    if (error !== 'cancel') {
+      ElMessage.error('发货失败')
+    }
   }
 }
 
@@ -578,18 +647,29 @@ const getOrderStatusText = (status: number) => {
 
 <style lang="scss" scoped>
 .custom-table {
+  :deep(.el-table__row) {
+    &:nth-child(odd) {
+      background-color: #ffffff;
+      .tracking-number-cell {
+        background-color: #ffffff;
+      }
+    }
+    &:nth-child(even) {
+      background-color: #f0f2f5;
+      .tracking-number-cell {
+        background-color: #f0f2f5;
+      }
+    }
+    &:hover {
+      background-color: #e6f0fc;
+      .tracking-number-cell {
+        background-color: #e6f0fc;
+      }
+    }
+  }
+
   :deep(.el-table__cell) {
-    border: none;
-  }
-  
-  // 移除表格边框
-  :deep(.el-table__inner-wrapper::before) {
-    display: none;
-  }
-  
-  // 移除底部边框
-  :deep(.el-table__border-bottom-cell) {
-    border-bottom: none;
+    border-bottom: 1px solid #ebeef5;
   }
 }
 
@@ -609,10 +689,23 @@ const getOrderStatusText = (status: number) => {
 }
 
 .sku-info {
-  text-align: center;
-  
-  > div {
-    line-height: 1.8;
+  padding: 8px;
+  text-align: left;
+
+  .sku-item {
+    font-size: 13px;
+    color: #606266;
+    margin-top: 4px;
+    line-height: 1.4;
+
+    &:first-child {
+      margin-top: 0;
+    }
+
+    .label {
+      color: #909399;
+      margin-right: 4px;
+    }
   }
 }
 
@@ -626,6 +719,8 @@ const getOrderStatusText = (status: number) => {
   .tracking-number {
     font-size: 14px;
     line-height: 1.5;
+    font-weight: 500;
+    color: #303133;
   }
 
   :deep(.el-button) {
@@ -644,56 +739,73 @@ const getOrderStatusText = (status: number) => {
   :deep(.el-button) {
     width: 120px;
     margin: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    border-radius: 20px;
+    transition: all 0.3s ease;
     
     .el-icon {
+      margin-right: 4px;
+    }
+
+    &:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    &.el-button--success {
+      background: linear-gradient(to right, #67c23a, #85ce61);
+      border: none;
+      
+      &:hover {
+        background: linear-gradient(to right, #85ce61, #95d475);
+      }
+    }
+
+    &.el-button--primary {
+      background: linear-gradient(to right, #409eff, #53a8ff);
+      border: none;
+      
+      &:hover {
+        background: linear-gradient(to right, #53a8ff, #66b1ff);
+      }
+    }
+  }
+}
+
+:deep(.el-table__inner-wrapper::before) {
+  display: none;
+}
+
+:deep(.el-table__border-bottom-cell) {
+  border-bottom: 1px solid #ebeef5;
+}
+
+.product-info {
+  padding: 8px;
+  text-align: left;
+
+  .product-title {
+    font-size: 14px;
+    font-weight: 500;
+    color: #303133;
+    margin-bottom: 8px;
+    line-height: 1.4;
+  }
+
+  .product-props,
+  .product-quantity {
+    font-size: 13px;
+    color: #606266;
+    margin-top: 4px;
+    line-height: 1.4;
+
+    .label {
+      color: #909399;
       margin-right: 4px;
     }
   }
 }
 
-:deep(.el-table__cell) {
-  .cell {
-    padding: 0;
-    display: flex;
-    justify-content: center;
-  }
-}
 
-.el-tag {
-  margin: 0 2px;
-}
 
-:deep(.el-image) {
-  border-radius: 4px;
-  transition: transform 0.2s;
-  
-  &:hover {
-    transform: scale(1.05);
-  }
-}
-
-:deep(.el-date-editor) {
-  width: 100%;
-}
-
-:deep(.text-left-column) {
-  .cell {
-    justify-content: flex-start !important;
-    padding-left: 16px !important;
-  }
-}
-
-// 如果上面的样式不生效，可以尝试这个更强的选择器
-:deep(.el-table) {
-  .text-left-column {
-    .cell {
-      justify-content: flex-start !important;
-      padding-left: 16px !important;
-    }
-  }
-}
 
 </style>
