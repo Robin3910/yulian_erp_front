@@ -21,6 +21,9 @@ export interface OrderVO {
   categoryName: string // 类目名称
   shippingInfo: string // 物流信息JSON字符串
   originalInfo: string // 接口接收的源信息
+  totalPrice: number // 订单总价
+  unitPrice: number // 单价
+
 }
 
 // 订单 API
@@ -49,9 +52,16 @@ export const OrderApi = {
   batchCreateOrder: async (data: any) => {
     return await request.post({ url: `/temu/order/batch-save-order`, data })
   },
+  //   订单金额统计
+  getAdminOrderAmountStatistics: async (params) => {
+    return await request.get({ url: `/temu/order/admin-statistics`, params } )
+  },
+  //   订单金额统计
+  getOrderAmountStatistics: async (params) => {
+    return await request.get({ url: `/temu/order/statistics`, params } )
+  },
   // 更新订单发货状态
   updateOrderShipping: async (data: { orderId: number; orderStatus: number }) => {
     return await request.put({ url: `/temu/order-shipping/update`, data })
   }
-
 }

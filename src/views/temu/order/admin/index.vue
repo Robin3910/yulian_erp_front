@@ -112,7 +112,13 @@
       </el-row>
     </el-form>
   </ContentWrap>
-
+  <ContentWrap>
+    <el-row>
+      <el-col :span="24" :lg="6" class="color-orange-500">
+        <div><span>订单总价:{{orderTotalPrice||0}}</span><span class="ml-2">当前页面订单总价:{{list.reduce((acc, item) => acc + item.totalPrice, 0).toFixed(2)}}</span></div>
+      </el-col>
+    </el-row>
+  </ContentWrap>
   <!-- 列表 -->
   <ContentWrap>
     <el-table
@@ -217,6 +223,7 @@
               />
             </el-select>
             <el-popconfirm
+              v-if="row.orderStatus == 0"
               title="是否更新类目?"
               placement="top-start"
               @confirm="handleUpdateCategory(row)"
@@ -372,13 +379,15 @@ const queryParams = reactive({
   originalInfo: undefined
 })
 const queryFormRef = ref() // 搜索的表单
-
+// 订单总金额
+const orderTotalPrice = ref(0)
 /** 查询列表 */
 const getList = async () => {
-  console.log('>>>>>>>>>>>>>我是管理员')
   loading.value = true
   try {
     const data = await OrderApi.getOrderPageByAdmin(queryParams)
+    const { totalPrice } = await OrderApi.getAdminOrderAmountStatistics(queryParams)
+    orderTotalPrice.value = totalPrice
     list.value = data.list
     total.value = data.total
   } finally {
