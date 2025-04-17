@@ -159,6 +159,11 @@
         <template #default="{ row }">
           <div class="text-left">
             <div class="truncate mb-2 font-bold   ">产品标题：{{ row.productTitle }}</div>
+            <!-- 商品属性 -->
+            <div class="flex items-start mb-2">
+              <div>商品属性:</div>
+              <div class="ml-2">{{ row.productProperties||'--'}}</div>
+            </div>  
             <div class="flex items-start mb-2">
               <div>定制文字列表:</div>
               <div class="ml-2">{{ row.customTextList||'--'}}</div>
@@ -209,7 +214,6 @@
         </template>
       </el-table-column>
 
-      <el-table-column label="商品属性" align="center" prop="productProperties" min-width="200" />
       <el-table-column label="SKU信息" align="center" prop="productTitle" min-width="200">
         <template #default="{ row }">
           <div class="text-left">
