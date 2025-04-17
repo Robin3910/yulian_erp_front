@@ -23,7 +23,7 @@
                 <div class="text-left flex" v-if="item.customImageUrls">
                   <div v-for="(_item, _index) in item.customImageUrls.split(',')" :key="_index" class="mr-1">
                     <el-image
-class="w-10 h-10" :hide-on-click-modal="true" :preview-teleported="true" :src="_item"
+                      class="w-10 h-10" :hide-on-click-modal="true" :preview-teleported="true" :src="_item"
                       :preview-src-list="[_item]" />
                   </div>
                 </div>
@@ -43,27 +43,27 @@ class="w-10 h-10" :hide-on-click-modal="true" :preview-teleported="true" :src="_
               <!-- 默认价格 -->
               <el-form-item label="默认价格：" class="mb-2 cursor-pointer">
                 <div class="text-left" v-if="item.defaultPrice">
-                  {{ item.defaultPrice }}
+                  ¥{{ item.defaultPrice?item.defaultPrice.toFixed(2):'0.00' }}
                 </div>
               </el-form-item>
               <!-- 分类价格 -->
               <el-form-item label="分类价格：" class="mb-2 cursor-pointer">
                 <div class="text-left" v-if="item.categoryPriceRule">
                   <div v-for="(_rule, _index) in item.categoryPriceRule.sort((a, b) => a.max - b.max)" :key="_index">
-                    <div>数量小于等于：<el-tag size="small">{{ _rule.max }}</el-tag>--价格：<el-tag size="small">{{ _rule.price }}</el-tag></div>
+                    <div>数量小于等于：<el-tag size="small">{{ _rule.max }}</el-tag>--价格：<el-tag size="small">¥{{ _rule.price.toFixed(2) }}</el-tag></div>
                   </div>
                 </div>
               </el-form-item>
               <!--  数量-->
               <el-form-item
-label="数量：" class="mb-2 cursor-pointer" :prop="`orderList.${index}.quantity`"
+                label="数量：" class="mb-2 cursor-pointer" :prop="`orderList.${index}.quantity`"
                 :rules="[{ required: true, message: '请输入数量', trigger: 'blur' }]">
                 <el-input v-model.number="item.quantity" class="!w-240px" clearable />
               </el-form-item>
               <!-- 单价 -->
               <el-form-item label="单价：" class="mb-2 cursor-pointer">
                 <div class="text-left" >
-                  {{ calculateUnitPrice(item) }}
+                  ¥{{ calculateUnitPrice(item)?calculateUnitPrice(item):'0.00' }}
                 </div>
 
               </el-form-item>
@@ -71,7 +71,7 @@ label="数量：" class="mb-2 cursor-pointer" :prop="`orderList.${index}.quantit
               <!-- 总价 -->
               <el-form-item label="总价：" class="mb-2 cursor-pointer">
                 <div class="text-left" >
-                  {{ (calculateUnitPrice(item)*item.quantity).toFixed(2) }}
+                  ¥{{ (calculateUnitPrice(item)*item.quantity).toFixed(2) }}
                 </div>
               </el-form-item>
             </div>
@@ -86,11 +86,11 @@ label="数量：" class="mb-2 cursor-pointer" :prop="`orderList.${index}.quantit
         <!-- 订单数 -->
         <div class="text-left text-orange-500" >
           <span>订单数：{{ formData.orderList.length||0 }} </span>
-          <span class="ml-2">总价：{{ formData.orderList.reduce((acc, item) => acc + (calculateUnitPrice(item)*item.quantity), 0).toFixed(2) }}</span>
+          <span class="ml-2">总价：¥{{ formData.orderList.reduce((acc, item) => acc + (calculateUnitPrice(item)*item.quantity), 0).toFixed(2) }}</span>
         </div>
         <div>
           <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleConfirm"> 确认 </el-button>
+          <el-button type="primary" @click="handleConfirm"> 确认 </el-button>
         </div>
       </div>
     </template>
@@ -136,8 +136,8 @@ const filterOrderQuantity = (list: any[]) => {
 const calculateUnitPrice = computed(() => {
   return (item) => {
 
-   // 设置默认价格
-   let unitPrice = item.defaultPrice
+    // 设置默认价格
+    let unitPrice = item.defaultPrice
     // 分类价格按照数量从小到大排序
     item.categoryPriceRule.sort((a, b) => a.max - b.max)
     //检查分类定价规则
@@ -148,9 +148,9 @@ const calculateUnitPrice = computed(() => {
         break
       }
     }
-    console.log('>>>>>>>>>>>>>计算单价',item.orderNo, item.unitPrice)
+    console.log('>>>>>>>>>>>>>计算单价',unitPrice.toFixed(2))
     return unitPrice.toFixed(2)
-}
+  }
 })
 // 传入订单数据
 const setOrderList =  (list: any[]) => {

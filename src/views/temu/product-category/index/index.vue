@@ -66,23 +66,23 @@
           <div v-if="scope.row.unitPrice">
           <div v-for="(item,index) in scope.row.unitPrice.sort((a,b)=>a.max-b.max)" :key="index" class="mb-2 text-left flex">
             <div class="mr-2">数量小于等于：<el-tag type="success">{{item.max}}</el-tag></div>
-            <div>价格：<el-tag type="success">{{item.price}}</el-tag></div>
+            <div>价格：<el-tag type="success">{{item.price?'¥'+item.price.toFixed(2):'暂未设置'}}</el-tag></div>
           </div>
           </div>
         </template>
       </el-table-column>
       <el-table-column label="默认价格" align="center" prop="defaultPrice" >
         <template #default="scope">
-          <el-tag type="success">{{scope.row.defaultPrice||'暂未设置'}}</el-tag>
+          <el-tag type="success">{{scope.row.defaultPrice?'¥'+scope.row.defaultPrice.toFixed(2):'暂未设置'}}</el-tag>
         </template>
       </el-table-column>
       <el-table-column label="商品尺寸" align="center" min-width="200">
         <template #default="scope">
           <div class="flex flex-col gap-1">
-            <div>长度：<el-tag size="small">{{scope.row.length}}cm</el-tag></div>
-            <div>宽度：<el-tag size="small">{{scope.row.width}}cm</el-tag></div>
-            <div>高度：<el-tag size="small">{{scope.row.height}}cm</el-tag></div>
-            <div>重量：<el-tag size="small">{{scope.row.weight}}g</el-tag></div>
+            <div>长度：<el-tag size="small">{{scope.row.length||0}}cm</el-tag></div>
+            <div>宽度：<el-tag size="small">{{scope.row.width||0}}cm</el-tag></div>
+            <div>高度：<el-tag size="small">{{scope.row.height||0}}cm</el-tag></div>
+            <div>重量：<el-tag size="small">{{scope.row.weight||0}}g</el-tag></div>
           </div>
         </template>
       </el-table-column>

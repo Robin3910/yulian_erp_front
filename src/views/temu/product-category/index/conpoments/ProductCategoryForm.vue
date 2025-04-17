@@ -8,7 +8,7 @@
       v-loading="formLoading"
     >
 
-     
+
       <el-form-item label="商品名称" prop="categoryName">
         <el-input v-model="formData.categoryName" placeholder="请输入商品名称" clearable />
       </el-form-item>
@@ -28,23 +28,27 @@
         <upload-img :file-size="10"  v-model="formData.mainImageUrl" />
       </el-form-item>
       <el-form-item
-label="单位价格" prop="unitPrice" :rules="[{
+label="补充阶梯" prop="unitPrice" :rules="[{
         required: true,
         message: '请输入单位价格规则',
         trigger: 'blur'
       }]">
         <div class="flex flex-col ">
           <div><el-button type="primary" @click="addPriceRule">添加规则</el-button></div>
-          <div v-for="(item,index) in formData.unitPrice" :key="index" class="flex  items-center  mt-2">
+          <div v-for="(item,index) in formData.unitPrice" :key="index" class="flex  items-center  mt-4">
+            <span style="flex: 0 0 auto">第{{numberToChinese(index+1)}}阶梯</span>
             <el-form-item
-label="数量:" :prop="'unitPrice.'+index+ `.max`" label-width="60px" class="" :rules="[
+:label="`数量:`"  :prop="'unitPrice.'+index+ `.max`" label-width="60px" class="" :rules="[
               {
                 required: true,
                 message: '请输入数量',
                 trigger: 'blur'
               }
             ]">
+            <div class="flex  items-center">
+              <span style="flex: 0 0 auto">{{formData.unitPrice[index-1]?formData.unitPrice[index-1].max:0}}-</span>
               <el-input type="text"  v-model.number="item.max" placeholder="请输入单位价格" clearable />
+            </div>
             </el-form-item>
             <el-form-item
 label="价格:" :prop="'unitPrice.'+index+ `.price`" label-width="60px"  class="" :rules="[
@@ -52,18 +56,28 @@ label="价格:" :prop="'unitPrice.'+index+ `.price`" label-width="60px"  class="
                 required: true,
                 message: '请输入价格',
                 trigger: 'blur'
+              },
+              {
+                validator: (rule, value, callback) => {
+                  if (value < 0) {
+                    callback(new Error('价格必须大于等于0'));
+                  } else {
+                    callback();
+                  }
+                },
+                trigger: 'blur'
               }
             ]">
-              <el-input type="text"  v-model.number="item.price" placeholder="请输入价格" clearable />
+              <el-input type="number"  v-model="item.price" placeholder="请输入价格" clearable />
             </el-form-item>
             <el-button class="ml-2" type="danger" @click="formData.unitPrice.splice(index,1)">删除</el-button>
           </div>
         </div>
       </el-form-item>
       <el-form-item
-label="默认价格" prop="defaultPrice" :rules="[{
+label="最大数量价格" label-width="120px" prop="defaultPrice" :rules="[{
         required: true,
-        message: '请输入默认价格',
+        message: '请输入最大数量价格',
         trigger: 'blur'
       }]">
         <el-input type="number"  v-model.number="formData.defaultPrice" placeholder="请输入默认价格" clearable />
@@ -105,10 +119,6 @@ const formRules = reactive({
   categoryName: [{ required: true, message: '商品名称不能为空', trigger: 'blur' }]
 })
 const formRef = ref() // 表单 Ref
-const filterInput = (s:string) => {
-  // 使用正则表达式过滤掉非数字字符
-  formData.value.categoryId= s.replace(/\D/g, '')
-}
 
 /** 打开弹窗 */
 const open = async (type: string, id?: number) => {
@@ -127,6 +137,40 @@ const open = async (type: string, id?: number) => {
   }
 }
 defineExpose({ open }) // 提供 open 方法，用于打开弹窗
+const  numberToChinese=(num: number): string=> {
+  const chineseNumbers = ['零', '一', '二', '三', '四', '五', '六', '七', '八', '九'];
+  const units = ['', '十', '百', '千', '万', '十', '百', '千', '亿', '十', '百', '千', '万', '十', '百', '千'];
+  let result = '';
+  let unitIndex = 0;
+
+  if (num === 0) {
+    return chineseNumbers[0];
+  }
+
+  while (num > 0) {
+    const digit = num % 10;
+    if (digit === 0) {
+      if (result.length > 0 && result[0] !== chineseNumbers[0]) {
+        result = chineseNumbers[0] + result;
+      }
+    } else {
+      result = chineseNumbers[digit] + units[unitIndex] + result;
+    }
+    num = Math.floor(num / 10);
+    unitIndex++;
+  }
+
+  // 去除连续的零
+  result = result.replace(/零+/g, '零');
+  // 去除末尾的零
+  if (result.endsWith('零')) {
+    result = result.slice(0, -1);
+  }
+  // 处理十位为1的情况，如“一十”改为“十”
+  result = result.replace(/^一十/, '十');
+
+  return result;
+}
 // 添加价格规则
 const addPriceRule=()=>{
   if(!formData.value.unitPrice){

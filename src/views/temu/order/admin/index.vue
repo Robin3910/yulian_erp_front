@@ -106,7 +106,7 @@
               <Icon icon="ep:refresh" class="mr-5px" />
               批量设置状态
             </el-button>
-            <el-button @click="handleBatchOrder"> 批量下单</el-button>
+            <el-button @click="handleBatchOrder" type="primary"> 批量下单</el-button>
           </el-form-item>
         </el-col>
       </el-row>
@@ -115,7 +115,9 @@
   <ContentWrap>
     <el-row>
       <el-col :span="24" :lg="6" class="color-orange-500">
-        <div><span>订单总价:{{orderTotalPrice||0}}</span><span class="ml-2">当前页面订单总价:{{list.reduce((acc, item) => acc + item.totalPrice, 0).toFixed(2)}}</span></div>
+        <div>
+          <span>当前筛选条件下的订单总价:￥{{orderTotalPrice?orderTotalPrice.toFixed(2):'0.00'}}</span>
+        </div>
       </el-col>
     </el-row>
   </ContentWrap>
@@ -130,7 +132,7 @@
     >
       <!--选择-->
       <el-table-column type="selection" width="55" align="center" />
-      <el-table-column label="店铺信息" align="center" prop="shopId" min-width="150">
+      <el-table-column label="订单信息" align="center" prop="shopId" min-width="150">
         <template #default="{ row }">
           <div class="text-left">
             <div>订单编号:{{ row.orderNo }}</div>
@@ -140,10 +142,14 @@
         </template>
       </el-table-column>
       <!--<el-table-column label="订单编号" align="center" prop="orderNo" />-->
-      <el-table-column label="商品信息" align="center" prop="productImgUrl" min-width="250">
+      <el-table-column label="商品信息" align="center" prop="productImgUrl" min-width="280">
         <template #default="{ row }">
           <div class="text-left">
             <div class="truncate mb-2">产品标题：{{ row.productTitle }}</div>
+            <div class="flex items-start mb-2">
+              <div>定制文字列表:</div>
+              <div class="ml-2">{{ row.customTextList||'--'}}</div>
+            </div>
             <div class="flex items-start mb-2">
               <div>产品图片：</div>
               <el-image
@@ -182,14 +188,14 @@
           </div>
         </template>
       </el-table-column>
-      <el-table-column label="定制文字列表" align="center" prop="customTextList" />
-      <el-table-column label="价格信息" min-width="80">
+      <!--<el-table-column label="定制文字列表" align="center" prop="" />-->
+      <el-table-column label="价格信息" min-width="120">
         <template #default="{ row }">
           <div>
             <div>
-              <div>单价：{{ row.unitPrice || '--' }}</div>
               <div>数量：{{ row.quantity || '--' }}</div>
-              <div>总价：{{ row.totalPrice || '--' }}</div>
+              <div>单价：{{ row.unitPrice?'￥'+row.unitPrice.toFixed(2): '--' }}</div>
+              <div>总价：{{ row.totalPrice?'￥'+row.totalPrice.toFixed(2) : '--' }}</div>
             </div>
           </div>
         </template>
@@ -205,9 +211,9 @@
           </div>
         </template>
       </el-table-column>
-      <el-table-column label="类目名称" align="center" prop="categoryName" min-width="300">
+      <el-table-column label="类目名称" align="center" prop="categoryName" min-width="230">
         <template #default="{ row }">
-          <div class="text-left">
+          <div class="text-left" v-if="row.orderStatus===0">
             <el-select
               class="!w-[150px]"
               filterable
@@ -223,7 +229,7 @@
               />
             </el-select>
             <el-popconfirm
-              v-if="row.orderStatus == 0"
+
               title="是否更新类目?"
               placement="top-start"
               @confirm="handleUpdateCategory(row)"
@@ -232,6 +238,9 @@
                 <el-button class="ml-1" type="primary">更新</el-button>
               </template>
             </el-popconfirm>
+          </div>
+          <div class="text-left" v-else>
+            <div>{{ row.categoryName }}</div>
           </div>
         </template>
       </el-table-column>
@@ -476,6 +485,10 @@ const handleBatchOrder = () => {
   }
   if (selectedRows.value.some((item) => !item.categoryId)) {
     ElMessage.error('存在未设置分类的订单请先设置分类')
+    return
+  }
+  if(selectedRows.value.some(item=>item.orderStatus!=0)){
+    ElMessage.error('只允许未下单的订单进行批量下单');
     return
   }
   batchOrderPopup.value = true
