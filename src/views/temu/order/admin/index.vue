@@ -129,10 +129,9 @@
       :stripe="true"
       :show-overflow-tooltip="true"
       @selection-change="handleSelectionChange"
-
     >
       <!--选择-->
-      <el-table-column type="selection"  width="55" align="center" />
+      <el-table-column type="selection" width="55" align="center" />
       <!--订单编号-->
       <el-table-column label="订单编号" align="center" prop="orderNo" min-width="150"/>
       <!--店铺信息-->
@@ -176,40 +175,6 @@
           </div>
         </template>
       </el-table-column>
-      <el-table-column label="类目名称" align="center" prop="categoryName" min-width="230">
-        <template #default="{ row }">
-          <div class="text-left" v-if="row.orderStatus===0">
-            <el-select
-              class="!w-[150px]"
-              filterable
-              v-model="row.categoryId"
-              placeholder="请选择类目"
-              clearable
-            >
-              <el-option
-                v-for="(item, index) in categoryList"
-                :key="index"
-                :label="item.categoryName"
-                :value="item.id.toString()"
-              />
-            </el-select>
-            <el-popconfirm
-
-              title="是否更新类目?"
-              placement="top-start"
-              @confirm="handleUpdateCategory(row)"
-            >
-              <template #reference>
-                <el-button class="ml-1" type="primary">更新</el-button>
-              </template>
-            </el-popconfirm>
-          </div>
-          <div class="text-left" v-else>
-            <div>{{ row.categoryName }}</div>
-          </div>
-        </template>
-      </el-table-column>
-
       <!-- 定制图片 -->
       <el-table-column label="定制图片" align="center" prop="customImageUrls" min-width="180">
         <template #default="{ row }">
@@ -259,6 +224,39 @@
             <div>SKU编号:{{ row.sku }}</div>
             <div>SKC编号:{{ row.skc }}</div>
             <div>定制SKU:{{ row.customSku }}</div>
+          </div>
+        </template>
+      </el-table-column>
+      <el-table-column label="类目名称" align="center" prop="categoryName" min-width="230">
+        <template #default="{ row }">
+          <div class="text-left" v-if="row.orderStatus===0">
+            <el-select
+              class="!w-[150px]"
+              filterable
+              v-model="row.categoryId"
+              placeholder="请选择类目"
+              clearable
+            >
+              <el-option
+                v-for="(item, index) in categoryList"
+                :key="index"
+                :label="item.categoryName"
+                :value="item.id.toString()"
+              />
+            </el-select>
+            <el-popconfirm
+
+              title="是否更新类目?"
+              placement="top-start"
+              @confirm="handleUpdateCategory(row)"
+            >
+              <template #reference>
+                <el-button class="ml-1" type="primary">更新</el-button>
+              </template>
+            </el-popconfirm>
+          </div>
+          <div class="text-left" v-else>
+            <div>{{ row.categoryName }}</div>
           </div>
         </template>
       </el-table-column>
@@ -514,18 +512,6 @@ const handleBatchOrder = () => {
   nextTick(() => {
     batchOrderPopupRef.value?.setOrderList(selectedRows.value)
   })
-}
-
-// 处理表格合并
-const handlerSpanMethod = ({ row, column, rowIndex, columnIndex }: any) => {
-  if (columnIndex === 0) {
-
-
-    return {
-      rowspan: 2,
-      colspan: 1
-   }
-  }
 }
 
 /** 初始化 **/
