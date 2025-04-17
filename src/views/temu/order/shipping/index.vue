@@ -93,15 +93,17 @@
       class="custom-table"
     >
       <!-- 物流单号列 -->
-      <el-table-column label="物流单号" align="center" min-width="200" fixed="left">
+      <el-table-column label="物流单号" align="center" min-width="140" fixed="left">
         <template #default="{ row, $index }">
-          <template v-if="spanArr[$index] !== 0">
+          <template v-if="spanArr.trackingSpans[$index] !== 0">
             <div class="tracking-number-cell">
               <span class="tracking-number">{{ (row as any).trackingNumber || '-' }}</span>
               <el-button
                 v-if="row.expressOutsideImageUrl"
                 size="small"
                 type="primary"
+                plain
+                class="action-button urgent-print-button"
                 @click.stop="handlePrint(row.expressOutsideImageUrl)"
               >
                 <el-icon><Printer /></el-icon>
@@ -114,14 +116,35 @@
 
       <!-- 2. 订单编号 -->
       <el-table-column 
-        label="订单编号" 
+        label="订单信息" 
         prop="orderNo" 
-        min-width="120" 
-        class-name="text-left-column" 
-      />
+        min-width="240" 
+        class-name="text-left-column"
+        :show-overflow-tooltip="false"
+      >
+        <template #default="{ row, $index }">
+          <template v-if="spanArr.orderSpans[$index] !== 0">
+            <div class="order-info">
+              <div class="order-number">
+                <span class="label">订单编号：</span>
+                {{ (row as any).orderNo || '-' }}</div>
+              <div class="shop-info">
+                <div class="shop-name">
+                  <span class="label">店铺名称：</span>
+                  <span>{{ row.shopName || '-' }}</span>
+                </div>
+                <div class="shop-id">
+                  <span class="label">店铺ID：</span>
+                  <span>{{ row.shopId || '-' }}</span>
+                </div>
+              </div>
+            </div>
+          </template>
+        </template>
+      </el-table-column>
 
       <!-- 3. 商品图片 -->
-      <el-table-column label="商品图片" align="center" prop="productImgUrl" min-width="100">
+      <el-table-column label="产品图片" align="center" prop="productImgUrl" min-width="110">
         <template #default="{ row }">
           <el-image
             :hide-on-click-modal="true"
@@ -136,7 +159,7 @@
       <!-- 4. 商品信息 -->
       <el-table-column 
         label="商品信息" 
-        min-width="200" 
+        min-width="180" 
         class-name="text-left-column"
       >
         <template #default="{ row }">
@@ -162,6 +185,7 @@
         label="SKU信息" 
         min-width="200"
         class-name="text-left-column"
+        header-align="center"
       >
         <template #default="{ row }">
           <div class="sku-info">
@@ -182,7 +206,7 @@
       </el-table-column>
 
       <!-- 6. 定制图片列表 -->
-      <el-table-column label="定制图片列表" align="center" prop="customImageUrls" min-width="200">
+      <el-table-column label="定制图片列表" align="center" prop="customImageUrls" min-width="150">
         <template #default="{ row }">
           <div class="custom-images-container" v-if="row.customImageUrls">
             <div v-for="(item, index) in row.customImageUrls.split(',')" :key="index" class="image-item">
@@ -201,7 +225,7 @@
       </el-table-column>
 
       <!-- 7. 定制文字列表 -->
-      <el-table-column label="定制文字列表" prop="customTextList" align="center" min-width="150" show-overflow-tooltip>
+      <el-table-column label="定制文字列表" prop="customTextList" align="center" min-width="110" show-overflow-tooltip>
         <template #default="{ row }">
           <div v-if="row.customTextList">{{ row.customTextList }}</div>
           <span v-else>-</span>
@@ -209,7 +233,7 @@
       </el-table-column>
 
       <!-- 8. 合成预览图 -->
-      <el-table-column label="合成预览图" prop="effectiveImgUrl" align="center" min-width="100">
+      <el-table-column label="合成预览图" prop="effectiveImgUrl" align="center" min-width="110">
         <template #default="{ row }">
           <el-image
             v-if="row.effectiveImgUrl"
@@ -225,16 +249,16 @@
       </el-table-column>
 
       <!-- 9. 订单状态 -->
-      <el-table-column label="订单状态" prop="orderStatus" align="center" min-width="100">
+      <el-table-column label="订单状态" prop="orderStatus" align="center" min-width="135">
         <template #default="{ row }">
-          <el-tag :type="getOrderStatusType(row.orderStatus)" class="status-tag">
+          <el-tag :type="getOrderStatusType(row.orderStatus)" class="status-tag" size="large">
             {{ getOrderStatusText(row.orderStatus) }}
           </el-tag>
         </template>
       </el-table-column>
 
       <!-- 10. 预订单创建时间 -->
-      <el-table-column label="发货订单创建时间" prop="createTime" align="center" min-width="180">
+      <el-table-column label="发货订单创建时间" prop="createTime" align="center" min-width="140">
         <template #default="{ row }">
           <div class="create-time" v-if="row.createTime">
             <div class="date">{{ formatDate(row.createTime, 'YYYY-MM-DD') }}</div>
@@ -245,13 +269,15 @@
       </el-table-column>
 
       <!-- 操作列 -->
-      <el-table-column label="操作" fixed="right" align="center" min-width="120">
+      <el-table-column label="操作" fixed="right" align="center" min-width="140">
         <template #default="{ row }">
-          <div class="print-buttons">
+          <div class="action-buttons">
             <el-button
               v-if="row.expressImageUrl"
               size="small"
               type="primary"
+              plain
+              class="action-button"
               @click.stop="handlePrint(row.expressImageUrl)"
             >
               <el-icon><Printer /></el-icon>
@@ -260,7 +286,9 @@
             <el-button
               v-if="row.expressSkuImageUrl"
               size="small"
-              type="primary"
+              type="info"
+              plain
+              class="action-button"
               @click.stop="handlePrint(row.expressSkuImageUrl)"
             >
               <el-icon><Printer /></el-icon>
@@ -270,6 +298,7 @@
               v-if="row.orderStatus === 3"
               size="small"
               type="success"
+              class="action-button ship-button"
               @click.stop="handleShip(row)"
             >
               <el-icon><Van /></el-icon>
@@ -299,18 +328,28 @@ import PrintPreview from './components/PrintPreview.vue'
 import { Printer, Van } from '@element-plus/icons-vue'
 import { formatDate } from '@/utils/formatTime'
 
+declare global {
+  interface Window {
+    handleImageError: () => void;
+  }
+}
+
+interface ExtendedOrderVO extends OrderVO {
+  orderId: number;
+}
+
 /** 订单 列表 */
 defineOptions({ name: 'TemuOrderIndex' })
 
 const loading = ref(true) // 列表的加载中
-const list = ref<OrderVO[]>([]) // 列表的数据
+const list = ref<ExtendedOrderVO[]>([]) // 列表的数据
 const total = ref(0) // 列表的总页数
 const categoryList = ref<any[]>([])
 
 // 店铺列表
 const shopList = ref<any[]>([])
 // 多选
-const selectedRows = ref<any[]>([])
+const selectedRows = ref<ExtendedOrderVO[]>([])
 const queryParams = reactive({
   pageNo: 1,
   pageSize: 10,
@@ -321,65 +360,131 @@ const queryParams = reactive({
   orderStatus: undefined
 })
 const queryFormRef = ref() // 搜索的表单
-const spanArr = ref<number[]>([]) // 用于存储合并信息
+
+interface SpanInfo {
+  trackingSpans: number[]
+  orderSpans: number[]
+}
+
+const spanArr = ref<SpanInfo>({ trackingSpans: [], orderSpans: [] })
 
 /** 查询列表 */
 const getList = async () => {
   loading.value = true
   try {
-    const data = await OrderApi.getShippingOrderPage(queryParams)
+    // 获取所有数据
+    const data = await OrderApi.getShippingOrderPage({
+      ...queryParams,
+      pageNo: 1,
+      pageSize: 999999 // 获取所有数据以便进行分组处理
+    })
     
-    // 按物流单号分组处理数据
-    const groupedData: OrderVO[] = []
-    const trackingGroups = new Map<string, OrderVO[]>()
+    if (!data.list || data.list.length === 0) {
+      list.value = []
+      total.value = 0
+      spanArr.value = { trackingSpans: [], orderSpans: [] }
+      return
+    }
+
+    // 转换数据为ExtendedOrderVO
+    const extendedList = data.list.map(item => ({
+      ...item,
+      orderId: item.id
+    })) as ExtendedOrderVO[]
+
+    // 按物流单号和订单编号分组处理数据
+    const trackingGroups = new Map<string, Map<string, ExtendedOrderVO[]>>()
     
-    // 按物流单号分组
-    data.list.forEach(item => {
-      const trackingNumber = (item as any).trackingNumber || ''
+    // 第一步：按物流单号和订单编号双重分组
+    extendedList.forEach(item => {
+      const trackingNumber = item.trackingNumber || ''
+      const orderNo = item.orderNo || ''
+      
       if (trackingNumber) {
         if (!trackingGroups.has(trackingNumber)) {
-          trackingGroups.set(trackingNumber, [])
+          trackingGroups.set(trackingNumber, new Map())
         }
-        trackingGroups.get(trackingNumber)?.push(item)
-      } else {
-        // 没有物流单号的数据直接添加到结果中
-        groupedData.push(item)
+        const orderGroup = trackingGroups.get(trackingNumber)!
+        if (!orderGroup.has(orderNo)) {
+          orderGroup.set(orderNo, [])
+        }
+        orderGroup.get(orderNo)!.push(item)
       }
     })
 
-    // 将分组数据展平
-    trackingGroups.forEach((orders) => {
-      groupedData.push(...orders)
+    // 第二步：对每个分组内的数据按createTime排序
+    trackingGroups.forEach(orderGroups => {
+      orderGroups.forEach(items => {
+        items.sort((a, b) => {
+          const aTime = Number((a as any).createTime) || 0
+          const bTime = Number((b as any).createTime) || 0
+          return bTime - aTime // 降序排序
+        })
+      })
+    })
+
+    // 第三步：将物流单号组转换为数组并排序
+    const sortedTrackingGroups = Array.from(trackingGroups.entries())
+      .sort(([_, aOrders], [__, bOrders]) => {
+        const aTime = Number((Array.from(aOrders.values())[0]?.[0] as any)?.createTime) || 0
+        const bTime = Number((Array.from(bOrders.values())[0]?.[0] as any)?.createTime) || 0
+        return bTime - aTime // 降序排序
+      })
+
+    // 更新总数为物流单号的数量
+    total.value = trackingGroups.size
+
+    // 第四步：计算当前页需要显示的物流单号范围
+    const pageSize = queryParams.pageSize
+    const currentPage = queryParams.pageNo
+    const startGroupIndex = (currentPage - 1) * pageSize
+    const endGroupIndex = startGroupIndex + pageSize
+    
+    // 第五步：只获取当前页的物流单号组
+    const currentPageGroups = sortedTrackingGroups.slice(startGroupIndex, endGroupIndex)
+    
+    // 第六步：展平当前页的数据
+    const groupedData: ExtendedOrderVO[] = []
+    const spanInfo: SpanInfo = {
+      trackingSpans: [],
+      orderSpans: []
+    }
+
+    currentPageGroups.forEach(([_, orderGroups]) => {
+      // 对每个物流单号内的订单按时间降序排序
+      const sortedOrders = Array.from(orderGroups.entries())
+        .sort(([_, aItems], [__, bItems]) => {
+          const aTime = Number((aItems[0] as any)?.createTime) || 0
+          const bTime = Number((bItems[0] as any)?.createTime) || 0
+          return bTime - aTime // 降序排序
+        })
+
+      // 计算当前物流单号下的所有订单数量
+      let totalItemsInTracking = 0
+      sortedOrders.forEach(([_, items]) => {
+        totalItemsInTracking += items.length
+      })
+
+      // 添加物流单号的合并信息
+      spanInfo.trackingSpans.push(totalItemsInTracking)
+      spanInfo.trackingSpans.push(...Array(totalItemsInTracking - 1).fill(0))
+      
+      // 处理每个订单组
+      sortedOrders.forEach(([_, items]) => {
+        // 为每个订单组添加合并信息
+        spanInfo.orderSpans.push(items.length)
+        spanInfo.orderSpans.push(...Array(items.length - 1).fill(0))
+        groupedData.push(...items)
+      })
     })
 
     list.value = groupedData
-    total.value = data.total
-
-    // 计算合并信息
-    const tempSpanArr: number[] = []
-    let pos = 0
-    let currentTrackingNumber = ''
-    
-    groupedData.forEach((item, index) => {
-      if (index === 0) {
-        pos = 0
-        currentTrackingNumber = (item as any).trackingNumber || ''
-        tempSpanArr.push(1)
-      } else {
-        if ((item as any).trackingNumber && (item as any).trackingNumber === currentTrackingNumber) {
-          tempSpanArr[pos] += 1
-          tempSpanArr.push(0)
-        } else {
-          pos = index
-          currentTrackingNumber = (item as any).trackingNumber || ''
-          tempSpanArr.push(1)
-        }
-      }
-    })
-    
-    spanArr.value = tempSpanArr
+    spanArr.value = spanInfo
   } catch (error) {
     console.error('获取数据失败:', error)
+    list.value = []
+    total.value = 0
+    spanArr.value = { trackingSpans: [], orderSpans: [] }
   } finally {
     loading.value = false
   }
@@ -410,7 +515,10 @@ const resetQuery = () => {
 // 处理多选
 const handleSelectionChange = (selection: OrderVO[]) => {
   console.log(selection)
-  selectedRows.value = selection
+  selectedRows.value = selection.map(item => ({
+    ...item,
+    orderId: item.id
+  })) as ExtendedOrderVO[]
 }
 // 批量设置状态
 const handleBatchSetStatus = async () => {
@@ -461,26 +569,24 @@ const handleUpdateCategory = async (row: { id: number; categoryId: number }) => 
 
 // 处理表格合并
 const handleSpanMethod = ({ rowIndex, columnIndex }: { rowIndex: number, columnIndex: number }) => {
+  if (!spanArr.value?.trackingSpans || !spanArr.value?.orderSpans) {
+    return { rowspan: 1, colspan: 1 }
+  }
+
   if (columnIndex === 0) { // 物流单号列
-    const rowSpan = spanArr.value[rowIndex]
+    const rowSpan = spanArr.value.trackingSpans[rowIndex]
     if (rowSpan === 0) {
-      // 被合并的行，不显示内容
-      return {
-        rowspan: 0,
-        colspan: 0
-      }
+      return { rowspan: 0, colspan: 0 }
     }
-    // 合并的起始行，显示合并后的内容
-    return {
-      rowspan: rowSpan,
-      colspan: 1
+    return { rowspan: rowSpan, colspan: 1 }
+  } else if (columnIndex === 1) { // 订单编号列
+    const rowSpan = spanArr.value.orderSpans[rowIndex]
+    if (rowSpan === 0) {
+      return { rowspan: 0, colspan: 0 }
     }
+    return { rowspan: rowSpan, colspan: 1 }
   }
-  // 其他列不合并
-  return {
-    rowspan: 1,
-    colspan: 1
-  }
+  return { rowspan: 1, colspan: 1 }
 }
 
 /** 初始化 **/
@@ -631,7 +737,7 @@ const handleShip = async (row: OrderVO) => {
     })
     
     await OrderApi.updateOrderShipping({
-      orderId: row.orderId,
+      orderId: row.id,
       orderStatus: 4
     })
     ElMessage.success('发货成功')
@@ -648,73 +754,53 @@ const handleShip = async (row: OrderVO) => {
 <style lang="scss" scoped>
 .custom-table {
   :deep(.el-table__row) {
+    transition: all 0.3s ease;
+    border-left: 3px solid transparent;
+
     &:nth-child(odd) {
       background-color: #ffffff;
-      .tracking-number-cell {
-        background-color: #ffffff;
-      }
     }
+    
     &:nth-child(even) {
       background-color: #f0f2f5;
-      .tracking-number-cell {
-        background-color: #f0f2f5;
-      }
     }
+    
     &:hover {
-      background-color: #e6f0fc;
-      .tracking-number-cell {
-        background-color: #e6f0fc;
+      background-color: #ecf5ff;
+      transform: translateX(1px);
+      border-left: 3px solid #409eff;
+      box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+      
+      td {
+        background-color: transparent !important;
+        
+        .el-button {
+          opacity: 1;
+        }
       }
     }
   }
 
   :deep(.el-table__cell) {
     border-bottom: 1px solid #ebeef5;
+    transition: all 0.3s ease;
   }
-}
 
-.custom-images-container {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  
-  .image-item {
-    border-radius: 4px;
-    transition: transform 0.2s;
-    
-    &:hover {
-      transform: scale(1.05);
+  :deep(.el-table__body) {
+    tr.hover-row > td.el-table__cell {
+      background-color: transparent;
     }
   }
 }
 
-.sku-info {
-  padding: 8px;
-  text-align: left;
-
-  .sku-item {
-    font-size: 13px;
-    color: #606266;
-    margin-top: 4px;
-    line-height: 1.4;
-
-    &:first-child {
-      margin-top: 0;
-    }
-
-    .label {
-      color: #909399;
-      margin-right: 4px;
-    }
-  }
-}
-
+// 物流单号单元格
 .tracking-number-cell {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 8px;
   padding: 8px 0;
+  background: transparent;
 
   .tracking-number {
     font-size: 14px;
@@ -723,62 +809,79 @@ const handleShip = async (row: OrderVO) => {
     color: #303133;
   }
 
-  :deep(.el-button) {
-    width: 120px;
-    margin: 0;
-  }
-}
-
-.print-buttons {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  padding: 4px 0;
-  
-  :deep(.el-button) {
+  .urgent-print-button {
     width: 120px;
     margin: 0;
     border-radius: 20px;
     transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
     
-    .el-icon {
-      margin-right: 4px;
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.2));
+      opacity: 0;
+      transition: opacity 0.3s ease;
     }
-
+    
     &:hover {
       transform: translateY(-1px);
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-    }
-
-    &.el-button--success {
-      background: linear-gradient(to right, #67c23a, #85ce61);
-      border: none;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
       
-      &:hover {
-        background: linear-gradient(to right, #85ce61, #95d475);
+      &::before {
+        opacity: 1;
       }
     }
 
-    &.el-button--primary {
-      background: linear-gradient(to right, #409eff, #53a8ff);
-      border: none;
-      
-      &:hover {
-        background: linear-gradient(to right, #53a8ff, #66b1ff);
+    &:active {
+      transform: translateY(1px);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .el-icon {
+      margin-right: 4px;
+      vertical-align: middle;
+    }
+  }
+}
+
+// 订单信息
+.order-info {
+  padding: 8px;
+  text-align: left;
+
+  .order-number {
+    font-size: 14px;
+    font-weight: 500;
+    color: #303133;
+    margin-bottom: 8px;
+    line-height: 1.4;
+    word-break: break-all;
+    white-space: normal;
+  }
+
+  .shop-info {
+    .shop-name,
+    .shop-id {
+      font-size: 13px;
+      color: #606266;
+      margin-top: 4px;
+      line-height: 1.4;
+
+      .label {
+        color: #909399;
+        margin-right: 4px;
       }
     }
   }
 }
 
-:deep(.el-table__inner-wrapper::before) {
-  display: none;
-}
-
-:deep(.el-table__border-bottom-cell) {
-  border-bottom: 1px solid #ebeef5;
-}
-
+// 商品信息
 .product-info {
   padding: 8px;
   text-align: left;
@@ -805,7 +908,116 @@ const handleShip = async (row: OrderVO) => {
   }
 }
 
+// SKU信息
+.sku-info {
+  padding: 8px;
+  text-align: left;
 
+  .sku-item {
+    font-size: 13px;
+    color: #606266;
+    margin-top: 4px;
+    line-height: 1.4;
 
+    &:first-child {
+      margin-top: 0;
+    }
 
+    .label {
+      color: #909399;
+      margin-right: 4px;
+    }
+  }
+}
+
+// 定制图片列表
+.custom-images-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  
+  .image-item {
+    border-radius: 4px;
+    transition: transform 0.2s;
+    
+    &:hover {
+      transform: scale(1.05);
+    }
+  }
+}
+
+// 状态标签
+.status-tag {
+  font-size: 14px;
+  padding: 8px 10px;
+  border-radius: 20px;
+  font-weight: 550;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  }
+}
+
+// 操作按钮
+.action-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 4px;
+
+  .action-button {
+    width: 120px;
+    margin: 0;
+    border-radius: 20px;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    opacity: 0.85;
+    
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.2));
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    
+    &:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+      
+      &::before {
+        opacity: 1;
+      }
+    }
+
+    &:active {
+      transform: translateY(1px);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .el-icon {
+      margin-right: 4px;
+      vertical-align: middle;
+    }
+
+    &.ship-button {
+      background: linear-gradient(135deg, #67c23a, #85ce61);
+      border: none;
+      color: white;
+      font-weight: 500;
+      
+      &:hover {
+        background: linear-gradient(135deg, #85ce61, #95d475);
+      }
+    }
+  }
+}
 </style>
