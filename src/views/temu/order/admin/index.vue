@@ -175,6 +175,39 @@
           </div>
         </template>
       </el-table-column>
+      <el-table-column label="类目名称" align="center" prop="categoryName" min-width="230">
+        <template #default="{ row }">
+          <div class="text-left" v-if="row.orderStatus===0">
+            <el-select
+              class="!w-[150px]"
+              filterable
+              v-model="row.categoryId"
+              placeholder="请选择类目"
+              clearable
+            >
+              <el-option
+                v-for="(item, index) in categoryList"
+                :key="index"
+                :label="item.categoryName"
+                :value="item.id.toString()"
+              />
+            </el-select>
+            <el-popconfirm
+
+              title="是否更新类目?"
+              placement="top-start"
+              @confirm="handleUpdateCategory(row)"
+            >
+              <template #reference>
+                <el-button class="ml-1" type="primary">更新</el-button>
+              </template>
+            </el-popconfirm>
+          </div>
+          <div class="text-left" v-else>
+            <div>{{ row.categoryName }}</div>
+          </div>
+        </template>
+      </el-table-column>
       <!-- 定制图片 -->
       <el-table-column label="定制图片" align="center" prop="customImageUrls" min-width="180">
         <template #default="{ row }">
@@ -227,39 +260,7 @@
           </div>
         </template>
       </el-table-column>
-      <el-table-column label="类目名称" align="center" prop="categoryName" min-width="230">
-        <template #default="{ row }">
-          <div class="text-left" v-if="row.orderStatus===0">
-            <el-select
-              class="!w-[150px]"
-              filterable
-              v-model="row.categoryId"
-              placeholder="请选择类目"
-              clearable
-            >
-              <el-option
-                v-for="(item, index) in categoryList"
-                :key="index"
-                :label="item.categoryName"
-                :value="item.id.toString()"
-              />
-            </el-select>
-            <el-popconfirm
 
-              title="是否更新类目?"
-              placement="top-start"
-              @confirm="handleUpdateCategory(row)"
-            >
-              <template #reference>
-                <el-button class="ml-1" type="primary">更新</el-button>
-              </template>
-            </el-popconfirm>
-          </div>
-          <div class="text-left" v-else>
-            <div>{{ row.categoryName }}</div>
-          </div>
-        </template>
-      </el-table-column>
 
       <el-table-column label="订单状态" align="center" prop="orderStatus" min-width="150">
         <template #default="{ row }">
