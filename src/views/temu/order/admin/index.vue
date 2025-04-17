@@ -132,63 +132,74 @@
     >
       <!--选择-->
       <el-table-column type="selection" width="55" align="center" />
-      <el-table-column label="订单信息" align="center" prop="shopId" min-width="150">
+      <!--订单编号-->
+      <el-table-column label="订单编号" align="center" prop="orderNo" min-width="150"/>
+      <!--店铺信息-->
+      <el-table-column label="店铺信息" align="center" prop="shopId" min-width="150">
         <template #default="{ row }">
           <div class="text-left">
-            <div>订单编号:{{ row.orderNo }}</div>
             <div>{{ row.shopName }}</div>
             <div>{{ row.shopId }}</div>
           </div>
         </template>
       </el-table-column>
-      <!--<el-table-column label="订单编号" align="center" prop="orderNo" />-->
+      <!-- 产品图片 -->
+      <el-table-column label="产品图片" align="center" prop="productImgUrl" width="120">
+        <template #default="{ row }">
+          <div class="text-left">
+            <el-image
+              class="w-80px h-80px"
+              :hide-on-click-modal="true"
+              :preview-teleported="true"
+              :src="row.productImgUrl"
+              :preview-src-list="[row.productImgUrl]"
+            />
+          </div>
+        </template>
+      </el-table-column>
+      <!-- 商品信息 -->
       <el-table-column label="商品信息" align="center" prop="productImgUrl" min-width="280">
         <template #default="{ row }">
           <div class="text-left">
-            <div class="truncate mb-2">产品标题：{{ row.productTitle }}</div>
+            <div class="truncate mb-2 font-bold   ">产品标题：{{ row.productTitle }}</div>
             <div class="flex items-start mb-2">
               <div>定制文字列表:</div>
               <div class="ml-2">{{ row.customTextList||'--'}}</div>
             </div>
-            <div class="flex items-start mb-2">
-              <div>产品图片：</div>
+
+          </div>
+        </template>
+      </el-table-column>
+      <!-- 定制图片 -->
+      <el-table-column label="定制图片" align="center" prop="customImageUrls" min-width="180">
+        <template #default="{ row }">
+          <div class=" flex flex-wrap " v-if="row.customImageUrls">
+            <div v-for="(item, index) in row.customImageUrls.split(',')" :key="index" class="ml-2">
               <el-image
                 class="w-60px h-60px"
                 :hide-on-click-modal="true"
                 :preview-teleported="true"
-                :src="row.productImgUrl"
-                :preview-src-list="[row.productImgUrl]"
-              />
-            </div>
-            <div class="flex items-start mb-2">
-              <div>定制图片：</div>
-              <div class="text-left" v-if="row.customImageUrls">
-                <div v-for="(item, index) in row.customImageUrls.split(',')" :key="index">
-                  <el-image
-                    class="w-60px h-60px"
-                    :hide-on-click-modal="true"
-                    :preview-teleported="true"
-                    :src="item"
-                    :preview-src-list="[item]"
-                  />
-                </div>
-              </div>
-            </div>
-            <div class="flex items-start mb-2">
-              <div>合成预览：</div>
-              <el-image
-                class="w-60px h-60px"
-                v-if="row.effectiveImgUrl"
-                :hide-on-click-modal="true"
-                :preview-teleported="true"
-                :src="row.effectiveImgUrl"
-                :preview-src-list="[row.effectiveImgUrl]"
+                :src="item"
+                :preview-src-list="[item]"
               />
             </div>
           </div>
         </template>
       </el-table-column>
-      <!--<el-table-column label="定制文字列表" align="center" prop="" />-->
+      <!--合成预览-->
+      <el-table-column label="合成预览" align="center" prop="effectiveImgUrl" min-width="120">
+        <template #default="{ row }">
+          <div class="text-left">
+            <el-image
+              class="w-60px h-60px"
+              v-if="row.effectiveImgUrl"
+              :hide-on-click-modal="true"
+              :preview-teleported="true"
+              :src="row.effectiveImgUrl"
+            />
+          </div>
+        </template>
+      </el-table-column>
       <el-table-column label="价格信息" min-width="120">
         <template #default="{ row }">
           <div>
@@ -256,7 +267,8 @@
         align="center"
         prop="bookingTime"
         :formatter="dateFormatter"
-        width="180px"
+        :show-overflow-tooltip="false"
+        width="150px"
       />
 
       <el-table-column label="物流信息" align="center" prop="shippingInfo" />
