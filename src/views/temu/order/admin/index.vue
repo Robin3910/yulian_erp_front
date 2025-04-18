@@ -107,6 +107,15 @@
               批量设置状态
             </el-button>
             <el-button @click="handleBatchOrder" type="primary"> 批量下单</el-button>
+            <el-popconfirm
+              title="是否把选中的订单打包成一个批次?"
+              placement="top-start"
+              @confirm="handleBatchGenerate"
+            >
+              <template #reference>
+                <el-button type="primary" plain>批次生成</el-button>
+              </template>
+            </el-popconfirm>
           </el-form-item>
         </el-col>
       </el-row>
@@ -116,7 +125,14 @@
     <el-row>
       <el-col :span="24" :lg="6" class="color-orange-500">
         <div>
-          <span>当前筛选条件下的订单总价:￥{{orderTotalPrice?orderTotalPrice.toFixed(2):'0.00'}}</span>
+          <span class="!color-dark-50 mr-1" v-if="selectedRows && selectedRows.length > 0"
+            >已选中的订单数:{{ selectedRows.length }}
+          </span>
+          <span
+            >当前筛选条件下的订单总价:￥{{
+              orderTotalPrice ? orderTotalPrice.toFixed(2) : '0.00'
+            }}</span
+          >
         </div>
       </el-col>
     </el-row>
@@ -129,11 +145,12 @@
       :stripe="true"
       :show-overflow-tooltip="true"
       @selection-change="handleSelectionChange"
+      row-key="id"
     >
       <!--选择-->
-      <el-table-column type="selection" width="55" align="center" />
+      <el-table-column type="selection" width="55" align="center" reserve-selection />
       <!--订单编号-->
-      <el-table-column label="订单编号" align="center" prop="orderNo" min-width="150"/>
+      <el-table-column label="订单编号" align="center" prop="orderNo" min-width="150" />
       <!--店铺信息-->
       <el-table-column label="店铺信息" align="center" prop="shopId" min-width="150">
         <template #default="{ row }">
@@ -161,23 +178,22 @@
       <el-table-column label="商品信息" align="center" prop="productImgUrl" min-width="280">
         <template #default="{ row }">
           <div class="text-left">
-            <div class="truncate mb-2 font-bold   ">产品标题：{{ row.productTitle }}</div>
+            <div class="truncate mb-2 font-bold">产品标题：{{ row.productTitle }}</div>
             <div class="flex items-start mb-2">
               <div>定制文字列表:</div>
-              <div class="ml-2">{{ row.customTextList||'--'}}</div>
+              <div class="ml-2">{{ row.customTextList || '--' }}</div>
             </div>
             <!-- 商品属性 -->
             <div class="flex items-start mb-2">
               <div>商品属性:</div>
-              <div class="ml-2">{{ row.productProperties||'--'}}</div>
+              <div class="ml-2">{{ row.productProperties || '--' }}</div>
             </div>
-
           </div>
         </template>
       </el-table-column>
       <el-table-column label="类目名称" align="center" prop="categoryName" min-width="230">
         <template #default="{ row }">
-          <div class="text-left" v-if="row.orderStatus===0">
+          <div class="text-left" v-if="row.orderStatus === 0">
             <el-select
               class="!w-[150px]"
               filterable
@@ -193,7 +209,6 @@
               />
             </el-select>
             <el-popconfirm
-
               title="是否更新类目?"
               placement="top-start"
               @confirm="handleUpdateCategory(row)"
@@ -211,7 +226,7 @@
       <!-- 定制图片 -->
       <el-table-column label="定制图片" align="center" prop="customImageUrls" min-width="180">
         <template #default="{ row }">
-          <div class=" flex flex-wrap " v-if="row.customImageUrls">
+          <div class="flex flex-wrap" v-if="row.customImageUrls">
             <div v-for="(item, index) in row.customImageUrls.split(',')" :key="index" class="ml-2">
               <el-image
                 class="w-60px h-60px"
@@ -244,8 +259,8 @@
           <div>
             <div>
               <div>数量：{{ row.quantity || '--' }}</div>
-              <div>单价：{{ row.unitPrice?'￥'+row.unitPrice.toFixed(2): '--' }}</div>
-              <div>总价：{{ row.totalPrice?'￥'+row.totalPrice.toFixed(2) : '--' }}</div>
+              <div>单价：{{ row.unitPrice ? '￥' + row.unitPrice.toFixed(2) : '--' }}</div>
+              <div>总价：{{ row.totalPrice ? '￥' + row.totalPrice.toFixed(2) : '--' }}</div>
             </div>
           </div>
         </template>
@@ -261,7 +276,6 @@
           </div>
         </template>
       </el-table-column>
-
 
       <el-table-column label="订单状态" align="center" prop="orderStatus" min-width="150">
         <template #default="{ row }">
@@ -364,7 +378,8 @@ import { dateFormatter } from '@/utils/formatTime'
 import { OrderApi, OrderVO } from '@/api/temu/order'
 import { TemuCommonApi } from '@/api/temu/common'
 import { getStrDictOptions } from '@/utils/dict'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { OrderBatchApi } from '@/api/temu/order-batch'
 
 /** 订单 列表 */
 defineOptions({ name: 'TemuOrderAdmin' })
@@ -506,14 +521,51 @@ const handleBatchOrder = () => {
     ElMessage.error('存在未设置分类的订单请先设置分类')
     return
   }
-  if(selectedRows.value.some(item=>item.orderStatus!=0)){
-    ElMessage.error('只允许未下单的订单进行批量下单');
+  if (selectedRows.value.some((item) => item.orderStatus != 0)) {
+    ElMessage.error('只允许未下单的订单进行批量下单')
     return
   }
   batchOrderPopup.value = true
   nextTick(() => {
     batchOrderPopupRef.value?.setOrderList(selectedRows.value)
   })
+}
+
+const handleBatchGenerate = async () => {
+  if (selectedRows.value.length === 0) {
+    ElMessage.warning('请选择要操作的订单')
+    return
+  }
+  if (selectedRows.value.some((item) => !item.categoryId)) {
+    ElMessage.error('存在未设置分类的订单请先设置分类')
+    return
+  }
+  if (selectedRows.value.some((item) => item.orderStatus != 1)) {
+    ElMessage.error('只允许已下单待送产的订单进行批次生成')
+    return
+  }
+  // 检查选中数据中的分类是否一致  如果不一致 需要弹窗让用确认如果一致则进行批次生成
+  const categoryList = selectedRows.value.map((item) => item.categoryId)
+  if (new Set(categoryList).size > 1) {
+    await new Promise((resolve, reject) => {
+      ElMessageBox.confirm('选中的订单存在不同分类是否要继续打包成一个批次？', '温馨提示', {
+        confirmButtonText: '确认',
+        cancelButtonText: '取消',
+        type: 'warning'
+      })
+        .then(() => {
+          resolve(true)
+        })
+        .catch(() => {
+          reject(false)
+        })
+    })
+  }
+  await OrderBatchApi.createOrderBatch({
+    orderIds: selectedRows.value.map((item) => item.id)
+  })
+  ElMessage.success('操作成功')
+  await getList()
 }
 
 /** 初始化 **/
