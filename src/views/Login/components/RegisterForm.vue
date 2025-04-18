@@ -258,9 +258,84 @@ onMounted(() => {
 </script>
 
 <style lang="scss" scoped>
-:deep(.anticon) {
+:deep(.el-input__wrapper) {
+  border: 1.5px solid #e4e7ed !important;
+  
+  &:hover, &.is-focus {
+    border-color: #4d6bfe !important;
+    box-shadow: 0 0 0 1px #4d6bfe33 !important;
+  }
+}
+
+:deep(.el-checkbox__input.is-checked .el-checkbox__inner) {
+  background-color: #4d6bfe !important;
+  border-color: #4d6bfe !important;
+}
+
+:deep(.el-link.el-link--primary) {
+  color: #4d6bfe !important;
+  
   &:hover {
-    color: var(--el-color-primary) !important;
+    color: #2563eb !important;
+  }
+}
+
+:deep(.el-button) {
+  &:hover {
+    color: #2563eb !important;
+    border-color: #2563eb !important;
+  }
+}
+
+:deep(.el-button--default) {
+  color: #4d6bfe !important;
+  border-color: #4d6bfe !important;
+  
+  &:hover {
+    color: #2563eb !important;
+    border-color: #2563eb !important;
+    background-color: rgba(37, 99, 235, 0.1) !important;
+  }
+  
+  &:active {
+    color: #1d4ed8 !important;
+    border-color: #1d4ed8 !important;
+  }
+}
+
+:deep(.el-button--primary) {
+  --el-button-bg-color: #4d6bfe !important;
+  --el-button-border-color: #4d6bfe !important;
+  --el-button-text-color: #ffffff !important;
+  --el-button-hover-bg-color: #2563eb !important;
+  --el-button-hover-border-color: #2563eb !important;
+  --el-button-hover-text-color: #ffffff !important;
+  --el-button-active-bg-color: #1d4ed8 !important;
+  --el-button-active-border-color: #1d4ed8 !important;
+  --el-button-active-text-color: #ffffff !important;
+  
+  &:hover {
+    color: #ffffff !important;
+  }
+  
+  &:active {
+    color: #ffffff !important;
+  }
+}
+
+.register-back {
+  color: #4d6bfe !important;
+  
+  &:hover {
+    color: #6c85fe !important;
+  }
+  
+  .el-icon {
+    transition: transform 0.3s ease;
+  }
+  
+  &:hover .el-icon {
+    transform: translateX(-4px);
   }
 }
 

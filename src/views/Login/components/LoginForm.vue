@@ -81,6 +81,15 @@
           />
         </el-form-item>
       </el-col>
+      <el-col :span="6" style="padding-right: 10px; padding-left: 10px">
+        <el-form-item>
+          <XButton
+            :title="t('login.btnRegister')"
+            class="w-[100%]"
+            @click="setLoginState(LoginStateEnum.REGISTER)"
+          />
+        </el-form-item>
+      </el-col>
       <Verify
         v-if="loginData.captchaEnable === 'true'"
         ref="verify"
@@ -89,64 +98,6 @@
         mode="pop"
         @success="handleLogin"
       />
-      <el-col :span="24" style="padding-right: 10px; padding-left: 10px">
-        <el-form-item>
-          <el-row :gutter="5" justify="space-between" style="width: 100%">
-            <el-col :span="8">
-              <XButton
-                :title="t('login.btnMobile')"
-                class="w-[100%]"
-                @click="setLoginState(LoginStateEnum.MOBILE)"
-              />
-            </el-col>
-            <el-col :span="8">
-              <XButton
-                :title="t('login.btnQRCode')"
-                class="w-[100%]"
-                @click="setLoginState(LoginStateEnum.QR_CODE)"
-              />
-            </el-col>
-            <el-col :span="8">
-              <XButton
-                :title="t('login.btnRegister')"
-                class="w-[100%]"
-                @click="setLoginState(LoginStateEnum.REGISTER)"
-              />
-            </el-col>
-          </el-row>
-        </el-form-item>
-      </el-col>
-      <el-divider content-position="center">{{ t('login.otherLogin') }}</el-divider>
-      <el-col :span="24" style="padding-right: 10px; padding-left: 10px">
-        <el-form-item>
-          <div class="w-[100%] flex justify-between">
-            <Icon
-              v-for="(item, key) in socialList"
-              :key="key"
-              :icon="item.icon"
-              :size="30"
-              class="anticon cursor-pointer"
-              color="#999"
-              @click="doSocialLogin(item.type)"
-            />
-          </div>
-        </el-form-item>
-      </el-col>
-      <el-divider content-position="center">萌新必读</el-divider>
-      <el-col :span="24" style="padding-right: 10px; padding-left: 10px">
-        <el-form-item>
-          <div class="w-[100%] flex justify-between">
-            <el-link href="https://doc.iocoder.cn/" target="_blank">📚开发指南</el-link>
-            <el-link href="https://doc.iocoder.cn/video/" target="_blank">🔥视频教程</el-link>
-            <el-link href="https://www.iocoder.cn/Interview/good-collection/" target="_blank">
-              ⚡面试手册
-            </el-link>
-            <el-link href="http://static.yudao.iocoder.cn/mp/Aix9975.jpeg" target="_blank">
-              🤝外包咨询
-            </el-link>
-          </div>
-        </el-form-item>
-      </el-col>
     </el-row>
   </el-form>
 </template>
@@ -178,6 +129,7 @@ const redirect = ref<string>('')
 const loginLoading = ref(false)
 const verify = ref()
 const captchaType = ref('blockPuzzle') // blockPuzzle 滑块 clickWord 点击文字
+const showPassword = ref(false)
 
 const getShow = computed(() => unref(getLoginState) === LoginStateEnum.LOGIN)
 
@@ -336,12 +288,112 @@ onMounted(() => {
   getLoginFormCache()
   getTenantByWebsite()
 })
+
+// 密码强度计算
+const getPasswordStrength = (password: string) => {
+  if (!password) return 0
+  let strength = 0
+  // 长度检查
+  if (password.length >= 8) strength += 1
+  // 包含数字
+  if (/\d/.test(password)) strength += 1
+  // 包含字母
+  if (/[a-zA-Z]/.test(password)) strength += 1
+  // 包含特殊字符
+  if (/[!@#$%^&*]/.test(password)) strength += 1
+  return strength
+}
+
+const strengthClass = computed(() => {
+  const strength = getPasswordStrength(loginData.loginForm.password)
+  return {
+    'strength-weak': strength === 1,
+    'strength-medium': strength === 2,
+    'strength-strong': strength === 3,
+    'strength-very-strong': strength === 4
+  }
+})
+
+const strengthText = computed(() => {
+  const strength = getPasswordStrength(loginData.loginForm.password)
+  const texts = ['弱', '中等', '强', '非常强']
+  return texts[strength - 1] || ''
+})
 </script>
 
 <style lang="scss" scoped>
 :deep(.anticon) {
   &:hover {
-    color: var(--el-color-primary) !important;
+    color: #4d6bfe !important;
+  }
+}
+
+:deep(.el-input__wrapper) {
+  border: 1.5px solid #e4e7ed !important;
+  
+  &:hover, &.is-focus {
+    border-color: #4d6bfe !important;
+    box-shadow: 0 0 0 1.5px #4d6bfe33 !important;
+  }
+}
+
+:deep(.el-checkbox__input.is-checked .el-checkbox__inner) {
+  background-color: #4d6bfe !important;
+  border-color: #4d6bfe !important;
+}
+
+:deep(.el-checkbox__label) {
+  color: #4d6bfe !important;
+}
+
+:deep(.el-link.el-link--primary) {
+  color: #4d6bfe !important;
+  
+  &:hover {
+    color: #2563eb !important;
+  }
+}
+
+:deep(.el-button) {
+  &:hover {
+    color: #2563eb !important;
+    border-color: #2563eb !important;
+  }
+}
+
+:deep(.el-button--default) {
+  color: #4d6bfe !important;
+  border-color: #4d6bfe !important;
+  
+  &:hover {
+    color: #2563eb !important;
+    border-color: #2563eb !important;
+    background-color: rgba(37, 99, 235, 0.1) !important;
+  }
+  
+  &:active {
+    color: #1d4ed8 !important;
+    border-color: #1d4ed8 !important;
+  }
+}
+
+:deep(.el-button--primary) {
+  --el-button-bg-color: #4d6bfe !important;
+  --el-button-border-color: #4d6bfe !important;
+  --el-button-text-color: #ffffff !important;
+  --el-button-hover-bg-color: #2563eb !important;
+  --el-button-hover-border-color: #2563eb !important;
+  --el-button-hover-text-color: #ffffff !important;
+  --el-button-active-bg-color: #1d4ed8 !important;
+  --el-button-active-border-color: #1d4ed8 !important;
+  --el-button-active-text-color: #ffffff !important;
+  
+  &:hover {
+    color: #ffffff !important;
+  }
+  
+  &:active {
+    color: #ffffff !important;
   }
 }
 
@@ -356,6 +408,118 @@ onMounted(() => {
     max-width: 100px;
     vertical-align: middle;
     cursor: pointer;
+  }
+}
+
+.title-divider {
+  height: 2px;
+  background: var(--el-color-primary);
+  margin: 8px 0 16px;
+  border-radius: 2px;
+  width: 40px;
+}
+
+.enterprise-option {
+  display: flex;
+  align-items: center;
+  
+  i {
+    color: var(--el-color-primary);
+  }
+}
+
+.password-field {
+  position: relative;
+}
+
+.password-strength {
+  position: absolute;
+  bottom: -20px;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  font-size: 12px;
+  
+  .strength-bar {
+    flex: 1;
+    height: 4px;
+    background: #eee;
+    border-radius: 2px;
+    margin-right: 8px;
+    overflow: hidden;
+  }
+  
+  .strength-level {
+    height: 100%;
+    width: 0;
+    transition: all 0.3s ease;
+    
+    &.strength-weak {
+      width: 25%;
+      background: #ff4d4f;
+    }
+    
+    &.strength-medium {
+      width: 50%;
+      background: #faad14;
+    }
+    
+    &.strength-strong {
+      width: 75%;
+      background: #52c41a;
+    }
+    
+    &.strength-very-strong {
+      width: 100%;
+      background: #1890ff;
+    }
+  }
+  
+  .strength-text {
+    color: var(--el-text-color-secondary);
+  }
+}
+
+.login-button {
+  height: 44px;
+  font-size: 16px;
+  border-radius: 22px;
+  background: var(--el-color-primary);
+  transition: all 0.3s ease;
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(var(--el-color-primary-rgb), 0.3);
+  }
+}
+
+.register-link {
+  font-size: 14px;
+  color: var(--el-color-primary);
+  display: inline-flex;
+  align-items: center;
+  transition: all 0.3s ease;
+  
+  .el-icon {
+    margin-left: 4px;
+    transition: transform 0.3s ease;
+  }
+  
+  &:hover {
+    .el-icon {
+      transform: translateX(4px);
+    }
+  }
+}
+
+// 移动端适配
+@media screen and (max-width: 768px) {
+  .el-input {
+    input[type="tel"] {
+      -webkit-appearance: none;
+      -moz-appearance: textfield;
+    }
   }
 }
 </style>
