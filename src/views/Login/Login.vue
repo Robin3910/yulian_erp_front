@@ -253,22 +253,43 @@ $prefix-cls: #{$namespace}-login;
 // 暗色模式适配
 .dark {
   .login-right-panel {
-    background: linear-gradient(135deg, rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.9));
+    background: linear-gradient(135deg, rgba(17, 24, 39, 0.95), rgba(17, 24, 39, 0.85));
+    &::before {
+      background: 
+        radial-gradient(circle at 30% 30%, rgba(var(--el-color-primary-rgb), 0.05), transparent 35%),
+        radial-gradient(circle at 70% 70%, rgba(var(--el-color-primary-rgb), 0.05), transparent 35%);
+    }
   }
 
   .login-box {
-    background: rgba(0, 0, 0, 0.6);
+    background: rgba(31, 41, 55, 0.85);
     border-color: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+    &:hover {
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
+      background: rgba(31, 41, 55, 0.9);
+    }
 
     :deep(.el-input__wrapper) {
-      background-color: rgba(0, 0, 0, 0.3);
+      background-color: rgba(17, 24, 39, 0.6);
       border-color: rgba(255, 255, 255, 0.1);
       
       &:hover, &.is-focus {
-        background-color: rgba(0, 0, 0, 0.4);
-        border-color: var(--el-color-primary);
+        background-color: rgba(17, 24, 39, 0.8);
+        border-color: #4d6bfe !important;
       }
     }
+
+    :deep(.el-checkbox__label) {
+      color: rgba(255, 255, 255, 0.85) !important;
+    }
+  }
+
+  :deep(.header-actions) {
+    background: rgba(17, 24, 39, 0.3);
+    backdrop-filter: blur(8px);
+    border-radius: 8px;
+    padding: 8px 16px;
   }
 }
 

@@ -205,7 +205,15 @@
         </template>
       </el-table-column>
 
-      <!-- 6. 定制图片列表 -->
+      <!-- 6. 定制文字列表 -->
+      <el-table-column label="定制文字列表" prop="customTextList" align="center" min-width="110" show-overflow-tooltip>
+        <template #default="{ row }">
+          <div v-if="row.customTextList">{{ row.customTextList }}</div>
+          <span v-else>-</span>
+        </template>
+      </el-table-column>
+
+      <!-- 7. 定制图片列表 -->
       <el-table-column label="定制图片列表" align="center" prop="customImageUrls" min-width="150">
         <template #default="{ row }">
           <div class="custom-images-container" v-if="row.customImageUrls">
@@ -220,14 +228,6 @@
               />
             </div>
           </div>
-          <span v-else>-</span>
-        </template>
-      </el-table-column>
-
-      <!-- 7. 定制文字列表 -->
-      <el-table-column label="定制文字列表" prop="customTextList" align="center" min-width="110" show-overflow-tooltip>
-        <template #default="{ row }">
-          <div v-if="row.customTextList">{{ row.customTextList }}</div>
           <span v-else>-</span>
         </template>
       </el-table-column>
@@ -299,7 +299,7 @@
               size="small"
               type="success"
               class="action-button ship-button"
-              @click.stop="handleShip(row)"
+              @click.stop="handleShip(row as ExtendedOrderVO)"
             >
               <el-icon><Van /></el-icon>
               发货
@@ -335,7 +335,27 @@ declare global {
 }
 
 interface ExtendedOrderVO extends OrderVO {
+  id: number;
+  orderNo: string;
+  trackingNumber: string;
+  expressImageUrl: string;
+  expressOutsideImageUrl: string;
+  expressSkuImageUrl: string;
+  shopId: number;
   orderId: number;
+  productImgUrl: string;
+  sku: string;
+  skc: string;
+  customSku: string;
+  quantity: number;
+  customImageUrls: string;
+  shopName: string;
+  productTitle: string;
+  productProperties: string;
+  createTime: number;
+  customTextList: string;
+  orderStatus: number;
+  effectiveImgUrl: string;
 }
 
 /** 订单 列表 */
@@ -386,11 +406,8 @@ const getList = async () => {
       return
     }
 
-    // 转换数据为ExtendedOrderVO
-    const extendedList = data.list.map(item => ({
-      ...item,
-      orderId: item.id
-    })) as ExtendedOrderVO[]
+    // 直接使用后端返回的数据，不需要额外转换
+    const extendedList = data.list as ExtendedOrderVO[]
 
     // 按物流单号和订单编号分组处理数据
     const trackingGroups = new Map<string, Map<string, ExtendedOrderVO[]>>()
@@ -728,7 +745,7 @@ const getOrderStatusText = (status: number) => {
 }
 
 // 处理发货
-const handleShip = async (row: OrderVO) => {
+const handleShip = async (row: ExtendedOrderVO) => {
   try {
     await ElMessageBox.confirm('确认发货吗？该操作确认后无法撤回', '提示', {
       confirmButtonText: '确定',
@@ -736,8 +753,9 @@ const handleShip = async (row: OrderVO) => {
       type: 'warning'
     })
     
+    console.log('发货orderId:', row.orderId) // 添加日志以便调试
     await OrderApi.updateOrderShipping({
-      orderId: row.id,
+      orderId: row.orderId,
       orderStatus: 4
     })
     ElMessage.success('发货成功')
@@ -758,17 +776,17 @@ const handleShip = async (row: OrderVO) => {
     border-left: 3px solid transparent;
 
     &:nth-child(odd) {
-      background-color: #ffffff;
+      background-color: var(--el-bg-color);
     }
     
     &:nth-child(even) {
-      background-color: #f0f2f5;
+      background-color: var(--el-fill-color-light);
     }
     
     &:hover {
-      background-color: #ecf5ff;
+      background-color: var(--el-color-primary-light-9);
       transform: translateX(1px);
-      border-left: 3px solid #409eff;
+      border-left: 3px solid var(--el-color-primary);
       box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
       
       td {
@@ -782,13 +800,83 @@ const handleShip = async (row: OrderVO) => {
   }
 
   :deep(.el-table__cell) {
-    border-bottom: 1px solid #ebeef5;
+    border-bottom: 1px solid var(--el-border-color-lighter);
     transition: all 0.3s ease;
+    background-color: transparent !important;
   }
 
   :deep(.el-table__body) {
     tr.hover-row > td.el-table__cell {
       background-color: transparent;
+    }
+  }
+
+  // 夜间模式适配
+  :deep(.dark) {
+    .el-table__row {
+      &:nth-child(odd) {
+        background-color: var(--el-bg-color-overlay);
+      }
+      
+      &:nth-child(even) {
+        background-color: var(--el-bg-color);
+      }
+      
+      &:hover {
+        background-color: var(--el-color-primary-light-9);
+        box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.2);
+      }
+
+      // 夜间模式文字颜色
+      .tracking-number {
+        color: var(--el-text-color-primary) !important;
+      }
+
+      .order-info {
+        .order-number {
+          color: var(--el-text-color-primary) !important;
+        }
+
+        .shop-info {
+          .shop-name,
+          .shop-id {
+            color: var(--el-text-color-regular) !important;
+
+            .label {
+              color: var(--el-text-color-secondary) !important;
+            }
+          }
+        }
+      }
+
+      .product-info {
+        .product-title {
+          color: var(--el-text-color-primary) !important;
+        }
+
+        .product-props,
+        .product-quantity {
+          color: var(--el-text-color-regular) !important;
+
+          .label {
+            color: var(--el-text-color-secondary) !important;
+          }
+        }
+      }
+
+      .sku-info {
+        .sku-item {
+          color: var(--el-text-color-regular) !important;
+
+          .label {
+            color: var(--el-text-color-secondary) !important;
+          }
+        }
+      }
+
+      .create-time {
+        color: var(--el-text-color-regular) !important;
+      }
     }
   }
 }
@@ -806,7 +894,7 @@ const handleShip = async (row: OrderVO) => {
     font-size: 14px;
     line-height: 1.5;
     font-weight: 500;
-    color: #303133;
+    color: var(--el-text-color-primary);
   }
 
   .urgent-print-button {
@@ -858,7 +946,7 @@ const handleShip = async (row: OrderVO) => {
   .order-number {
     font-size: 14px;
     font-weight: 500;
-    color: #303133;
+    color: var(--el-text-color-primary);
     margin-bottom: 8px;
     line-height: 1.4;
     word-break: break-all;
@@ -869,12 +957,12 @@ const handleShip = async (row: OrderVO) => {
     .shop-name,
     .shop-id {
       font-size: 13px;
-      color: #606266;
+      color: var(--el-text-color-regular);
       margin-top: 4px;
       line-height: 1.4;
 
       .label {
-        color: #909399;
+        color: var(--el-text-color-secondary);
         margin-right: 4px;
       }
     }
@@ -889,7 +977,7 @@ const handleShip = async (row: OrderVO) => {
   .product-title {
     font-size: 14px;
     font-weight: 500;
-    color: #303133;
+    color: var(--el-text-color-primary);
     margin-bottom: 8px;
     line-height: 1.4;
   }
@@ -897,12 +985,12 @@ const handleShip = async (row: OrderVO) => {
   .product-props,
   .product-quantity {
     font-size: 13px;
-    color: #606266;
+    color: var(--el-text-color-regular);
     margin-top: 4px;
     line-height: 1.4;
 
     .label {
-      color: #909399;
+      color: var(--el-text-color-secondary);
       margin-right: 4px;
     }
   }
@@ -915,7 +1003,7 @@ const handleShip = async (row: OrderVO) => {
 
   .sku-item {
     font-size: 13px;
-    color: #606266;
+    color: var(--el-text-color-regular);
     margin-top: 4px;
     line-height: 1.4;
 
@@ -924,7 +1012,7 @@ const handleShip = async (row: OrderVO) => {
     }
 
     .label {
-      color: #909399;
+      color: var(--el-text-color-secondary);
       margin-right: 4px;
     }
   }
