@@ -114,7 +114,7 @@ export default {
     small: '小'
   },
   login: {
-    welcome: '欢迎使用本系统',
+    welcome: '欢迎使用禹链EPR系统',
     message: '开箱即用的中后台管理系统',
     tenantname: '租户名称',
     username: '用户名',

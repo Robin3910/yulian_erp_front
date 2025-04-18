@@ -16,34 +16,13 @@
         </el-form-item>
       </el-col>
       <el-col :span="24" style="padding-right: 10px; padding-left: 10px">
-        <el-form-item v-if="registerData.tenantEnable === 'true'" prop="tenantName">
-          <el-input
-            v-model="registerData.registerForm.tenantName"
-            :placeholder="t('login.tenantname')"
-            :prefix-icon="iconHouse"
-            link
-            type="primary"
-            size="large"
-          />
-        </el-form-item>
-      </el-col>
-      <el-col :span="24" style="padding-right: 10px; padding-left: 10px">
         <el-form-item prop="username">
           <el-input
             v-model="registerData.registerForm.username"
             :placeholder="t('login.username')"
             size="large"
             :prefix-icon="iconAvatar"
-          />
-        </el-form-item>
-      </el-col>
-      <el-col :span="24" style="padding-right: 10px; padding-left: 10px">
-        <el-form-item prop="username">
-          <el-input
-            v-model="registerData.registerForm.nickname"
-            placeholder="昵称"
-            size="large"
-            :prefix-icon="iconAvatar"
+            @input="handleUsernameInput"
           />
         </el-form-item>
       </el-col>
@@ -170,6 +149,11 @@ const registerData = reactive({
   }
 })
 
+const handleUsernameInput = (value: string) => {
+  // 当用户名输入时，自动设置昵称
+  registerData.registerForm.nickname = value
+}
+
 // 提交注册
 const handleRegister = async (params: any) => {
   loading.value = true
@@ -258,9 +242,84 @@ onMounted(() => {
 </script>
 
 <style lang="scss" scoped>
-:deep(.anticon) {
+:deep(.el-input__wrapper) {
+  border: 1.5px solid #e4e7ed !important;
+  
+  &:hover, &.is-focus {
+    border-color: #4d6bfe !important;
+    box-shadow: 0 0 0 1px #4d6bfe33 !important;
+  }
+}
+
+:deep(.el-checkbox__input.is-checked .el-checkbox__inner) {
+  background-color: #4d6bfe !important;
+  border-color: #4d6bfe !important;
+}
+
+:deep(.el-link.el-link--primary) {
+  color: #4d6bfe !important;
+  
   &:hover {
-    color: var(--el-color-primary) !important;
+    color: #2563eb !important;
+  }
+}
+
+:deep(.el-button) {
+  &:hover {
+    color: #2563eb !important;
+    border-color: #2563eb !important;
+  }
+}
+
+:deep(.el-button--default) {
+  color: #4d6bfe !important;
+  border-color: #4d6bfe !important;
+  
+  &:hover {
+    color: #2563eb !important;
+    border-color: #2563eb !important;
+    background-color: rgba(37, 99, 235, 0.1) !important;
+  }
+  
+  &:active {
+    color: #1d4ed8 !important;
+    border-color: #1d4ed8 !important;
+  }
+}
+
+:deep(.el-button--primary) {
+  --el-button-bg-color: #4d6bfe !important;
+  --el-button-border-color: #4d6bfe !important;
+  --el-button-text-color: #ffffff !important;
+  --el-button-hover-bg-color: #2563eb !important;
+  --el-button-hover-border-color: #2563eb !important;
+  --el-button-hover-text-color: #ffffff !important;
+  --el-button-active-bg-color: #1d4ed8 !important;
+  --el-button-active-border-color: #1d4ed8 !important;
+  --el-button-active-text-color: #ffffff !important;
+  
+  &:hover {
+    color: #ffffff !important;
+  }
+  
+  &:active {
+    color: #ffffff !important;
+  }
+}
+
+.register-back {
+  color: #4d6bfe !important;
+  
+  &:hover {
+    color: #6c85fe !important;
+  }
+  
+  .el-icon {
+    transition: transform 0.3s ease;
+  }
+  
+  &:hover .el-icon {
+    transform: translateX(-4px);
   }
 }
 
@@ -275,6 +334,66 @@ onMounted(() => {
     max-width: 100px;
     vertical-align: middle;
     cursor: pointer;
+  }
+}
+
+.password-form-item {
+  margin-bottom: 35px !important;  // 增加底部间距
+}
+
+.password-strength-wrapper {
+  margin-top: 8px;
+  height: 20px;
+  position: relative;
+}
+
+.password-strength {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  font-size: 12px;
+  
+  .strength-bar {
+    flex: 1;
+    height: 4px;
+    background: #eee;
+    border-radius: 2px;
+    margin-right: 8px;
+    overflow: hidden;
+    position: relative;
+  }
+  
+  .strength-level {
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    transition: all 0.3s ease;
+    
+    &.strength-weak {
+      width: 25%;
+      background: #ff4d4f;
+    }
+    
+    &.strength-medium {
+      width: 50%;
+      background: #faad14;
+    }
+    
+    &.strength-strong {
+      width: 75%;
+      background: #52c41a;
+    }
+    
+    &.strength-very-strong {
+      width: 100%;
+      background: #1890ff;
+    }
+  }
+  
+  .strength-text {
+    color: var(--el-text-color-secondary);
+    min-width: 36px;
   }
 }
 </style>

@@ -1,5 +1,5 @@
 <template>
-  <h2 class="enter-x mb-3 text-center text-2xl font-bold xl:text-center xl:text-3xl">
+  <h2 class="enter-x mb-3 text-center text-2xl font-bold xl:text-center xl:text-3xl login-title">
     {{ getFormTitle }}
   </h2>
 </template>
@@ -24,3 +24,8 @@ const getFormTitle = computed(() => {
   return titleObj[unref(getLoginState)]
 })
 </script>
+<style lang="scss" scoped>
+.login-title {
+  color: #4d6bfe;
+}
+</style>
