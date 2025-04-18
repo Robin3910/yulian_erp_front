@@ -41,7 +41,7 @@ class="w-10 h-10" :hide-on-click-modal="true" :preview-teleported="true" :src="_
                 </div>
               </el-form-item>
               <!-- 默认价格 -->
-              <el-form-item label="默认价格：" class="mb-2 cursor-pointer">
+              <el-form-item :label="`数量超过${item.categoryPriceRule.sort((a, b) => a.max - b.max)[item.categoryPriceRule.sort((a, b) => a.max - b.max).length - 1]?item.categoryPriceRule.sort((a, b) => a.max - b.max)[item.categoryPriceRule.sort((a, b) => a.max - b.max).length - 1].max:0}价格是：`" class="mb-2 cursor-pointer">
                 <div class="text-left" v-if="item.defaultPrice">
                   ¥{{ item.defaultPrice?item.defaultPrice.toFixed(2):'0.00' }}
                 </div>
@@ -50,7 +50,7 @@ class="w-10 h-10" :hide-on-click-modal="true" :preview-teleported="true" :src="_
               <el-form-item label="分类价格：" class="mb-2 cursor-pointer">
                 <div class="text-left" v-if="item.categoryPriceRule">
                   <div v-for="(_rule, _index) in item.categoryPriceRule.sort((a, b) => a.max - b.max)" :key="_index">
-                    <div>数量小于等于：<el-tag size="small">{{ _rule.max }}</el-tag>--价格：<el-tag size="small">¥{{ _rule.price.toFixed(2) }}</el-tag></div>
+                    <div>数量：<el-tag size="small">{{ item.categoryPriceRule.sort((a, b) => a.max - b.max)[_index-1]?item.categoryPriceRule.sort((a, b) => a.max - b.max)[_index-1].max:0}}</el-tag>~<el-tag size="small">{{ _rule.max }}</el-tag>价格：<el-tag size="small">¥{{ _rule.price.toFixed(2) }}</el-tag></div>
                   </div>
                 </div>
               </el-form-item>
