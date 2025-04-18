@@ -103,7 +103,7 @@
               重置
             </el-button>
 
-            <el-button @click="handleBatchOrder"> 批量下单</el-button>
+            <el-button @click="handleBatchOrder" type="primary"> 批量下单</el-button>
 
           </el-form-item>
         </el-col>
