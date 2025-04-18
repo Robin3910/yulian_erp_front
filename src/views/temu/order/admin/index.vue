@@ -233,6 +233,7 @@
               v-if="row.effectiveImgUrl"
               :hide-on-click-modal="true"
               :preview-teleported="true"
+              :preview-src-list="[row.effectiveImgUrl]"
               :src="row.effectiveImgUrl"
             />
           </div>

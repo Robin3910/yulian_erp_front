@@ -75,7 +75,10 @@ label="价格:" :prop="'unitPrice.'+index+ `.price`" label-width="60px"  class="
         </div>
       </el-form-item>
       <el-form-item
-label="最大数量价格" label-width="120px" prop="defaultPrice" :rules="[{
+        :label="`数量大于${formData.unitPrice&&formData.unitPrice.sort((a,b)=>a.max-b.max).length>0?formData.unitPrice.sort((a,b)=>a.max-b.max)[formData.unitPrice.sort((a,b)=>a.max-b.max).length-1].max:''}价格`"
+        label-width="140px"
+        prop="defaultPrice"
+        :rules="[{
         required: true,
         message: '请输入最大数量价格',
         trigger: 'blur'
