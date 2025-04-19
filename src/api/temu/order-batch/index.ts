@@ -17,5 +17,9 @@ export const OrderBatchApi = {
   // 查询批次分页
   getOrderBatchPage: async (params: any) => {
     return await request.get({ url: `/temu/order-batch/page`, params })
-  }
+  },
+  //更新批次文件信息
+  updateOrderBatchFile: async (data: any) => {
+    return await request.put({ url: `/temu/order-batch/update-file`, data })
+  },
 }

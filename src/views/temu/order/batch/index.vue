@@ -62,20 +62,24 @@
 
   <!-- 列表 -->
   <ContentWrap>
-    <el-table v-loading="loading" :data="list" :stripe="true" :show-overflow-tooltip="true" :default-expand-all="true">
-
+    <el-table
+      v-loading="loading"
+      :data="list"
+      :stripe="true"
+      :show-overflow-tooltip="true"
+      :default-expand-all="true"
+    >
       <el-table-column type="expand">
         <template #default="scope">
-          <div >
+          <div>
             <el-table
               v-loading="loading"
               :data="scope.row.orderList"
               :stripe="true"
               :show-overflow-tooltip="true"
             >
-
               <!--订单编号-->
-              <el-table-column label="订单编号" align="center" prop="orderNo" min-width="150"/>
+              <el-table-column label="订单编号" align="center" prop="orderNo" min-width="150" />
               <!--店铺信息-->
               <el-table-column label="店铺信息" align="center" prop="shopId" min-width="150">
                 <template #default="{ row }">
@@ -103,17 +107,16 @@
               <el-table-column label="商品信息" align="center" prop="productImgUrl" min-width="280">
                 <template #default="{ row }">
                   <div class="text-left">
-                    <div class="truncate mb-2 font-bold   ">产品标题：{{ row.productTitle }}</div>
+                    <div class="truncate mb-2 font-bold">产品标题：{{ row.productTitle }}</div>
                     <div class="flex items-start mb-2">
                       <div>定制文字列表:</div>
-                      <div class="ml-2">{{ row.customTextList||'--'}}</div>
+                      <div class="ml-2">{{ row.customTextList || '--' }}</div>
                     </div>
                     <!-- 商品属性 -->
                     <div class="flex items-start mb-2">
                       <div>商品属性:</div>
-                      <div class="ml-2">{{ row.productProperties||'--'}}</div>
+                      <div class="ml-2">{{ row.productProperties || '--' }}</div>
                     </div>
-
                   </div>
                 </template>
               </el-table-column>
@@ -123,10 +126,19 @@
                 </template>
               </el-table-column>
               <!-- 定制图片 -->
-              <el-table-column label="定制图片" align="center" prop="customImageUrls" min-width="180">
+              <el-table-column
+                label="定制图片"
+                align="center"
+                prop="customImageUrls"
+                min-width="180"
+              >
                 <template #default="{ row }">
-                  <div class=" flex flex-wrap " v-if="row.customImageUrls">
-                    <div v-for="(item, index) in row.customImageUrls.split(',')" :key="index" class="ml-2">
+                  <div class="flex flex-wrap" v-if="row.customImageUrls">
+                    <div
+                      v-for="(item, index) in row.customImageUrls.split(',')"
+                      :key="index"
+                      class="ml-2"
+                    >
                       <el-image
                         class="w-60px h-60px"
                         :hide-on-click-modal="true"
@@ -139,7 +151,12 @@
                 </template>
               </el-table-column>
               <!--合成预览-->
-              <el-table-column label="合成预览" align="center" prop="effectiveImgUrl" min-width="120">
+              <el-table-column
+                label="合成预览"
+                align="center"
+                prop="effectiveImgUrl"
+                min-width="120"
+              >
                 <template #default="{ row }">
                   <div class="text-left">
                     <el-image
@@ -158,8 +175,10 @@
                   <div>
                     <div>
                       <div>数量：{{ row.quantity || '--' }}</div>
-                      <div>单价：{{ row.unitPrice?'￥'+row.unitPrice.toFixed(2): '--' }}</div>
-                      <div>总价：{{ row.totalPrice?'￥'+row.totalPrice.toFixed(2) : '--' }}</div>
+                      <div>单价：{{ row.unitPrice ? '￥' + row.unitPrice.toFixed(2) : '--' }}</div>
+                      <div
+                        >总价：{{ row.totalPrice ? '￥' + row.totalPrice.toFixed(2) : '--' }}
+                      </div>
                     </div>
                   </div>
                 </template>
@@ -174,7 +193,6 @@
                   </div>
                 </template>
               </el-table-column>
-
 
               <el-table-column label="订单状态" align="center" prop="orderStatus" min-width="150">
                 <template #default="{ row }">
@@ -197,20 +215,51 @@
         </template>
       </el-table-column>
 
-      <el-table-column label="批次编号" align="center" prop="batchNo" >
+      <el-table-column label="批次编号" align="center" prop="batchNo">
         <template #default="{ row }">
-          <div class="text-left">
+          <div class="font-bold">
             <div>{{ row.batchNo }}</div>
           </div>
         </template>
       </el-table-column>
-      <el-table-column label="文件地址" align="center" prop="fileUrl" />
+      <el-table-column label="文件地址" align="center" prop="fileUrl">
+        <template #default="{ row }">
+          <div class="font-bold flex item-center justify-center" v-if="row.fileUrl">
+            <a :href="row.fileUrl"  :download="row.fileUrl">
+              <el-button type="primary" size="small">已作图,点击下载</el-button>
+
+            </a>
+            <upload-file
+              :model-value="row.fileUrl"
+
+              :file-size="100"
+              :is-show-tip="false"
+              :show-file-list="false"
+              :limit="1"
+              @upload-success="handleFileSuccess(row, $event)"
+            >
+              <el-button  class="ml-2" type="primary" size="small">更换</el-button>
+            </upload-file>
+          </div>
+          <div class="font-bold" v-else>
+            <upload-file
+              :model-value="row.fileUrl"
+              :file-size="100"
+              :is-show-tip="false"
+              :show-file-list="false"
+              :limit="1"
+              @upload-success="handleFileSuccess(row, $event)"
+            >
+              <el-button type="warning" size="small">未作图,点击上传</el-button>
+            </upload-file>
+          </div>
+        </template>
+      </el-table-column>
       <el-table-column
         label="创建时间"
         align="center"
         prop="createTime"
         :formatter="dateFormatter"
-
       />
       <el-table-column label="操作" align="center" min-width="120px">
         <template #default="scope">
@@ -245,9 +294,8 @@
 
 <script setup lang="ts">
 import { dateFormatter } from '@/utils/formatTime'
-import download from '@/utils/download'
-import { OrderBatchApi, OrderBatchVO } from '@/api/temu/order-batch/index'
-import {DICT_TYPE} from "@/utils/dict";
+import { OrderBatchApi, OrderBatchVO } from '@/api/temu/order-batch'
+import { DICT_TYPE } from '@/utils/dict'
 
 /** 订单批次 列表 */
 defineOptions({ name: 'BatchOrderPopup' })
@@ -313,21 +361,12 @@ const handleDelete = async (id: number) => {
   } catch {}
 }
 
-/** 导出按钮操作 */
-const handleExport = async () => {
-  try {
-    // 导出的二次确认
-    await message.exportConfirm()
-    // 发起导出
-    exportLoading.value = true
-    const data = await OrderBatchApi.exportOrderBatch(queryParams)
-    download.excel(data, '订单批次.xls')
-  } catch {
-  } finally {
-    exportLoading.value = false
-  }
+const handleFileSuccess = async (row: any, res: any) => {
+  await OrderBatchApi.updateOrderBatchFile({ id: row.id, fileUrl: res })
+  row.fileUrl = res
+  message.success('操作成功')
+  await getList()
 }
-
 /** 初始化 **/
 onMounted(() => {
   getList()

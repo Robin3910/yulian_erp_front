@@ -16,14 +16,16 @@
       :on-preview="handlePreview"
       :on-remove="handleRemove"
       :on-success="handleFileSuccess"
-      :show-file-list="true"
+      :show-file-list="showFileList"
       class="upload-file-uploader"
       name="file"
     >
-      <el-button type="primary">
-        <Icon icon="ep:upload-filled" />
-        选取文件
-      </el-button>
+      <slot>
+        <el-button type="primary"  >
+          <Icon icon="ep:upload-filled" />
+          选取文件
+        </el-button>
+      </slot>
       <template v-if="isShowTip" #tip>
         <div style="font-size: 8px">
           大小不超过 <b style="color: #f56c6c">{{ fileSize }}MB</b>
@@ -32,7 +34,7 @@
           格式为 <b style="color: #f56c6c">{{ fileType.join('/') }}</b> 的文件
         </div>
       </template>
-      <template #file="row">
+      <template #file="row" v-if="showFileList">
         <div class="flex items-center">
           <span>{{ row.file.name }}</span>
           <div class="ml-10px">
@@ -76,9 +78,10 @@ import { UploadFile } from 'element-plus/es/components/upload/src/upload'
 defineOptions({ name: 'UploadFile' })
 
 const message = useMessage() // 消息弹窗
-const emit = defineEmits(['update:modelValue'])
+const emit = defineEmits(['update:modelValue','upload-success'])
 
 const props = defineProps({
+
   modelValue: propTypes.oneOfType<string | string[]>([String, Array<String>]).isRequired,
   fileType: propTypes.array.def(['doc', 'xls', 'ppt', 'txt', 'pdf']), // 文件类型, 例如['png', 'jpg', 'jpeg']
   fileSize: propTypes.number.def(5), // 大小限制(MB)
@@ -86,7 +89,8 @@ const props = defineProps({
   autoUpload: propTypes.bool.def(true), // 自动上传
   drag: propTypes.bool.def(false), // 拖拽上传
   isShowTip: propTypes.bool.def(true), // 是否显示提示
-  disabled: propTypes.bool.def(false) // 是否禁用上传组件 ==> 非必传（默认为 false）
+  disabled: propTypes.bool.def(false), // 是否禁用上传组件 ==> 非必传（默认为 false）,
+  showFileList: propTypes.bool.def(false)// 是否显示文件列表 ==> 非必传（默认为 false）,
 })
 
 // ========== 上传相关 ==========
@@ -194,6 +198,8 @@ const emitUpdateModelValue = () => {
     result = result.join(',')
   }
   emit('update:modelValue', result)
+  console.log('>>>>>>>组件上传',result)
+  emit('upload-success', result)
 }
 </script>
 <style lang="scss" scoped>
