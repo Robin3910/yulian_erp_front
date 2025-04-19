@@ -17,6 +17,17 @@
           class="!w-240px"
         />
       </el-form-item>
+
+      <el-form-item label="订单状态" prop="orderStatus" >
+        <el-select v-model="queryParams.status" placeholder="请选择订单状态" clearable class="!w-220px">
+          <el-option
+            v-for="dict in getStrDictOptions(DICT_TYPE.TEMU_ORDER_BATCH_STATUS)"
+            :key="dict.value"
+            :label="dict.label"
+            :value="dict.value"
+          />
+        </el-select>
+      </el-form-item>
       <el-form-item label="创建时间" prop="createTime">
         <el-date-picker
           v-model="queryParams.createTime"
@@ -225,20 +236,19 @@
       <el-table-column label="文件地址" align="center" prop="fileUrl">
         <template #default="{ row }">
           <div class="font-bold flex item-center justify-center" v-if="row.fileUrl">
-            <a :href="row.fileUrl"  :download="row.fileUrl">
+            <a :href="row.fileUrl" :download="row.fileUrl">
               <el-button type="primary" size="small">已作图,点击下载</el-button>
-
             </a>
             <upload-file
+              v-if="row.status === 0"
               :model-value="row.fileUrl"
-
               :file-size="100"
               :is-show-tip="false"
               :show-file-list="false"
               :limit="1"
               @upload-success="handleFileSuccess(row, $event)"
             >
-              <el-button  class="ml-2" type="primary" size="small">更换</el-button>
+              <el-button class="ml-2" type="primary" size="small" >更换</el-button>
             </upload-file>
           </div>
           <div class="font-bold" v-else>
@@ -261,24 +271,24 @@
         prop="createTime"
         :formatter="dateFormatter"
       />
-      <el-table-column label="操作" align="center" min-width="120px">
+      <el-table-column label="订单状态" align="center" prop="orderStatus" min-width="150">
+        <template #default="{ row }">
+          <dict-tag :type="DICT_TYPE.TEMU_ORDER_BATCH_STATUS" :value="row.status" />
+        </template>
+      </el-table-column>
+      <el-table-column label="操作" align="center" width="120px" fixed="right">
         <template #default="scope">
-          <el-button
-            link
-            type="primary"
-            @click="openForm('update', scope.row.id)"
-            v-hasPermi="['temu:order-batch:update']"
-          >
-            编辑
-          </el-button>
-          <el-button
-            link
-            type="danger"
-            @click="handleDelete(scope.row.id)"
-            v-hasPermi="['temu:order-batch:delete']"
-          >
-            删除
-          </el-button>
+          <div class="flex justify-center" v-if="scope.row.status === 0">
+            <el-popconfirm
+              title="是否确认完成订单?"
+              placement="top-start"
+              @confirm="handleUpdateBathchStatus(scope.row)"
+            >
+              <template #reference>
+                <el-button  type="success" size="small" > 完成生产</el-button>
+              </template>
+            </el-popconfirm>
+          </div>
         </template>
       </el-table-column>
     </el-table>
@@ -295,7 +305,7 @@
 <script setup lang="ts">
 import { dateFormatter } from '@/utils/formatTime'
 import { OrderBatchApi, OrderBatchVO } from '@/api/temu/order-batch'
-import { DICT_TYPE } from '@/utils/dict'
+import {DICT_TYPE, getStrDictOptions} from '@/utils/dict'
 
 /** 订单批次 列表 */
 defineOptions({ name: 'BatchOrderPopup' })
@@ -366,6 +376,23 @@ const handleFileSuccess = async (row: any, res: any) => {
   row.fileUrl = res
   message.success('操作成功')
   await getList()
+}
+const handleUpdateBathchStatus = async (row: any) => {
+  try {
+    if (!row.fileUrl) {
+      message.warning('请先上传文件!')
+      return
+    }
+    if (row.status == 1) {
+      message.warning('该订单已完成生产!')
+      return
+    }
+    await OrderBatchApi.updateOrderBatchStatus({ id: row.id })
+    row.status = true
+    message.success('操作成功')
+    // 刷新列表
+    await getList()
+  } catch {}
 }
 /** 初始化 **/
 onMounted(() => {

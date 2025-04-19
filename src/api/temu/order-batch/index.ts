@@ -22,4 +22,8 @@ export const OrderBatchApi = {
   updateOrderBatchFile: async (data: any) => {
     return await request.put({ url: `/temu/order-batch/update-file`, data })
   },
+  //更新批次状态
+  updateOrderBatchStatus: async (data: any) => {
+    return await request.put({ url: `/temu/order-batch/update-status`, data })
+  }
 }
