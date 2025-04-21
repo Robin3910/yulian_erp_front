@@ -48,25 +48,7 @@
           <Icon icon="ep:refresh" class="mr-5px" />
           重置
         </el-button>
-        <el-button
-          type="primary"
-          plain
-          @click="openForm('create')"
-          v-hasPermi="['temu:order-batch:create']"
-        >
-          <Icon icon="ep:plus" class="mr-5px" />
-          新增
-        </el-button>
-        <el-button
-          type="success"
-          plain
-          @click="handleExport"
-          :loading="exportLoading"
-          v-hasPermi="['temu:order-batch:export']"
-        >
-          <Icon icon="ep:download" class="mr-5px" />
-          导出
-        </el-button>
+
       </el-form-item>
     </el-form>
   </ContentWrap>
@@ -372,6 +354,9 @@ const handleDelete = async (id: number) => {
 }
 
 const handleFileSuccess = async (row: any, res: any) => {
+  if (!res) {
+    return
+  }
   await OrderBatchApi.updateOrderBatchFile({ id: row.id, fileUrl: res })
   row.fileUrl = res
   message.success('操作成功')
