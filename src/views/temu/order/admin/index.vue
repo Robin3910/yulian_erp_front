@@ -1,4 +1,5 @@
 <template>
+
   <ContentWrap>
     <!-- 搜索工作栏 -->
     <el-form
@@ -146,6 +147,7 @@
       :show-overflow-tooltip="true"
       @selection-change="handleSelectionChange"
       row-key="id"
+      ref="tableRef"
     >
       <!--选择-->
       <el-table-column type="selection" width="55" align="center" reserve-selection />
@@ -389,7 +391,7 @@ const list = ref<OrderVO[]>([]) // 列表的数据
 const total = ref(0) // 列表的总页数
 const categoryList = ref<any[]>([])
 const batchOrderPopup = ref(false)
-
+const tableRef=useTemplateRef('tableRef')
 // 店铺列表
 const shopList = ref<any[]>([])
 // 多选
@@ -426,6 +428,7 @@ const queryFormRef = ref() // 搜索的表单
 const orderTotalPrice = ref(0)
 /** 查询列表 */
 const getList = async () => {
+  tableRef.value.clearSelection()
   loading.value = true
   try {
     const data = await OrderApi.getOrderPageByAdmin(queryParams)
@@ -530,6 +533,8 @@ const handleBatchOrder = () => {
     batchOrderPopupRef.value?.setOrderList(selectedRows.value)
   })
 }
+
+
 
 const handleBatchGenerate = async () => {
   if (selectedRows.value.length === 0) {

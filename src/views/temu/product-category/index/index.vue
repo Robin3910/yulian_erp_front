@@ -9,7 +9,6 @@
       label-width="68px"
     >
       <el-row :gutter="20">
-
         <el-col :span="24" :lg="6">
           <el-form-item label="商品名称" prop="categoryName" class="w-full">
             <el-input
@@ -17,7 +16,6 @@
               placeholder="请输入商品名称"
               clearable
               @keyup.enter="handleQuery"
-
             />
           </el-form-item>
         </el-col>
@@ -31,63 +29,104 @@
               start-placeholder="开始日期"
               end-placeholder="结束日期"
               :default-time="[new Date('1 00:00:00'), new Date('1 23:59:59')]"
-
             />
           </el-form-item>
         </el-col>
         <el-col :span="24" :lg="6">
           <el-form-item class="w-full">
-            <el-button @click="handleQuery"><Icon icon="ep:search" class="mr-5px" /> 搜索</el-button>
-            <el-button @click="resetQuery"><Icon icon="ep:refresh" class="mr-5px" /> 重置</el-button>
+            <el-button @click="handleQuery">
+              <Icon icon="ep:search" class="mr-5px" />
+              搜索
+            </el-button>
+            <el-button @click="resetQuery">
+              <Icon icon="ep:refresh" class="mr-5px" />
+              重置
+            </el-button>
             <el-button
               v-hasPermi="['temu:product-category:create']"
               type="primary"
               plain
               @click="openForm('create')"
-
             >
-              <Icon icon="ep:plus" class="mr-5px" /> 新增
+              <Icon icon="ep:plus" class="mr-5px" />
+              新增
             </el-button>
-
           </el-form-item>
         </el-col>
       </el-row>
-
     </el-form>
   </ContentWrap>
 
   <!-- 列表 -->
   <ContentWrap>
     <el-table v-loading="loading" :data="list" :stripe="true" :show-overflow-tooltip="true">
-      <el-table-column label="主键ID" align="center" prop="id" />
-      <el-table-column label="商品品类ID" align="center" prop="categoryId" />
       <el-table-column label="商品名称" align="center" prop="categoryName" />
-      <el-table-column label="定价规则" align="center" prop="unitPrice" min-width="200" >
+      <el-table-column label="计价规则" align="center">
         <template #default="scope">
-          <div v-if="scope.row.unitPrice">
-          <div v-for="(item,index) in scope.row.unitPrice.sort((a,b)=>a.max-b.max)" :key="index" class="mb-2 text-left flex">
-            <div class="mr-2">产品数量：<el-tag type="success">{{scope.row.unitPrice.sort((a,b)=>a.max-b.max)[index-1]?scope.row.unitPrice.sort((a,b)=>a.max-b.max)[index-1].max:0}}</el-tag>~<el-tag type="success">{{item.max}}</el-tag></div>
-            <div>价格：<el-tag type="success">{{item.price?'¥'+item.price.toFixed(2):'暂未设置'}}</el-tag></div>
-          </div>
-          </div>
+          <span v-if="scope.row.ruleType === 1"><el-tag type="success">按数量计价</el-tag></span>
+          <span v-if="scope.row.ruleType === 2"><el-tag type="warning">按版面计价</el-tag></span>
         </template>
       </el-table-column>
-      <el-table-column label="默认价格" align="center" prop="defaultPrice" min-width="120" >
-        <template #default="scope">
-          <el-tag type="success">数量大于{{scope.row.unitPrice.sort((a,b)=>a.max-b.max)[scope.row.unitPrice.sort((a,b)=>a.max-b.max).length-1].max}} 价格:{{scope.row.defaultPrice?'¥'+scope.row.defaultPrice.toFixed(2):'暂未设置'}}</el-tag>
+      <el-table-column
+        label="定价规则"
+        align="center"
+        prop="unitPrice"
+        min-width="120"
+      >
+        <template #default="scope" >
+          <div v-if="scope.row.ruleType===1&&(scope.row.unitPrice as RulePriceByNumber)&&(scope.row.unitPrice as RulePriceByNumber).unitPrice">
+            <div
+              v-for="(item, index) in sortRulePrice((scope.row.unitPrice as RulePriceByNumber).unitPrice)"
+              :key="index"
+              class="mb-2 text-left flex"
+            >
+             <div>产品数量在 {{ index-1>=0? (scope.row.unitPrice as RulePriceByNumber).unitPrice[index-1].max : 0 }} - {{ item.max }} 个时，价格是¥{{ item.price }} 元</div>
+            </div>
+            <div class="text-left">
+              产品数量大于{{(scope.row.unitPrice as RulePriceByNumber).unitPrice[(scope.row.unitPrice as RulePriceByNumber).unitPrice.length-1].max}}，价格是¥{{ (scope.row.unitPrice as RulePriceByNumber).defaultPrice}} 元
+            </div>
+          </div>
+          <div v-else-if="scope.row.ruleType===2&&(scope.row.unitPrice as RulePriceByLayout)&&(scope.row.unitPrice as RulePriceByLayout).unitPrice">
+            <div v-for="(item, index) in sortRulePrice((scope.row.unitPrice as RulePriceByLayout).unitPrice)" :key="index">
+              <div
+                v-if="item.max"
+                class="mb-2 text-left flex"
+              >
+                <div>版面尺寸在 {{ index-1>=0? (scope.row.unitPrice as RulePriceByLayout).unitPrice[index-1].max : 0 }} - {{ item.max }} 个时，价格是¥{{ item.price }}元</div>
+              </div>
+            </div>
+            <div class="text-left">
+              版面尺寸大于{{(scope.row.unitPrice as RulePriceByLayout).unitPrice[(scope.row.unitPrice as RulePriceByLayout).unitPrice.length-1].max}}，价格是¥{{ (scope.row.unitPrice as RulePriceByLayout).defaultPrice}} 元
+            </div>
+            <div class="text-left">
+              制作单个产品的价格是¥{{ (scope.row.unitPrice as RulePriceByLayout).singlePrice}}元 </div>
+            <div class="text-left">单个版面可以制作 {{ (scope.row.unitPrice as RulePriceByLayout).singleLayoutCount}}个产品   </div>
+          </div>
         </template>
       </el-table-column>
       <el-table-column label="商品尺寸" align="center" min-width="200">
         <template #default="scope">
           <div class="flex flex-col gap-1">
-            <div>长度：<el-tag size="small">{{scope.row.length||0}}cm</el-tag></div>
-            <div>宽度：<el-tag size="small">{{scope.row.width||0}}cm</el-tag></div>
-            <div>高度：<el-tag size="small">{{scope.row.height||0}}cm</el-tag></div>
-            <div>重量：<el-tag size="small">{{scope.row.weight||0}}kg</el-tag></div>
+            <div
+              >长度：
+              <el-tag size="small">{{ scope.row.length || 0 }}cm</el-tag>
+            </div>
+            <div
+              >宽度：
+              <el-tag size="small">{{ scope.row.width || 0 }}cm</el-tag>
+            </div>
+            <div
+              >高度：
+              <el-tag size="small">{{ scope.row.height || 0 }}cm</el-tag>
+            </div>
+            <div
+              >重量：
+              <el-tag size="small">{{ scope.row.weight || 0 }}kg</el-tag>
+            </div>
           </div>
         </template>
       </el-table-column>
-      <el-table-column label="主图URL" align="center" prop="mainImageUrl" >
+      <el-table-column label="主图URL" align="center" prop="mainImageUrl">
         <template #default="scope">
           <el-image
             style="width: 100px; height: 100px"
@@ -113,7 +152,6 @@
             link
             type="primary"
             @click="openForm('update', scope.row.id)"
-
           >
             编辑
           </el-button>
@@ -122,7 +160,6 @@
             link
             type="danger"
             @click="handleDelete(scope.row.id)"
-
           >
             删除
           </el-button>
@@ -144,13 +181,23 @@
 
 <script setup lang="ts">
 import { dateFormatter } from '@/utils/formatTime'
-import download from '@/utils/download'
-import { ProductCategoryApi, ProductCategoryVO } from '@/api/temu/product-category'
-import  ProductCategoryForm from './conpoments/ProductCategoryForm.vue'
+import { ProductCategoryApi, ProductCategoryVO,rulePrice,RulePriceByNumber,RulePriceByLayout } from '@/api/temu/product-category'
+import ProductCategoryForm from './conpoments/ProductCategoryForm.vue'
 
 /** 商品品类 列表 */
 defineOptions({ name: 'TemuProductCategory' })
-
+// 排序规则价格
+const sortRulePrice = (arr: rulePrice[]) => {
+  if (!arr) {
+    return []
+  }
+  return arr.sort((a, b) => {
+    // 处理 max 为 undefined 的情况
+    const maxA = a.max ?? 0
+    const maxB = b.max ?? 0
+    return maxA - maxB
+  })
+}
 const message = useMessage() // 消息弹窗
 const { t } = useI18n() // 国际化
 
@@ -167,7 +214,7 @@ const queryParams = reactive({
   height: undefined,
   weight: undefined,
   mainImageUrl: undefined,
-  createTime: [],
+  createTime: []
 })
 const queryFormRef = ref() // 搜索的表单
 

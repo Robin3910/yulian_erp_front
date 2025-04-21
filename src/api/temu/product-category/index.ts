@@ -12,6 +12,22 @@ export interface ProductCategoryVO {
   mainImageUrl: string // 主图URL
 }
 
+export interface rulePrice {
+  max: number | undefined
+  price: number | undefined
+}
+
+export type RulePriceByNumber = {
+  defaultPrice: number | undefined
+  unitPrice: rulePrice[]
+}
+export type RulePriceByLayout = {
+  singlePrice: number | undefined
+  singleLayoutCount: number | undefined
+  defaultPrice: number | undefined
+  unitPrice: rulePrice[]
+}
+
 // 商品品类 API
 export const ProductCategoryApi = {
   // 查询商品品类分页
