@@ -92,11 +92,11 @@
                 v-if="item.max"
                 class="mb-2 text-left flex"
               >
-                <div>版面尺寸在 {{ index-1>=0? (scope.row.unitPrice as RulePriceByLayout).unitPrice[index-1].max : 0 }} - {{ item.max }} 个时，价格是¥{{ item.price }}元</div>
+                <div>版面的数量在 {{ index-1>=0? (scope.row.unitPrice as RulePriceByLayout).unitPrice[index-1].max : 0 }} - {{ item.max }} 个时，价格是¥{{ item.price }}元</div>
               </div>
             </div>
             <div class="text-left">
-              版面尺寸大于{{(scope.row.unitPrice as RulePriceByLayout).unitPrice[(scope.row.unitPrice as RulePriceByLayout).unitPrice.length-1].max}}，价格是¥{{ (scope.row.unitPrice as RulePriceByLayout).defaultPrice}} 元
+              版面的数量大于{{(scope.row.unitPrice as RulePriceByLayout).unitPrice[(scope.row.unitPrice as RulePriceByLayout).unitPrice.length-1].max}}，价格是¥{{ (scope.row.unitPrice as RulePriceByLayout).defaultPrice}} 元
             </div>
             <div class="text-left">
               制作单个产品的价格是¥{{ (scope.row.unitPrice as RulePriceByLayout).singlePrice}}元 </div>
