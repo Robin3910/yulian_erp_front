@@ -222,27 +222,32 @@
               <el-button type="primary" size="small">已作图,点击下载</el-button>
             </a>
             <upload-file
+              :model-value="[]"
               v-if="row.status === 0"
-              :model-value="row.fileUrl"
               :file-size="100"
               :is-show-tip="false"
               :show-file-list="false"
               :limit="1"
               @upload-success="handleFileSuccess(row, $event)"
             >
-              <el-button class="ml-2" type="primary" size="small" >更换</el-button>
+              <template #default="scope">
+                <el-button class="ml-2" type="primary"  :loading="scope.loading" size="small" >更换</el-button>
+              </template>
+
             </upload-file>
           </div>
           <div class="font-bold" v-else>
             <upload-file
-              :model-value="row.fileUrl"
+              :model-value="[]"
               :file-size="100"
               :is-show-tip="false"
               :show-file-list="false"
               :limit="1"
               @upload-success="handleFileSuccess(row, $event)"
             >
-              <el-button type="warning" size="small">未作图,点击上传</el-button>
+              <template #default="scope">
+                <el-button type="warning" size="small"  :loading="scope.loading">未作图,点击上传</el-button>
+              </template>
             </upload-file>
           </div>
         </template>

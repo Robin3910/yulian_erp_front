@@ -20,7 +20,7 @@
       class="upload-file-uploader"
       name="file"
     >
-      <slot>
+      <slot :loading="uploadLoading">
         <el-button type="primary"  >
           <Icon icon="ep:upload-filled" />
           选取文件
@@ -94,6 +94,7 @@ const props = defineProps({
 })
 
 // ========== 上传相关 ==========
+const uploadLoading= ref(false)
 const uploadRef = ref<UploadInstance>()
 const uploadList = ref<UploadUserFile[]>([])
 const fileList = ref<UploadUserFile[]>([])
@@ -125,6 +126,7 @@ const beforeUpload: UploadProps['beforeUpload'] = (file: UploadRawFile) => {
     return false
   }
   message.success('正在上传文件，请稍候...')
+  uploadLoading.value = true
   uploadNumber.value++
 }
 // 处理上传的文件发生变化
@@ -134,6 +136,7 @@ const beforeUpload: UploadProps['beforeUpload'] = (file: UploadRawFile) => {
 // 文件上传成功
 const handleFileSuccess: UploadProps['onSuccess'] = (res: any): void => {
   message.success('上传成功')
+  uploadLoading.value = false
   // 删除自身
   const index = fileList.value.findIndex((item) => item.response?.data === res.data)
   fileList.value.splice(index, 1)
@@ -152,6 +155,7 @@ const handleExceed: UploadProps['onExceed'] = (): void => {
 // 上传错误提示
 const excelUploadError: UploadProps['onError'] = (): void => {
   message.error('导入数据失败，请您重新上传！')
+  uploadLoading.value = false
 }
 // 删除上传文件
 const handleRemove = (file: UploadFile) => {

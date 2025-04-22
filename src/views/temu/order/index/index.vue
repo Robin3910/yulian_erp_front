@@ -64,7 +64,7 @@
           </el-form-item>
         </el-col>
         <el-col :span="24" :lg="6">
-          <el-form-item label="类目" prop="orderStatus" class="w-full">
+          <el-form-item label="类目" prop="categoryId" class="w-full">
             <el-select
               filterable
               v-model="queryParams.categoryId"
@@ -172,7 +172,7 @@
           </div>
         </template>
       </el-table-column>
-      <el-table-column label="类目名称" align="center" prop="categoryName" min-width="230">
+      <el-table-column label="类目名称" align="center" prop="productCategoryName" min-width="230">
         <template #default="{ row }">
           <div class="text-left" v-if="row.orderStatus===0">
             <el-select
@@ -398,7 +398,7 @@ const queryParams = reactive({
   customImageUrls: undefined,
   customTextList: undefined,
   productImgUrl: undefined,
-  categoryId: undefined,
+  categoryId: [],
   categoryName: undefined,
   shippingInfo: undefined,
   originalInfo: undefined
