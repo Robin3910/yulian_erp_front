@@ -128,7 +128,26 @@ const open = async (type: string, id?: number) => {
   if (id) {
     formLoading.value = true
     try {
-      formData.value = await ShopApi.getShop(id)
+      const data = await ShopApi.getShop(id)
+      // 处理 oldTypeUrl 为 null 的情况
+      formData.value = {
+        ...data,
+        oldTypeUrl: data.oldTypeUrl || {
+          '0': undefined,
+          '1': undefined,
+          '2': undefined
+        }
+      }
+      // 如果有额外的图片，需要更新 extraOldTypeUrls
+      if (data.oldTypeUrl) {
+        Object.keys(data.oldTypeUrl).forEach(key => {
+          const keyNum = parseInt(key)
+          if (keyNum >= 3) {
+            extraOldTypeUrls.value[keyNum] = ''
+            nextImageKey = Math.max(nextImageKey, keyNum + 1)
+          }
+        })
+      }
     } finally {
       formLoading.value = false
     }
@@ -144,12 +163,18 @@ const submitForm = async () => {
   // 提交请求
   formLoading.value = true
   try {
-    const data = formData.value as unknown as ShopVO
+    const data = { ...formData.value }
+    // 检查 oldTypeUrl 是否所有值都为 undefined
+    const hasValue = Object.values(data.oldTypeUrl).some(url => url !== undefined)
+    if (!hasValue) {
+      data.oldTypeUrl = null
+    }
+    
     if (formType.value === 'create') {
-      await ShopApi.createShop(data)
+      await ShopApi.createShop(data as unknown as ShopVO)
       message.success(t('common.createSuccess'))
     } else {
-      await ShopApi.updateShop(data)
+      await ShopApi.updateShop(data as unknown as ShopVO)
       message.success(t('common.updateSuccess'))
     }
     dialogVisible.value = false

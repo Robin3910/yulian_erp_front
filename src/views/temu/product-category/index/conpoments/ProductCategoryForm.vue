@@ -28,7 +28,7 @@
         </el-radio-group>
       </el-form-item>
       <el-form-item
-        v-if="formData.ruleType === 1"
+        v-if="formData.ruleType === 1 && formData.unitPrice"
         label="补充阶梯"
         prop="unitPrice"
         :rules="[
@@ -145,7 +145,7 @@
         </div>
       </el-form-item>
       <el-form-item
-        v-if="formData.ruleType === 2"
+        v-if="formData.ruleType === 2 && formData.unitPrice"
         label="补充阶梯"
         prop="unitPrice"
         :rules="[
@@ -357,7 +357,19 @@ const dialogVisible = ref(false) // 弹窗的是否展示
 const dialogTitle = ref('') // 弹窗的标题
 const formLoading = ref(false) // 表单的加载中：1）修改时的数据加载；2）提交的按钮禁用
 const formType = ref('') // 表单的类型：create - 新增；update - 修改
-const formData = ref({
+const formData = ref<{
+  id: number | undefined;
+  categoryId: number | undefined;
+  categoryName: string | undefined;
+  length: number | undefined;
+  width: number | undefined;
+  height: number | undefined;
+  weight: number | undefined;
+  mainImageUrl: string | null;
+  unitPrice: RulePriceByNumber | RulePriceByLayout | null;
+  ruleType: number | undefined;
+  oldType: string;
+}>({
   id: undefined,
   categoryId: undefined,
   categoryName: undefined,
@@ -365,8 +377,8 @@ const formData = ref({
   width: undefined,
   height: undefined,
   weight: undefined,
-  mainImageUrl: undefined,
-  unitPrice: undefined as RulePriceByNumber | RulePriceByLayout | undefined,
+  mainImageUrl: null,
+  unitPrice: null,
   ruleType: undefined,
   oldType: '0'
 })
@@ -400,29 +412,26 @@ const open = async (type: string, id?: number) => {
 }
 // 初始化规则价格
 const initUnitPrice = () => {
+  if (!formData.value.ruleType) return;
+
   if (formData.value.ruleType === 1) {
     formData.value.unitPrice = {
       defaultPrice: undefined,
-      unitPrice: [
-        {
-          max: undefined,
-          price: undefined
-        }
-      ]
-    }
-  }
-  if (formData.value.ruleType === 2) {
+      unitPrice: [{
+        max: undefined,
+        price: undefined
+      }]
+    } as RulePriceByNumber;
+  } else if (formData.value.ruleType === 2) {
     formData.value.unitPrice = {
       singlePrice: undefined,
       singleLayoutCount: undefined,
       defaultPrice: undefined,
-      unitPrice: [
-        {
-          max: undefined,
-          price: undefined
-        }
-      ]
-    }
+      unitPrice: [{
+        max: undefined,
+        price: undefined
+      }]
+    } as RulePriceByLayout;
   }
 }
 defineExpose({ open }) // 提供 open 方法，用于打开弹窗
@@ -479,18 +488,20 @@ const numberToChinese = (num: number): string => {
 }
 // 添加价格规则
 const addPriceRule = () => {
-  if (!(formData.value.unitPrice as RulePriceByNumber).unitPrice) {
-    ;(formData.value.unitPrice as RulePriceByNumber).unitPrice = [
-      {
-        max: undefined,
-        price: undefined
-      }
-    ]
-  } else {
-    ;(formData.value.unitPrice as RulePriceByNumber).unitPrice.push({
-      max: undefined,
-      price: undefined
-    })
+  if (!formData.value.unitPrice) {
+    initUnitPrice();
+    return;
+  }
+
+  const newRule = {
+    max: undefined,
+    price: undefined
+  };
+
+  if (formData.value.ruleType === 1) {
+    (formData.value.unitPrice as RulePriceByNumber).unitPrice.push(newRule);
+  } else if (formData.value.ruleType === 2) {
+    (formData.value.unitPrice as RulePriceByLayout).unitPrice.push(newRule);
   }
 }
 /** 提交表单 */
@@ -528,8 +539,9 @@ const resetForm = () => {
     width: undefined,
     height: undefined,
     weight: undefined,
-    mainImageUrl: undefined,
-    unitPrice: undefined,
+    mainImageUrl: null,
+    unitPrice: null,
+    ruleType: undefined,
     oldType: '0'
   }
   formRef.value?.resetFields()
