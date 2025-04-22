@@ -21,16 +21,28 @@
               <!--  定制图片-->
               <el-form-item label="定制图片：" class="mb-2 cursor-pointer">
                 <div class="text-left flex" v-if="item.customImageUrls">
-                  <div v-for="(_item, _index) in item.customImageUrls.split(',')" :key="_index" class="mr-1">
+                  <div
+                    v-for="(_item, _index) in item.customImageUrls.split(',')"
+                    :key="_index"
+                    class="mr-1"
+                  >
                     <el-image
-                      class="w-10 h-10" :hide-on-click-modal="true" :preview-teleported="true" :src="_item"
-                      :preview-src-list="[_item]" />
+                      class="w-10 h-10"
+                      :hide-on-click-modal="true"
+                      :preview-teleported="true"
+                      :src="_item"
+                      :preview-src-list="[_item]"
+                    />
                   </div>
                 </div>
               </el-form-item>
               <!--  定制文字-->
               <el-form-item label="定制文字：" class="mb-2 cursor-pointer">
-                <div class="text-left truncate" :title="item.customTextList" v-if="item.customTextList">
+                <div
+                  class="text-left truncate"
+                  :title="item.customTextList"
+                  v-if="item.customTextList"
+                >
                   {{ item.customTextList }}
                 </div>
               </el-form-item>
@@ -40,38 +52,158 @@
                   {{ item.categoryName }}
                 </div>
               </el-form-item>
-              <!-- 默认价格 -->
-              <el-form-item :label="`数量超过${item.categoryPriceRule.sort((a, b) => a.max - b.max)[item.categoryPriceRule.sort((a, b) => a.max - b.max).length - 1]?item.categoryPriceRule.sort((a, b) => a.max - b.max)[item.categoryPriceRule.sort((a, b) => a.max - b.max).length - 1].max:0}价格是：`" class="mb-2 cursor-pointer">
-                <div class="text-left" v-if="item.defaultPrice">
-                  ¥{{ item.defaultPrice?item.defaultPrice.toFixed(2):'0.00' }}
+              <!--计价规则-->
+              <el-form-item label="计价规则：" class="mb-2 cursor-pointer">
+                <div class="text-left" v-if="item.categoryRuleType">
+                  <span v-if="item.categoryRuleType === 1">按数量计价</span>
+                  <span v-if="item.categoryRuleType === 2">按版面计价</span>
                 </div>
               </el-form-item>
-              <!-- 分类价格 -->
-              <el-form-item label="分类价格：" class="mb-2 cursor-pointer">
-                <div class="text-left" v-if="item.categoryPriceRule">
-                  <div v-for="(_rule, _index) in item.categoryPriceRule.sort((a, b) => a.max - b.max)" :key="_index">
-                    <div>数量：<el-tag size="small">{{ item.categoryPriceRule.sort((a, b) => a.max - b.max)[_index-1]?item.categoryPriceRule.sort((a, b) => a.max - b.max)[_index-1].max:0}}</el-tag>~<el-tag size="small">{{ _rule.max }}</el-tag>价格：<el-tag size="small">¥{{ _rule.price.toFixed(2) }}</el-tag></div>
+              <template v-if="item.categoryRuleType === 1">
+                <!-- 分类价格 -->
+                <el-form-item label="分类价格：" class="mb-2 cursor-pointer">
+                  <div class="text-left" v-if="item.categoryPriceRule">
+                    <div
+                      v-for="(_rule, _index) in sortRulePrice(
+                        (item.categoryPriceRule as RulePriceByNumber).unitPrice
+                      )"
+                      :key="_index"
+                    >
+                      <div
+                      >数量：
+                        <el-tag size="small">
+                          {{
+                            sortRulePrice((item.categoryPriceRule as RulePriceByNumber).unitPrice)[
+                            _index - 1
+                              ]
+                              ? sortRulePrice(
+                                (item.categoryPriceRule as RulePriceByNumber).unitPrice
+                              )[_index - 1].max
+                              : 0
+                          }}
+                        </el-tag>
+                        ~
+                        <el-tag size="small">{{ _rule.max }}</el-tag>
+                        价格：
+                        <el-tag size="small"
+                        >¥{{ parseFloat((_rule.price as any) || 0).toFixed(2) }}
+                        </el-tag>
+                      </div>
+                    </div>
+                    <div v-if="(item.categoryPriceRule as RulePriceByNumber).defaultPrice">
+                      <div>
+                        数量大于{{
+                          sortRulePrice((item.categoryPriceRule as RulePriceByNumber).unitPrice)[
+                          sortRulePrice((item.categoryPriceRule as RulePriceByNumber).unitPrice)
+                            .length - 1
+                            ].max
+                        }}价格是：
+                        <el-tag size="small">
+                          ¥{{
+                            parseFloat(
+                              ((item.categoryPriceRule as RulePriceByNumber).defaultPrice as any) ||
+                              0
+                            ).toFixed(2)
+                          }}
+                        </el-tag>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </el-form-item>
+                </el-form-item>
+              </template>
+              <template v-if="item.categoryRuleType === 2">
+                <!-- 分类价格 -->
+                <el-form-item label="分类价格：" class="mb-2 cursor-pointer">
+                  <div class="text-left" v-if="item.categoryPriceRule">
+                    <div v-if="item.categoryPriceRule as RulePriceByLayout">
+                      <div
+                      >单个产品的价格:
+                        <el-tag size="small"
+                        >¥{{
+                            parseFloat(
+                              ((item.categoryPriceRule as RulePriceByLayout).singlePrice as any) ||
+                              0
+                            ).toFixed(2)
+                          }}
+                        </el-tag>
+                      </div>
+                    </div>
+                    <div v-if="item.categoryPriceRule as RulePriceByLayout">
+                      <div
+                      >单个版面可以制作的产品数量:
+                        <el-tag size="small">
+                          {{ (item.categoryPriceRule as RulePriceByLayout).singleLayoutCount }}
+                        </el-tag>
+                      </div>
+                    </div>
+                    <div
+                      v-for="(_rule, _index) in sortRulePrice(
+                        (item.categoryPriceRule as RulePriceByLayout).unitPrice
+                      )"
+                      :key="_index"
+                    >
+                      <div
+                      >版面数量：
+                        <el-tag size="small">
+                          {{
+                            sortRulePrice((item.categoryPriceRule as RulePriceByLayout).unitPrice)[
+                            _index - 1
+                              ]
+                              ? sortRulePrice(
+                                (item.categoryPriceRule as RulePriceByLayout).unitPrice
+                              )[_index - 1].max
+                              : 0
+                          }}
+                        </el-tag>
+                        ~
+                        <el-tag size="small">{{ _rule.max }}</el-tag>
+                        价格：
+                        <el-tag size="small"
+                        >¥{{ parseFloat((_rule.price as any) || 0).toFixed(2) }}
+                        </el-tag>
+                      </div>
+                    </div>
+                    <div v-if="(item.categoryPriceRule as RulePriceByLayout).defaultPrice">
+                      <div>
+                        版面数量大于{{
+                          sortRulePrice((item.categoryPriceRule as RulePriceByLayout).unitPrice)[
+                          sortRulePrice((item.categoryPriceRule as RulePriceByLayout).unitPrice)
+                            .length - 1
+                            ].max
+                        }}价格是：
+                        <el-tag size="small">
+                          ¥{{
+                            parseFloat(
+                              ((item.categoryPriceRule as RulePriceByLayout).defaultPrice as any) ||
+                              0
+                            ).toFixed(2)
+                          }}
+                        </el-tag>
+                      </div>
+                    </div>
+                  </div>
+                </el-form-item>
+              </template>
               <!--  数量-->
               <el-form-item
-                label="数量：" class="mb-2 cursor-pointer" :prop="`orderList.${index}.quantity`"
-                :rules="[{ required: true, message: '请输入数量', trigger: 'blur' }]">
+                label="数量："
+                class="mb-2 cursor-pointer"
+                :prop="`orderList.${index}.quantity`"
+                :rules="[{ required: true, message: '请输入数量', trigger: 'blur' }]"
+              >
                 <el-input v-model.number="item.quantity" class="!w-240px" clearable />
               </el-form-item>
               <!-- 单价 -->
               <el-form-item label="单价：" class="mb-2 cursor-pointer">
-                <div class="text-left" >
-                  ¥{{ calculateUnitPrice(item)?calculateUnitPrice(item):'0.00' }}
+                <div class="text-left">
+                  ¥{{ calculateUnitPrice(item) ? calculateUnitPrice(item) : '0.00' }}
                 </div>
-
               </el-form-item>
 
               <!-- 总价 -->
               <el-form-item label="总价：" class="mb-2 cursor-pointer">
-                <div class="text-left" >
-                  ¥{{ (calculateUnitPrice(item)*item.quantity).toFixed(2) }}
+                <div class="text-left">
+                  ¥{{ (calculateUnitPrice(item) * item.quantity).toFixed(2) }}
                 </div>
               </el-form-item>
             </div>
@@ -84,13 +216,19 @@
     <template #footer>
       <div class="dialog-footer flex items-center justify-between">
         <!-- 订单数 -->
-        <div class="text-left text-orange-500" >
-          <span>订单数：{{ formData.orderList.length||0 }} </span>
-          <span class="ml-2">总价：¥{{ formData.orderList.reduce((acc, item) => acc + (calculateUnitPrice(item)*item.quantity), 0).toFixed(2) }}</span>
+        <div class="text-left text-orange-500">
+          <span>订单数：{{ formData.orderList.length || 0 }} </span>
+          <span class="ml-2"
+          >总价：¥{{
+              formData.orderList
+                .reduce((acc, item) => acc + calculateUnitPrice(item) * item.quantity, 0)
+                .toFixed(2)
+            }}</span
+          >
         </div>
         <div>
           <el-button @click="dialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="handleConfirm"> 确认 </el-button>
+          <el-button type="primary" @click="handleConfirm"> 确认</el-button>
         </div>
       </div>
     </template>
@@ -99,7 +237,8 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { OrderApi } from '@/api/temu/order'
-import { ElMessage } from "element-plus";
+import { rulePrice, RulePriceByNumber, RulePriceByLayout } from '@/api/temu/product-category'
+import { ElMessage } from 'element-plus'
 import _ from 'lodash'
 // ##########################变量区###################################################
 
@@ -109,7 +248,18 @@ defineOptions({
   name: 'BatchOrderPopup'
 })
 // ##########################方法区###################################################
-
+// 排序规则价格
+const sortRulePrice = (arr: rulePrice[]) => {
+  if (!arr) {
+    return []
+  }
+  // 确保a.max和b.max都存在,否则返回0进行安全比较
+  return arr.sort((a, b) => {
+    const maxA = a?.max ?? 0
+    const maxB = b?.max ?? 0
+    return maxA - maxB
+  })
+}
 // 按照的规则过滤订单的数量
 const filterOrderQuantity = (list: any[]) => {
   list.forEach((item) => {
@@ -134,26 +284,77 @@ const filterOrderQuantity = (list: any[]) => {
 }
 // 根据传入的规则计算单价
 const calculateUnitPrice = computed(() => {
-  return (item) => {
-
-    // 设置默认价格
-    let unitPrice = item.defaultPrice
-    // 分类价格按照数量从小到大排序
-    item.categoryPriceRule.sort((a, b) => a.max - b.max)
-    //检查分类定价规则
-    for (let index = 0; index < item.categoryPriceRule.length; index++) {
-      const rule = item.categoryPriceRule[index]
-      if (item.quantity <= rule.max) {
-        unitPrice = rule.price
-        break
+  return (item): number => {
+    if (item.categoryRuleType === 1) {
+      let priceRule = _.cloneDeep(item.categoryPriceRule) as RulePriceByNumber
+      // 设置默认价格
+      let unitPrice = priceRule.defaultPrice || 0
+      // 分类价格按照数量从小到大排序
+      priceRule.unitPrice.sort((a, b) => (a?.max ?? 0) - (b?.max ?? 0))
+      //检查分类定价规则
+      for (let index = 0; index < priceRule.unitPrice.length; index++) {
+        const rule = priceRule.unitPrice[index]
+        if (item.quantity <= (rule?.max ?? 0)) {
+          unitPrice = rule.price || 0
+          break
+        }
       }
+      return Number(parseFloat(unitPrice as any).toFixed(2))
     }
-    console.log('>>>>>>>>>>>>>计算单价',unitPrice.toFixed(2))
-    return unitPrice.toFixed(2)
+    if (item.categoryRuleType === 2) {
+      let priceRule = _.cloneDeep(item.categoryPriceRule) as RulePriceByLayout
+      // 计算版面价格
+      let calcLayoutUnitPrice = (count: number) => {
+        let unitPrice = priceRule.defaultPrice as number
+        priceRule.unitPrice.sort((a, b) => (a?.max ?? 0) - (b?.max ?? 0))
+        for (let index = 0; index < priceRule.unitPrice.length; index++) {
+          const rule = priceRule.unitPrice[index]
+          if (count <= (rule?.max ?? 0)) {
+            unitPrice = rule.price || 0
+            break
+          }
+        }
+        return Number(parseFloat(unitPrice as any).toFixed(2))
+      }
+      let minPrice = 0
+      //首先计算出 单个产品的单价*数量的价格
+      let singleTotalPrice = (priceRule.singlePrice as number) * item.quantity
+      minPrice= singleTotalPrice
+      // 然后计算产品最大可以需要几个版面
+      let maxLayoutCount = Math.ceil((item.quantity / (priceRule.singleLayoutCount as number)) as number)
+      for (let index = 1; index <= maxLayoutCount; index++) {
+        let currentTotalPrice = 0
+        let remainPrice=0
+        // 当前整版的价格
+        let  currentLayoutTotalPrice=calcLayoutUnitPrice(index)*index;
+        //检查是是否存在剩余的单个产品 没有就是0  有就加上单个产品*价格
+        let  remainder=item.quantity-index * (priceRule.singleLayoutCount as number)
+        if (remainder > 0){
+          remainPrice=priceRule.singlePrice as number * remainder
+        }else {
+          remainPrice=0
+        }
+        currentTotalPrice=currentLayoutTotalPrice+remainPrice
+        if (currentTotalPrice <= minPrice) {
+          minPrice = currentTotalPrice
+          console.log(`产品数量${item.quantity },
+         方案1(直接按产品计价)：按单个单品价格算是${singleTotalPrice},
+         方案2(购买版面+产品)：购买${index}个版面完成制作${index*(priceRule.singleLayoutCount as number)}个产品花费价格：${index*calcLayoutUnitPrice(index)},
+         剩余${remainder}个产品
+         价格是${remainder>0?priceRule.singlePrice as number * remainder:0},
+         方案2总价是:${currentTotalPrice},由版面总价${currentLayoutTotalPrice}+剩余产品的总价${remainPrice}组成,
+
+        `)
+        }
+
+      }
+      return Number((minPrice/item.quantity).toFixed(2))||0
+    }
+    return 0
   }
 })
 // 传入订单数据
-const setOrderList =  (list: any[]) => {
+const setOrderList = (list: any[]) => {
   let newList = _.cloneDeep(list)
   filterOrderQuantity(newList)
   formData.orderList = newList

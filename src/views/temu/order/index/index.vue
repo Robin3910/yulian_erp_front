@@ -360,7 +360,7 @@ import { dateFormatter } from '@/utils/formatTime'
 import { OrderApi, OrderVO } from '@/api/temu/order'
 import { TemuCommonApi } from '@/api/temu/common'
 import { getStrDictOptions } from '@/utils/dict'
-import { ElMessage } from 'element-plus'
+import { ElMessage,ElTable } from 'element-plus'
 import BatchOrderPopup from "@/views/temu/order/index/components/BatchOrderPopup.vue";
 
 /** 订单 列表 */
@@ -371,6 +371,7 @@ const list = ref<OrderVO[]>([]) // 列表的数据
 const total = ref(0) // 列表的总页数
 const categoryList = ref<any[]>([])
 const batchOrderPopup = ref(false)
+const tableRef=useTemplateRef<InstanceType<typeof ElTable>>('tableRef')
 // 店铺列表
 const shopList = ref<any[]>([])
 // 多选
@@ -407,6 +408,7 @@ const queryFormRef = ref() // 搜索的表单
 const orderTotalPrice = ref(0)
 /** 查询列表 */
 const getList = async () => {
+  tableRef&&tableRef.value&&tableRef.value.clearSelection()
   loading.value = true
   try {
     const data = await OrderApi.getOrderPage(queryParams)
