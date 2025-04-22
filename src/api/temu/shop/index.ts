@@ -6,6 +6,7 @@ export interface ShopVO {
   shopId: number // 店铺ID
   shopName: string // 店铺名称
   webhook: string // 信息通知机器人webhook地址
+  oldTypeUrl?: Record<string, string> // 合规单图片URL对象
 }
 
 // 店铺 API
