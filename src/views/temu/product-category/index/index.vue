@@ -61,6 +61,14 @@
   <ContentWrap>
     <el-table v-loading="loading" :data="list" :stripe="true" :show-overflow-tooltip="true">
       <el-table-column label="商品名称" align="center" prop="categoryName" />
+      <el-table-column label="合规单类型" align="center" prop="oldType">
+        <template #default="scope">
+          <el-tag v-if="scope.row.oldType === '0'" type="primary">0+</el-tag>
+          <el-tag v-else-if="scope.row.oldType === '1'" type="success">3+</el-tag>
+          <el-tag v-else-if="scope.row.oldType === '2'" type="warning">14+</el-tag>
+          <el-tag v-else type="info">请补充合规单类型</el-tag>
+        </template>
+      </el-table-column>
       <el-table-column label="计价规则" align="center">
         <template #default="scope">
           <span v-if="scope.row.ruleType === 1"><el-tag type="success">按数量计价</el-tag></span>

@@ -325,6 +325,13 @@
       <el-form-item label="重量(g)" prop="weight">
         <el-input type="number" v-model="formData.weight" placeholder="请输入重量(g)" clearable />
       </el-form-item>
+      <el-form-item label="合规单类型" prop="oldType">
+        <el-radio-group v-model="formData.oldType">
+          <el-radio label="0">0+</el-radio>
+          <el-radio label="1">3+</el-radio>
+          <el-radio label="2">14+</el-radio>
+        </el-radio-group>
+      </el-form-item>
       <el-form-item label="主图URL" prop="mainImageUrl">
         <upload-img :file-size="10" v-model="formData.mainImageUrl" />
       </el-form-item>
@@ -360,7 +367,8 @@ const formData = ref({
   weight: undefined,
   mainImageUrl: undefined,
   unitPrice: undefined as RulePriceByNumber | RulePriceByLayout | undefined,
-  ruleType: undefined
+  ruleType: undefined,
+  oldType: '0'
 })
 const formRules = reactive({
   categoryId: [{ required: true, message: '商品品类ID不能为空', trigger: 'blur' }],
@@ -464,7 +472,7 @@ const numberToChinese = (num: number): string => {
   if (result.endsWith('零')) {
     result = result.slice(0, -1)
   }
-  // 处理十位为1的情况，如“一十”改为“十”
+  // 处理十位为1的情况，如"一十"改为"十"
   result = result.replace(/^一十/, '十')
 
   return result
@@ -521,7 +529,8 @@ const resetForm = () => {
     height: undefined,
     weight: undefined,
     mainImageUrl: undefined,
-    unitPrice: undefined
+    unitPrice: undefined,
+    oldType: '0'
   }
   formRef.value?.resetFields()
 }
