@@ -196,14 +196,14 @@
               <!-- 单价 -->
               <el-form-item label="单价：" class="mb-2 cursor-pointer">
                 <div class="text-left">
-                  ¥{{ calculateUnitPrice(item) ? calculateUnitPrice(item) : '0.00' }}
+                  ¥{{ calculateUnitPrice(item) ? _.round(calculateUnitPrice(item), 4) : '0.00' }}
                 </div>
               </el-form-item>
 
               <!-- 总价 -->
               <el-form-item label="总价：" class="mb-2 cursor-pointer">
                 <div class="text-left">
-                  ¥{{ (calculateUnitPrice(item) * item.quantity).toFixed(2) }}
+                  ¥{{ _.round(calculateUnitPrice(item) * item.quantity,6).toFixed(2)||'0.00' }}
                 </div>
               </el-form-item>
             </div>
@@ -220,9 +220,8 @@
           <span>订单数：{{ formData.orderList.length || 0 }} </span>
           <span class="ml-2"
             >总价：¥{{
-              formData.orderList
-                .reduce((acc, item) => acc + calculateUnitPrice(item) * item.quantity, 0)
-                .toFixed(2)
+              _.round(formData.orderList
+                .reduce((acc, item) => acc + calculateUnitPrice(item) * item.quantity, 0),3).toFixed(2)
             }}</span
           >
         </div>
@@ -299,7 +298,7 @@ const calculateUnitPrice = computed(() => {
           break
         }
       }
-      return Number(parseFloat(unitPrice as any).toFixed(2))
+      return unitPrice
     }
     if (item.categoryRuleType === 2) {
       let priceRule = _.cloneDeep(item.categoryPriceRule) as RulePriceByLayout
@@ -314,7 +313,7 @@ const calculateUnitPrice = computed(() => {
             break
           }
         }
-        return Number(parseFloat(unitPrice as any).toFixed(2))
+        return unitPrice
       }
       let minPrice = 0
       //首先计算出 单个产品的单价*数量的价格
@@ -348,7 +347,7 @@ const calculateUnitPrice = computed(() => {
         }
 
       }
-      return Number((minPrice/item.quantity).toFixed(2))||0
+      return minPrice/item.quantity||0
     }
     return 0
   }
