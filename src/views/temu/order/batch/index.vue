@@ -215,7 +215,7 @@
           </div>
         </template>
       </el-table-column>
-      <el-table-column label="文件地址" align="center" prop="fileUrl">
+      <el-table-column label="打印文件地址" align="center" prop="fileUrl">
         <template #default="{ row }">
           <div class="font-bold flex item-center justify-center" v-if="row.fileUrl">
             <a :href="row.fileUrl" :download="row.fileUrl">
@@ -260,6 +260,13 @@
         prop="createTime"
         :formatter="dateFormatter"
       />
+      <el-table-column label="" align="center" min-width="150">
+        <template #default="{ row }">
+          <div class="flex justify-center mt-2">
+            <el-button type="primary" size="small" @click="handleDownloadCustomImages(row)">下载定制图片</el-button>
+          </div>
+        </template>
+      </el-table-column>
       <el-table-column label="订单状态" align="center" prop="orderStatus" min-width="150">
         <template #default="{ row }">
           <dict-tag :type="DICT_TYPE.TEMU_ORDER_BATCH_STATUS" :value="row.status" />
@@ -296,6 +303,7 @@ import { dateFormatter } from '@/utils/formatTime'
 import { OrderBatchApi, OrderBatchVO } from '@/api/temu/order-batch'
 import {DICT_TYPE, getStrDictOptions} from '@/utils/dict'
 import { ElMessageBox,ElMessage } from 'element-plus'
+import JSZip from 'jszip'
 
 /** 订单批次 列表 */
 defineOptions({ name: 'BatchOrderPopup' })
@@ -345,9 +353,6 @@ const resetQuery = () => {
 /** 添加/修改操作 */
 const formRef = ref()
 
-
-
-
 const handleFileSuccess = async (row: any, res: any) => {
   if (!res) {
     return
@@ -385,6 +390,71 @@ const handleUpdateBathchStatus = async (row: any) => {
     // 刷新列表
     await getList()
   } catch {}
+}
+const handleDownloadCustomImages = async (row: any) => {
+  try {
+    if (!row.orderList || row.orderList.length === 0) {
+      message.warning('该批次没有订单信息！')
+      return
+    }
+    
+    loading.value = true
+    const zip = new JSZip()
+    const promises: Promise<void>[] = []
+    let hasImages = false
+    
+    // 遍历所有订单
+    row.orderList.forEach((order: any, orderIndex: number) => {
+      if (!order.customImageUrls) return
+      
+      const urls = order.customImageUrls.split(',')
+      urls.forEach((url: string, imgIndex: number) => {
+        if (!url) return
+        
+        hasImages = true
+        const promise = fetch(url)
+          .then(response => {
+            if (!response.ok) throw new Error(`Network response was not ok for image: ${url}`)
+            return response.blob()
+          })
+          .then(blob => {
+            // 使用订单号和图片索引构建文件名
+            const fileName = `订单${orderIndex+1}_${order.orderNo}_图片${imgIndex+1}.${blob.type.split('/')[1] || 'png'}`
+            zip.file(fileName, blob)
+          })
+          .catch(error => {
+            console.error(`Error fetching image ${url}:`, error)
+          })
+          
+        promises.push(promise)
+      })
+    })
+    
+    if (!hasImages) {
+      message.warning('没有找到可下载的定制图片！')
+      loading.value = false
+      return
+    }
+    
+    // 等待所有图片加载完成
+    await Promise.all(promises)
+    
+    // 生成zip文件并下载
+    const content = await zip.generateAsync({ type: 'blob' })
+    const link = document.createElement('a')
+    link.href = URL.createObjectURL(content)
+    link.download = `${row.batchNo}_定制图片.zip`
+    link.click()
+    
+    // 释放URL对象
+    URL.revokeObjectURL(link.href)
+    message.success('定制图片打包下载成功！')
+  } catch (error) {
+    console.error('下载定制图片失败:', error)
+    message.error('下载定制图片失败，请重试！')
+  } finally {
+    loading.value = false
+  }
 }
 /** 初始化 **/
 onMounted(() => {

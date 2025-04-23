@@ -393,30 +393,42 @@ declare global {
   }
 }
 
-interface ExtendedOrderVO extends OrderVO {
+interface OrderItem {
   id: number;
   orderNo: string;
+  productTitle: string;
+  orderStatus: number;
+  sku: string;
+  skc: string;
+  salePrice: number;
+  customSku: string;
+  quantity: number;
+  productProperties: string;
+  bookingTime: number;
+  shopId: number;
+  customImageUrls: string;
+  customTextList: string | null;
+  productImgUrl: string;
+  categoryId: string;
+  categoryName: string;
+  effectiveImgUrl: string;
+}
+
+interface ShippingOrder {
+  id: number;
+  orderNo: string | null;
   trackingNumber: string;
   expressImageUrl: string;
   expressOutsideImageUrl: string;
   expressSkuImageUrl: string;
   oldTypeUrl: string;
   shopId: number;
-  orderId: number;
-  productImgUrl: string;
-  sku: string;
-  skc: string;
-  customSku: string;
-  quantity: number;
-  customImageUrls: string;
   shopName: string;
-  productTitle: string;
-  productProperties: string;
   createTime: number;
-  customTextList: string;
-  orderStatus: number;
-  effectiveImgUrl: string;
+  orderList: OrderItem[];
 }
+
+type ExtendedOrderVO = Omit<ShippingOrder, 'orderList' | 'orderNo'> & OrderItem;
 
 /** 订单 列表 */
 defineOptions({ name: 'TemuOrderIndex' })
@@ -466,8 +478,34 @@ const getList = async () => {
       return
     }
 
-    // 直接使用后端返回的数据，不需要额外转换
-    const extendedList = data.list as ExtendedOrderVO[]
+    // 处理数据，将orderList中的数据展开
+    const extendedList: ExtendedOrderVO[] = []
+    ;(data.list as ShippingOrder[]).forEach((shippingOrder) => {
+      if (shippingOrder.orderList && shippingOrder.orderList.length > 0) {
+        // 按订单编号分组
+        const orderGroups = new Map<string, OrderItem[]>()
+        shippingOrder.orderList.forEach(orderItem => {
+          const orderNo = orderItem.orderNo
+          if (!orderGroups.has(orderNo)) {
+            orderGroups.set(orderNo, [])
+          }
+          orderGroups.get(orderNo)!.push(orderItem)
+        })
+
+        // 处理每个订单组
+        orderGroups.forEach((items, orderNo) => {
+          items.forEach(orderItem => {
+            // 移除orderItem中的createTime，使用外层的createTime
+            const { createTime: itemCreateTime, ...restOrderItem } = orderItem
+            const { orderList, orderNo: shippingOrderNo, ...restShippingData } = shippingOrder
+            extendedList.push({
+              ...restShippingData, // 这里包含了外层的createTime
+              ...restOrderItem // 这里不包含orderItem的createTime
+            })
+          })
+        })
+      }
+    })
 
     // 按物流单号和订单编号分组处理数据
     const trackingGroups = new Map<string, Map<string, ExtendedOrderVO[]>>()
@@ -592,10 +630,14 @@ const resetQuery = () => {
 // 处理多选
 const handleSelectionChange = (selection: OrderVO[]) => {
   console.log(selection)
-  selectedRows.value = selection.map(item => ({
-    ...item,
-    orderId: item.id
-  })) as ExtendedOrderVO[]
+  selectedRows.value = selection.map(item => {
+    const { orderList, ...rest } = item as unknown as ShippingOrder
+    return {
+      ...rest,
+      ...(orderList?.[0] || {}),
+      orderId: item.id
+    }
+  }) as ExtendedOrderVO[]
 }
 // 批量设置状态
 const handleBatchSetStatus = async () => {
@@ -823,7 +865,7 @@ const handleShip = async (row: ExtendedOrderVO) => {
       item.orderStatus === 3
     )
     
-    const orderIds = sameTrackingOrders.map(item => item.orderId)
+    const orderIds = sameTrackingOrders.map(item => item.id)
     
     if (orderIds.length === 0) {
       ElMessage.warning('没有找到可发货的订单')
