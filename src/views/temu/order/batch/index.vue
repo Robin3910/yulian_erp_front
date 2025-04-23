@@ -221,34 +221,36 @@
             <a :href="row.fileUrl" :download="row.fileUrl">
               <el-button type="primary" size="small">已作图,点击下载</el-button>
             </a>
-            <upload-file
-              :model-value="[]"
-              v-if="row.status === 0"
-              :file-size="100"
-              :is-show-tip="false"
-              :show-file-list="false"
-              :limit="1"
-              @upload-success="handleFileSuccess(row, $event)"
-            >
-              <template #default="scope">
-                <el-button class="ml-2" type="primary"  :loading="scope.loading" size="small" >更换</el-button>
-              </template>
+            <el-button  v-if="row.status === 0" class="ml-2" type="primary" @click="handlerHandleUpload(row)" size="small" >更换</el-button>
+            <!--<upload-file-->
+            <!--  :model-value="[]"-->
+            <!--  v-if="row.status === 0"-->
+            <!--  :file-size="100"-->
+            <!--  :is-show-tip="false"-->
+            <!--  :show-file-list="false"-->
+            <!--  :limit="1"-->
+            <!--  @upload-success="handleFileSuccess(row, $event)"-->
+            <!--&gt;-->
+            <!--  <template #default="scope">-->
+            <!--    <el-button class="ml-2" type="primary"  :loading="scope.loading" size="small" >更换</el-button>-->
+            <!--  </template>-->
 
-            </upload-file>
+            <!--</upload-file>-->
           </div>
           <div class="font-bold" v-else>
-            <upload-file
-              :model-value="[]"
-              :file-size="100"
-              :is-show-tip="false"
-              :show-file-list="false"
-              :limit="1"
-              @upload-success="handleFileSuccess(row, $event)"
-            >
-              <template #default="scope">
-                <el-button type="warning" size="small"  :loading="scope.loading">未作图,点击上传</el-button>
-              </template>
-            </upload-file>
+            <el-button type="warning" size="small"  @click="handlerHandleUpload(row)">未作图,点击上传</el-button>
+            <!--<upload-file-->
+            <!--  :model-value="[]"-->
+            <!--  :file-size="100"-->
+            <!--  :is-show-tip="false"-->
+            <!--  :show-file-list="false"-->
+            <!--  :limit="1"-->
+            <!--  @upload-success="handleFileSuccess(row, $event)"-->
+            <!--&gt;-->
+            <!--  <template #default="scope">-->
+            <!--    <el-button type="warning" size="small"  :loading="scope.loading">未作图,点击上传</el-button>-->
+            <!--  </template>-->
+            <!--</upload-file>-->
           </div>
         </template>
       </el-table-column>
@@ -293,6 +295,7 @@
 import { dateFormatter } from '@/utils/formatTime'
 import { OrderBatchApi, OrderBatchVO } from '@/api/temu/order-batch'
 import {DICT_TYPE, getStrDictOptions} from '@/utils/dict'
+import { ElMessageBox,ElMessage } from 'element-plus'
 
 /** 订单批次 列表 */
 defineOptions({ name: 'BatchOrderPopup' })
@@ -341,22 +344,9 @@ const resetQuery = () => {
 
 /** 添加/修改操作 */
 const formRef = ref()
-const openForm = (type: string, id?: number) => {
-  formRef.value.open(type, id)
-}
 
-/** 删除按钮操作 */
-const handleDelete = async (id: number) => {
-  try {
-    // 删除的二次确认
-    await message.delConfirm()
-    // 发起删除
-    await OrderBatchApi.deleteOrderBatch(id)
-    message.success(t('common.delSuccess'))
-    // 刷新列表
-    await getList()
-  } catch {}
-}
+
+
 
 const handleFileSuccess = async (row: any, res: any) => {
   if (!res) {
@@ -366,6 +356,18 @@ const handleFileSuccess = async (row: any, res: any) => {
   row.fileUrl = res
   message.success('操作成功')
   await getList()
+}
+const handlerHandleUpload = async (row:any) => {
+  ElMessageBox.prompt('请输入要上传的文件地址例如：https://xxx.com/xxx.zip', '提示', {
+    confirmButtonText: '确认',
+    cancelButtonText: '取消',
+    inputPattern:
+      /^(http|https):\/\/.+\.(zip|rar|7z|docx|doc|xls|xlsx)$/,
+    inputErrorMessage: '无效的地址',
+  })
+    .then(({ value }) => {
+      handleFileSuccess(row,value)
+    })
 }
 const handleUpdateBathchStatus = async (row: any) => {
   try {
