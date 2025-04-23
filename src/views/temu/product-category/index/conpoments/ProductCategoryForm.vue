@@ -64,7 +64,7 @@
             >
               <div class="flex items-center">
                 <span style="flex: 0 0 auto"
-                  >{{
+                >{{
                     (formData.unitPrice as RulePriceByNumber).unitPrice[index - 1]
                       ? (formData.unitPrice as RulePriceByNumber).unitPrice[index - 1].max
                       : 0
@@ -107,7 +107,7 @@
               class="ml-2"
               type="danger"
               @click="(formData.unitPrice as RulePriceByNumber).unitPrice.splice(index, 1)"
-              >删除
+            >删除
             </el-button>
           </div>
           <div class="flex items-center mt-4 mb-4">
@@ -124,11 +124,11 @@
             >
               <div class="flex items-center">
                 <span class="mr-2" style="flex: 0 0 auto"
-                  >数量大于{{
+                >数量大于{{
                     sortRulePrice((formData.unitPrice as RulePriceByNumber).unitPrice)
                       ? sortRulePrice((formData.unitPrice as RulePriceByNumber).unitPrice)[
-                          sortRulePrice((formData.unitPrice as RulePriceByNumber).unitPrice)
-                            .length - 1
+                      sortRulePrice((formData.unitPrice as RulePriceByNumber).unitPrice)
+                        .length - 1
                         ].max
                       : 0
                   }}的价格是:</span
@@ -160,57 +160,57 @@
           <div>
             <el-button type="primary" @click="addPriceRule">添加规则</el-button>
           </div>
-         <div class="flex items-center mt-4 ">
-           <div class="flex items-center mb-2">
-             <el-form-item
-               label-width="0px"
-               prop="unitPrice.singlePrice"
-               :rules="[
+          <div class="flex items-center mt-4 ">
+            <div class="flex items-center mb-2">
+              <el-form-item
+                label-width="0px"
+                prop="unitPrice.singlePrice"
+                :rules="[
                 {
                   required: true,
                   message: '请输入单个产品价格',
                   trigger: 'blur'
                 }
               ]"
-             >
-               <div class="flex items-center">
+              >
+                <div class="flex items-center">
                 <span class="mr-2" style="flex: 0 0 auto"
                 >单个产品的价格是:</span
                 >
-                 <el-input
-                   v-model="(formData.unitPrice as RulePriceByLayout).singlePrice"
-                   placeholder="请输入价格"
-                   clearable
-                   class="w-full"
-                 />
-               </div>
-             </el-form-item>
-           </div>
-           <div class="flex items-center  mb-2">
-             <el-form-item
-               label-width="0px"
-               prop="unitPrice.singleLayoutCount"
-               :rules="[
+                  <el-input
+                    v-model="(formData.unitPrice as RulePriceByLayout).singlePrice"
+                    placeholder="请输入价格"
+                    clearable
+                    class="w-full"
+                  />
+                </div>
+              </el-form-item>
+            </div>
+            <div class="flex items-center  mb-2">
+              <el-form-item
+                label-width="0px"
+                prop="unitPrice.singleLayoutCount"
+                :rules="[
                 {
                   required: true,
                   message: '请输入单个版面可定做的数量',
                   trigger: 'blur'
                 }
               ]"
-             >
-               <div class="flex items-center">
+              >
+                <div class="flex items-center">
                 <span class="mr-2" style="flex: 0 0 auto"
                 >单个版面可定做的数量:</span>
-                 <el-input
-                   v-model="(formData.unitPrice as RulePriceByLayout).singleLayoutCount"
-                   placeholder="请输入单个版面可定做的数量"
-                   clearable
-                   class="w-full"
-                 />
-               </div>
-             </el-form-item>
-           </div>
-         </div>
+                  <el-input
+                    v-model="(formData.unitPrice as RulePriceByLayout).singleLayoutCount"
+                    placeholder="请输入单个版面可定做的数量"
+                    clearable
+                    class="w-full"
+                  />
+                </div>
+              </el-form-item>
+            </div>
+          </div>
           <div
             v-for="(item, index) in (formData.unitPrice as RulePriceByLayout).unitPrice"
             :key="index"
