@@ -98,16 +98,38 @@
           <template v-if="spanArr.trackingSpans[$index] !== 0">
             <div class="tracking-number-cell">
               <span class="tracking-number">{{ (row as any).trackingNumber || '-' }}</span>
-              <el-button
-                v-if="row.expressOutsideImageUrl"
-                size="small"
-                type="primary"
-                plain
-                class="action-button urgent-print-button"
-                @click.stop="handlePrint(row.expressOutsideImageUrl)"
+              <el-tooltip
+                effect="dark"
+                content="当前加急面单尚未上传，请联系相关人员及时上传！"
+                placement="top"
+                :disabled="!!row.expressOutsideImageUrl"
+                popper-class="custom-tooltip"
+                :show-after="100"
+                :hide-after="200"
+                :enterable="false"
+                :offset="20"
               >
-                <el-icon><Printer /></el-icon>
-                打印加急面单
+                <el-button
+                  size="small"
+                  type="primary"
+                  plain
+                  class="action-button urgent-print-button"
+                  :disabled="!row.expressOutsideImageUrl"
+                  @click.stop="handlePrint(row.expressOutsideImageUrl)"
+                >
+                  <el-icon><Printer /></el-icon>
+                  打印加急面单
+                </el-button>
+              </el-tooltip>
+              <el-button
+                v-if="canShip(row)"
+                size="small"
+                type="success"
+                class="action-button ship-button"
+                @click.stop="handleShip(row)"
+              >
+                <el-icon><Van /></el-icon>
+                发货
               </el-button>
             </div>
           </template>
@@ -272,38 +294,75 @@
       <el-table-column label="操作" fixed="right" align="center" min-width="140">
         <template #default="{ row }">
           <div class="action-buttons">
-            <el-button
-              v-if="row.expressImageUrl"
-              size="small"
-              type="primary"
-              plain
-              class="action-button"
-              @click.stop="handlePrint(row.expressImageUrl)"
+            <el-tooltip
+              effect="dark"
+              content="当前面单尚未上传，请联系相关人员及时上传！"
+              placement="left-start"
+              :disabled="!!row.expressImageUrl"
+              popper-class="custom-tooltip custom-tooltip-left"
+              :show-after="100"
+              :hide-after="200"
+              :enterable="false"
+              :offset="20"
             >
-              <el-icon><Printer /></el-icon>
-              打印面单
-            </el-button>
-            <el-button
-              v-if="row.expressSkuImageUrl"
-              size="small"
-              type="info"
-              plain
-              class="action-button"
-              @click.stop="handlePrint(row.expressSkuImageUrl)"
+              <el-button
+                size="small"
+                type="primary"
+                plain
+                class="action-button"
+                :disabled="!row.expressImageUrl"
+                @click.stop="handlePrint(row.expressImageUrl)"
+              >
+                <el-icon><Printer /></el-icon>
+                打印面单
+              </el-button>
+            </el-tooltip>
+            <el-tooltip
+              effect="dark"
+              content="当前合规单尚未上传，请联系相关人员及时上传！"
+              placement="left-start"
+              :disabled="!!row.oldTypeUrl"
+              popper-class="custom-tooltip custom-tooltip-left"
+              :show-after="100"
+              :hide-after="200"
+              :enterable="false"
+              :offset="20"
             >
-              <el-icon><Printer /></el-icon>
-              打印商品条码
-            </el-button>
-            <el-button
-              v-if="row.orderStatus === 3"
-              size="small"
-              type="success"
-              class="action-button ship-button"
-              @click.stop="handleShip(row as ExtendedOrderVO)"
+              <el-button
+                size="small"
+                type="warning"
+                plain
+                class="action-button"
+                :disabled="!row.oldTypeUrl"
+                @click.stop="handlePrint(row.oldTypeUrl)"
+              >
+                <el-icon><Printer /></el-icon>
+                打印合规单
+              </el-button>
+            </el-tooltip>
+            <el-tooltip
+              effect="dark"
+              content="当前商品条码尚未上传，请联系相关人员及时上传！"
+              placement="left-start"
+              :disabled="!!row.expressSkuImageUrl"
+              popper-class="custom-tooltip custom-tooltip-left"
+              :show-after="100"
+              :hide-after="200"
+              :enterable="false"
+              :offset="20"
             >
-              <el-icon><Van /></el-icon>
-              发货
-            </el-button>
+              <el-button
+                size="small"
+                type="info"
+                plain
+                class="action-button"
+                :disabled="!row.expressSkuImageUrl"
+                @click.stop="handlePrint(row.expressSkuImageUrl)"
+              >
+                <el-icon><Printer /></el-icon>
+                打印商品条码
+              </el-button>
+            </el-tooltip>
           </div>
         </template>
       </el-table-column>
@@ -341,6 +400,7 @@ interface ExtendedOrderVO extends OrderVO {
   expressImageUrl: string;
   expressOutsideImageUrl: string;
   expressSkuImageUrl: string;
+  oldTypeUrl: string;
   shopId: number;
   orderId: number;
   productImgUrl: string;
@@ -679,7 +739,7 @@ const handlePrint = (url: string) => {
 
     // 添加全局错误处理函数
     window.handleImageError = () => {
-      ElMessage.error('打印失败：图片加载失败')
+      ElMessage.error('打印失败：打印素材已失效，请联系相关人员重新上传！')
       document.body.removeChild(iframe)
     }
 
@@ -687,7 +747,7 @@ const handlePrint = (url: string) => {
     const timeout = setTimeout(() => {
       if (document.body.contains(iframe)) {
         document.body.removeChild(iframe)
-        ElMessage.error('打印失败：加载超时')
+        ElMessage.error('打印失败：打印素材加载超时！')
       }
     }, 10000) // 10秒超时
 
@@ -744,24 +804,53 @@ const getOrderStatusText = (status: number) => {
   }
 }
 
-// 处理发货
+// 添加判断是否可以发货的方法
+const canShip = (row: ExtendedOrderVO) => {
+  // 检查当前物流单号下是否有状态为3的订单
+  const sameTrackingOrders = list.value.filter(item => 
+    item.trackingNumber === row.trackingNumber && 
+    item.orderStatus === 3
+  )
+  return sameTrackingOrders.length > 0
+}
+
+// 修改发货处理方法
 const handleShip = async (row: ExtendedOrderVO) => {
   try {
-    await ElMessageBox.confirm('确认发货吗？该操作确认后无法撤回', '提示', {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'warning'
-    })
+    // 获取同一物流单号下的所有可发货订单
+    const sameTrackingOrders = list.value.filter(item => 
+      item.trackingNumber === row.trackingNumber && 
+      item.orderStatus === 3
+    )
     
-    console.log('发货orderId:', row.orderId) // 添加日志以便调试
-    await OrderApi.updateOrderShipping({
-      orderId: row.orderId,
+    const orderIds = sameTrackingOrders.map(item => item.orderId)
+    
+    if (orderIds.length === 0) {
+      ElMessage.warning('没有找到可发货的订单')
+      return
+    }
+
+    await ElMessageBox.confirm(
+      `确认发货该物流单号下的 ${orderIds.length} 个订单吗？该操作确认后无法撤回`, 
+      '提示', 
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }
+    )
+    
+    // 调用新的批量更新接口
+    await OrderApi.batchUpdateOrderStatus({
+      orderIds: orderIds,
       orderStatus: 4
     })
+    
     ElMessage.success('发货成功')
     getList()
   } catch (error) {
     if (error !== 'cancel') {
+      console.error('发货失败:', error)
       ElMessage.error('发货失败')
     }
   }
@@ -784,30 +873,35 @@ const handleShip = async (row: ExtendedOrderVO) => {
     }
     
     &:hover {
-      background-color: var(--el-color-primary-light-9);
-      transform: translateX(1px);
-      border-left: 3px solid var(--el-color-primary);
-      box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
-      
       td {
-        background-color: transparent !important;
-        
-        .el-button {
-          opacity: 1;
-        }
+        background-color: inherit !important;
       }
     }
   }
 
   :deep(.el-table__cell) {
-    border-bottom: 1px solid var(--el-border-color-lighter);
+    border-bottom: 1px solid var(--el-border-color-darker);
     transition: all 0.3s ease;
     background-color: transparent !important;
   }
 
+  :deep(.el-table__header-wrapper) {
+    .el-table__cell {
+      border-bottom: 1px solid var(--el-border-color-darker);
+    }
+  }
+
   :deep(.el-table__body) {
     tr.hover-row > td.el-table__cell {
-      background-color: transparent;
+      background-color: inherit !important;
+    }
+    
+    tr:hover > td.el-table__cell {
+      background-color: inherit !important;
+    }
+
+    tr:last-child td {
+      border-bottom: 1px solid var(--el-border-color-darker);
     }
   }
 
@@ -823,61 +917,27 @@ const handleShip = async (row: ExtendedOrderVO) => {
       }
       
       &:hover {
-        background-color: var(--el-color-primary-light-9);
-        box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.2);
-      }
-
-      // 夜间模式文字颜色
-      .tracking-number {
-        color: var(--el-text-color-primary) !important;
-      }
-
-      .order-info {
-        .order-number {
-          color: var(--el-text-color-primary) !important;
-        }
-
-        .shop-info {
-          .shop-name,
-          .shop-id {
-            color: var(--el-text-color-regular) !important;
-
-            .label {
-              color: var(--el-text-color-secondary) !important;
-            }
-          }
-        }
-      }
-
-      .product-info {
-        .product-title {
-          color: var(--el-text-color-primary) !important;
-        }
-
-        .product-props,
-        .product-quantity {
-          color: var(--el-text-color-regular) !important;
-
-          .label {
-            color: var(--el-text-color-secondary) !important;
-          }
-        }
-      }
-
-      .sku-info {
-        .sku-item {
-          color: var(--el-text-color-regular) !important;
-
-          .label {
-            color: var(--el-text-color-secondary) !important;
-          }
-        }
-      }
-
-      .create-time {
-        color: var(--el-text-color-regular) !important;
+        background-color: inherit !important;
+        box-shadow: none;
       }
     }
+
+    .el-table__cell {
+      border-bottom-color: var(--el-border-color);
+    }
+  }
+}
+
+:deep(.el-popper.custom-tooltip) {
+  pointer-events: none !important;
+}
+
+:deep(.el-popper.custom-tooltip-left) {
+  margin: 0 !important;
+  padding: 5px 10px !important;
+  
+  .el-popper__arrow {
+    right: -6px !important;
   }
 }
 
@@ -933,6 +993,30 @@ const handleShip = async (row: ExtendedOrderVO) => {
 
     .el-icon {
       margin-right: 4px;
+      vertical-align: middle;
+    }
+  }
+
+  .ship-button {
+    width: 90px;  // 增加按钮宽度
+    height: 28px;  // 增加按钮高度
+    font-size: 14px;  // 增加字体大小
+    background: linear-gradient(135deg, #67c23a, #85ce61);
+    border: none;
+    color: white;
+    font-weight: 500;
+    padding: 8px 16px;  // 增加内边距
+    // margin-right: 18px;
+    margin: 0 auto;
+    
+    &:hover {
+      background: linear-gradient(135deg, #85ce61, #95d475);
+      transform: translateY(-1px);
+    }
+
+    .el-icon {
+      font-size: 16px;  // 增加图标大小
+      margin-right: 6px;  // 调整图标间距
       vertical-align: middle;
     }
   }
