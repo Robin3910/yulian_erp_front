@@ -262,7 +262,7 @@
           <div>
             <div>
               <div>数量：{{ row.quantity || '--' }}</div>
-              <div>单价：{{ row.unitPrice ? '￥' + row.unitPrice.toFixed(2) : '--' }}</div>
+              <div>单价：{{ row.unitPrice ? '￥' + row.unitPrice.toFixed(6) : '--' }}</div>
               <div>总价：{{ row.totalPrice ? '￥' + row.totalPrice.toFixed(2) : '--' }}</div>
             </div>
           </div>
