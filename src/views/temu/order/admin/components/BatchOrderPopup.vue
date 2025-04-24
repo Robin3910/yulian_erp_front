@@ -263,10 +263,12 @@ const sortRulePrice = (arr: rulePrice[]) => {
 const filterOrderQuantity = (list: any[]) => {
   list.forEach((item) => {
     const properties = item.productProperties.toLowerCase()
+    const productTitle = item.productTitle.toLowerCase()
+    const productCategoryName = item.productCategoryName.toLowerCase()
     // 特殊情况处理：包含"熊"或"baer"字样，或包含尺寸单位"in"/"cm"
     if (
-      properties.includes('熊') ||
-      properties.includes('baer') ||
+      properties.includes('熊') || properties.includes('象') || productCategoryName.includes("件套") ||
+      properties.includes('baer') || productTitle.includes("拼图") ||
       properties.includes('in') ||
       properties.includes('cm')
     ) {
