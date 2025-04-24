@@ -59,7 +59,14 @@
 
   <!-- 列表 -->
   <ContentWrap>
-    <el-table v-loading="loading" :data="list" :stripe="true" :show-overflow-tooltip="true">
+    <el-table 
+      v-loading="loading" 
+      :data="list" 
+      :stripe="true" 
+      :show-overflow-tooltip="true"
+      height="calc(100vh - 280px)"
+      :header-cell-style="{ background: 'var(--el-bg-color)' }"
+    >
       <el-table-column label="商品名称" align="center" prop="categoryName" />
       <el-table-column label="合规单类型" align="center" prop="oldType">
         <template #default="scope">
@@ -274,3 +281,11 @@ onMounted(() => {
   getList()
 })
 </script>
+
+<style lang="scss" scoped>
+:deep(.el-table__header-wrapper) {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+</style>

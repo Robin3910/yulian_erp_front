@@ -1,109 +1,308 @@
 <template>
-  <ContentWrap>
+  <div class="shipping-container">
     <!-- 搜索工作栏 -->
-    <el-form
-      class="-mb-15px"
-      :model="queryParams"
-      ref="queryFormRef"
-      :inline="true"
-      label-width="100px"
-    >
-      <el-row :gutter="20">
-        <el-col :span="24" :lg="6">
-          <el-form-item label="店铺" prop="shopId" class="w-full">
-            <el-select filterable v-model="queryParams.shopId" placeholder="请选择店铺" clearable>
-              <el-option
-                v-for="(item, index) in shopList"
-                :key="index"
-                :label="item.shopName"
-                :value="item.shopId"
+    <ContentWrap>
+      <el-form
+        class="-mb-15px"
+        :model="queryParams"
+        ref="queryFormRef"
+        :inline="true"
+        label-width="100px"
+      >
+        <el-row :gutter="20">
+          <el-col :span="24" :lg="6">
+            <el-form-item label="店铺" prop="shopId" class="w-full">
+              <el-select filterable v-model="queryParams.shopId" placeholder="请选择店铺" clearable>
+                <el-option
+                  v-for="(item, index) in shopList"
+                  :key="index"
+                  :label="item.shopName"
+                  :value="item.shopId"
+                />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="24" :lg="6">
+            <el-form-item label="订单编号" prop="orderNo" class="w-full">
+              <el-input
+                v-model="queryParams.orderNo"
+                placeholder="请输入订单编号"
+                clearable
+                @keyup.enter="handleQuery"
               />
-            </el-select>
-          </el-form-item>
-        </el-col>
-        <el-col :span="24" :lg="6">
-          <el-form-item label="订单编号" prop="orderNo" class="w-full">
-            <el-input
-              v-model="queryParams.orderNo"
-              placeholder="请输入订单编号"
-              clearable
-              @keyup.enter="handleQuery"
-            />
-          </el-form-item>
-        </el-col>
-        <el-col :span="24" :lg="6">
-          <el-form-item label="物流单号" prop="trackingNumber" class="w-full">
-            <el-input
-              v-model="queryParams.trackingNumber"
-              placeholder="请输入物流单号"
-              clearable
-              @keyup.enter="handleQuery"
-            />
-          </el-form-item>
-        </el-col>
-        <el-col :span="24" :lg="8">
-          <el-form-item label="订单创建时间" prop="createTime">
-            <el-date-picker
-              v-model="queryParams.createTime"
-              type="daterange"
-              range-separator="至"
-              start-placeholder="开始日期"
-              end-placeholder="结束日期"
-              value-format="YYYY-MM-DD"
-              :default-time="[
-                new Date(2000, 1, 1, 0, 0, 0),
-                new Date(2000, 1, 1, 23, 59, 59)
-              ]"
-            />
-          </el-form-item>
-        </el-col>
-        <el-col :span="24" :lg="6">
-          <el-form-item label="订单状态" prop="orderStatus" class="w-full">
-            <el-select v-model="queryParams.orderStatus" placeholder="请选择订单状态" clearable>
-              <el-option :label="'已生产待发货'" :value="3" />
-              <el-option :label="'已发货'" :value="4" />
-            </el-select>
-          </el-form-item>
-        </el-col>
-        <el-col :span="24" :lg="6">
-          <el-form-item>
-            <el-button @click="handleQuery">
-              <Icon icon="ep:search" class="mr-5px" />
-              搜索
-            </el-button>
-            <el-button @click="resetQuery">
-              <Icon icon="ep:refresh" class="mr-5px" />
-              重置
-            </el-button>
-          </el-form-item>
-        </el-col>
-      </el-row>
-    </el-form>
-  </ContentWrap>
+            </el-form-item>
+          </el-col>
+          <el-col :span="24" :lg="6">
+            <el-form-item label="物流单号" prop="trackingNumber" class="w-full">
+              <el-input
+                v-model="queryParams.trackingNumber"
+                placeholder="请输入物流单号"
+                clearable
+                @keyup.enter="handleQuery"
+              />
+            </el-form-item>
+          </el-col>
+          <el-col :span="24" :lg="8">
+            <el-form-item label="订单创建时间" prop="createTime">
+              <el-date-picker
+                v-model="queryParams.createTime"
+                type="daterange"
+                range-separator="至"
+                start-placeholder="开始日期"
+                end-placeholder="结束日期"
+                value-format="YYYY-MM-DD"
+                :default-time="[
+                  new Date(2000, 1, 1, 0, 0, 0),
+                  new Date(2000, 1, 1, 23, 59, 59)
+                ]"
+              />
+            </el-form-item>
+          </el-col>
+          <el-col :span="24" :lg="6">
+            <el-form-item label="订单状态" prop="orderStatus" class="w-full">
+              <el-select v-model="queryParams.orderStatus" placeholder="请选择订单状态" clearable>
+                <el-option :label="'已生产待发货'" :value="3" />
+                <el-option :label="'已发货'" :value="4" />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="24" :lg="6">
+            <el-form-item>
+              <el-button @click="handleQuery">
+                <Icon icon="ep:search" class="mr-5px" />
+                搜索
+              </el-button>
+              <el-button @click="resetQuery">
+                <Icon icon="ep:refresh" class="mr-5px" />
+                重置
+              </el-button>
+            </el-form-item>
+          </el-col>
+        </el-row>
+      </el-form>
+    </ContentWrap>
 
-  <!-- 列表 -->
-  <ContentWrap>
-    <el-table
-      v-loading="loading"
-      :data="list"
-      :stripe="true"
-      :show-overflow-tooltip="true"
-      @selection-change="handleSelectionChange"
-      :span-method="handleSpanMethod"
-      class="custom-table"
-    >
-      <!-- 物流单号列 -->
-      <el-table-column label="物流单号" align="center" min-width="140" fixed="left">
-        <template #default="{ row, $index }">
-          <template v-if="spanArr.trackingSpans[$index] !== 0">
-            <div class="tracking-number-cell">
-              <span class="tracking-number">{{ (row as any).trackingNumber || '-' }}</span>
+    <!-- 表格区域 -->
+    <ContentWrap>
+      <el-table
+        v-loading="loading"
+        :data="list"
+        :stripe="true"
+        :show-overflow-tooltip="true"
+        @selection-change="handleSelectionChange"
+        :span-method="handleSpanMethod"
+        class="custom-table"
+        height="calc(100vh - 280px)"
+        :header-cell-style="{ background: 'var(--el-bg-color)' }"
+      >
+        <!-- 物流单号列 -->
+        <el-table-column label="物流单号" align="center" min-width="140" fixed="left">
+          <template #default="{ row, $index }">
+            <template v-if="spanArr.trackingSpans[$index] !== 0">
+              <div class="tracking-number-cell">
+                <span class="tracking-number">{{ (row as any).trackingNumber || '-' }}</span>
+                <el-tooltip
+                  effect="dark"
+                  content="当前加急面单尚未上传，请联系相关人员及时上传！"
+                  placement="top"
+                  :disabled="!!row.expressOutsideImageUrl"
+                  popper-class="custom-tooltip"
+                  :show-after="100"
+                  :hide-after="200"
+                  :enterable="false"
+                  :offset="20"
+                >
+                  <el-button
+                    size="small"
+                    type="primary"
+                    plain
+                    class="action-button urgent-print-button"
+                    :disabled="!row.expressOutsideImageUrl"
+                    @click.stop="handlePrint(row.expressOutsideImageUrl)"
+                  >
+                    <el-icon><Printer /></el-icon>
+                    打印加急面单
+                  </el-button>
+                </el-tooltip>
+                <el-button
+                  v-if="canShip(row)"
+                  size="small"
+                  type="success"
+                  class="action-button ship-button"
+                  @click.stop="handleShip(row)"
+                >
+                  <el-icon><Van /></el-icon>
+                  发货
+                </el-button>
+              </div>
+            </template>
+          </template>
+        </el-table-column>
+
+        <!-- 2. 订单编号 -->
+        <el-table-column 
+          label="订单信息" 
+          prop="orderNo" 
+          min-width="240" 
+          class-name="text-left-column"
+          :show-overflow-tooltip="false"
+        >
+          <template #default="{ row, $index }">
+            <template v-if="spanArr.orderSpans[$index] !== 0">
+              <div class="order-info">
+                <div class="order-number">
+                  <span class="label">订单编号：</span>
+                  {{ (row as any).orderNo || '-' }}</div>
+                <div class="shop-info">
+                  <div class="shop-name">
+                    <span class="label">店铺名称：</span>
+                    <span>{{ row.shopName || '-' }}</span>
+                  </div>
+                  <div class="shop-id">
+                    <span class="label">店铺ID：</span>
+                    <span>{{ row.shopId || '-' }}</span>
+                  </div>
+                </div>
+              </div>
+            </template>
+          </template>
+        </el-table-column>
+
+        <!-- 订单状态 -->
+        <el-table-column label="订单状态" prop="orderStatus" align="center" min-width="135">
+          <template #default="{ row }">
+            <el-tag :type="getOrderStatusType(row.orderStatus)" class="status-tag" size="large">
+              {{ getOrderStatusText(row.orderStatus) }}
+            </el-tag>
+          </template>
+        </el-table-column>
+
+        <!-- 3. 商品图片 -->
+        <el-table-column label="产品图片" align="center" prop="productImgUrl" min-width="110">
+          <template #default="{ row }">
+            <el-image
+              :hide-on-click-modal="true"
+              :preview-teleported="true"
+              :src="row.productImgUrl"
+              :preview-src-list="[row.productImgUrl]"
+              style="width: 80px; height: 80px"
+            />
+          </template>
+        </el-table-column>
+
+        <!-- 4. 商品信息 -->
+        <el-table-column 
+          label="商品信息" 
+          min-width="180" 
+          class-name="text-left-column"
+        >
+          <template #default="{ row }">
+            <div class="product-info">
+              <div class="product-title">
+                <span class="label">标题：</span>
+                <span>{{ row.productTitle || '-' }}</span>
+              </div>
+              <div class="product-props" v-if="row.productProperties">
+                <span class="label">属性：</span>
+                <span>{{ row.productProperties }}</span>
+              </div>
+              <div class="product-quantity">
+                <span class="label">数量：</span>
+                <span>{{ row.quantity }}</span>
+              </div>
+            </div>
+          </template>
+        </el-table-column>
+
+        <!-- 5. SKU信息 -->
+        <el-table-column 
+          label="SKU信息" 
+          min-width="200"
+          class-name="text-left-column"
+          header-align="center"
+        >
+          <template #default="{ row }">
+            <div class="sku-info">
+              <div class="sku-item">
+                <span class="label">SKU编号：</span>
+                <span>{{ row.sku || '-' }}</span>
+              </div>
+              <div class="sku-item">
+                <span class="label">SKC编号：</span>
+                <span>{{ row.skc || '-' }}</span>
+              </div>
+              <div class="sku-item">
+                <span class="label">定制SKU：</span>
+                <span>{{ row.customSku || '-' }}</span>
+              </div>
+            </div>
+          </template>
+        </el-table-column>
+
+        <!-- 6. 定制文字列表 -->
+        <el-table-column label="定制文字列表" prop="customTextList" align="center" min-width="110" show-overflow-tooltip>
+          <template #default="{ row }">
+            <div v-if="row.customTextList">{{ row.customTextList }}</div>
+            <span v-else>-</span>
+          </template>
+        </el-table-column>
+
+        <!-- 7. 定制图片列表 -->
+        <el-table-column label="定制图片列表" align="center" prop="customImageUrls" min-width="150">
+          <template #default="{ row }">
+            <div class="custom-images-container" v-if="row.customImageUrls">
+              <div v-for="(item, index) in row.customImageUrls.split(',')" :key="index" class="image-item">
+                <el-image
+                  :hide-on-click-modal="true"
+                  :preview-teleported="true"
+                  :src="item"
+                  :preview-src-list="[item]"
+                  style="width: 60px; height: 60px;"
+                  fit="cover"
+                />
+              </div>
+            </div>
+            <span v-else>-</span>
+          </template>
+        </el-table-column>
+
+        <!-- 8. 合成预览图 -->
+        <el-table-column label="合成预览图" prop="effectiveImgUrl" align="center" min-width="110">
+          <template #default="{ row }">
+            <el-image
+              v-if="row.effectiveImgUrl"
+              :hide-on-click-modal="true"
+              :preview-teleported="true"
+              :src="row.effectiveImgUrl"
+              :preview-src-list="[row.effectiveImgUrl]"
+              style="width: 80px; height: 80px"
+              fit="cover"
+            />
+            <span v-else>-</span>
+          </template>
+        </el-table-column>
+
+        <!-- 9. 预订单创建时间 -->
+        <el-table-column label="发货订单创建时间" prop="createTime" align="center" min-width="140">
+          <template #default="{ row }">
+            <div class="create-time" v-if="row.createTime">
+              <div class="date">{{ formatDate(row.createTime, 'YYYY-MM-DD') }}</div>
+              <div class="time">{{ formatDate(row.createTime, 'HH:mm:ss') }}</div>
+            </div>
+            <span v-else>-</span>
+          </template>
+        </el-table-column>
+
+        <!-- 操作列 -->
+        <el-table-column label="操作" fixed="right" align="center" min-width="140">
+          <template #default="{ row }">
+            <div class="action-buttons">
               <el-tooltip
                 effect="dark"
-                content="当前加急面单尚未上传，请联系相关人员及时上传！"
-                placement="top"
-                :disabled="!!row.expressOutsideImageUrl"
-                popper-class="custom-tooltip"
+                content="当前面单尚未上传，请联系相关人员及时上传！"
+                placement="left-start"
+                :disabled="!!row.expressImageUrl"
+                popper-class="custom-tooltip custom-tooltip-left"
                 :show-after="100"
                 :hide-after="200"
                 :enterable="false"
@@ -113,268 +312,73 @@
                   size="small"
                   type="primary"
                   plain
-                  class="action-button urgent-print-button"
-                  :disabled="!row.expressOutsideImageUrl"
-                  @click.stop="handlePrint(row.expressOutsideImageUrl)"
+                  class="action-button"
+                  :disabled="!row.expressImageUrl"
+                  @click.stop="handlePrint(row.expressImageUrl)"
                 >
                   <el-icon><Printer /></el-icon>
-                  打印加急面单
+                  打印面单
                 </el-button>
               </el-tooltip>
-              <el-button
-                v-if="canShip(row)"
-                size="small"
-                type="success"
-                class="action-button ship-button"
-                @click.stop="handleShip(row)"
+              <el-tooltip
+                effect="dark"
+                content="当前合规单尚未上传，请联系相关人员及时上传！"
+                placement="left-start"
+                :disabled="!!row.oldTypeUrl"
+                popper-class="custom-tooltip custom-tooltip-left"
+                :show-after="100"
+                :hide-after="200"
+                :enterable="false"
+                :offset="20"
               >
-                <el-icon><Van /></el-icon>
-                发货
-              </el-button>
+                <el-button
+                  size="small"
+                  type="warning"
+                  plain
+                  class="action-button"
+                  :disabled="!row.oldTypeUrl"
+                  @click.stop="handlePrint(row.oldTypeUrl)"
+                >
+                  <el-icon><Printer /></el-icon>
+                  打印合规单
+                </el-button>
+              </el-tooltip>
+              <el-tooltip
+                effect="dark"
+                content="当前商品条码尚未上传，请联系相关人员及时上传！"
+                placement="left-start"
+                :disabled="!!row.expressSkuImageUrl"
+                popper-class="custom-tooltip custom-tooltip-left"
+                :show-after="100"
+                :hide-after="200"
+                :enterable="false"
+                :offset="20"
+              >
+                <el-button
+                  size="small"
+                  type="info"
+                  plain
+                  class="action-button"
+                  :disabled="!row.expressSkuImageUrl"
+                  @click.stop="handlePrint(row.expressSkuImageUrl)"
+                >
+                  <el-icon><Printer /></el-icon>
+                  打印商品条码
+                </el-button>
+              </el-tooltip>
             </div>
           </template>
-        </template>
-      </el-table-column>
-
-      <!-- 2. 订单编号 -->
-      <el-table-column 
-        label="订单信息" 
-        prop="orderNo" 
-        min-width="240" 
-        class-name="text-left-column"
-        :show-overflow-tooltip="false"
-      >
-        <template #default="{ row, $index }">
-          <template v-if="spanArr.orderSpans[$index] !== 0">
-            <div class="order-info">
-              <div class="order-number">
-                <span class="label">订单编号：</span>
-                {{ (row as any).orderNo || '-' }}</div>
-              <div class="shop-info">
-                <div class="shop-name">
-                  <span class="label">店铺名称：</span>
-                  <span>{{ row.shopName || '-' }}</span>
-                </div>
-                <div class="shop-id">
-                  <span class="label">店铺ID：</span>
-                  <span>{{ row.shopId || '-' }}</span>
-                </div>
-              </div>
-            </div>
-          </template>
-        </template>
-      </el-table-column>
-
-      <!-- 3. 商品图片 -->
-      <el-table-column label="产品图片" align="center" prop="productImgUrl" min-width="110">
-        <template #default="{ row }">
-          <el-image
-            :hide-on-click-modal="true"
-            :preview-teleported="true"
-            :src="row.productImgUrl"
-            :preview-src-list="[row.productImgUrl]"
-            style="width: 80px; height: 80px"
-          />
-        </template>
-      </el-table-column>
-
-      <!-- 4. 商品信息 -->
-      <el-table-column 
-        label="商品信息" 
-        min-width="180" 
-        class-name="text-left-column"
-      >
-        <template #default="{ row }">
-          <div class="product-info">
-            <div class="product-title">
-              <span class="label">标题：</span>
-              <span>{{ row.productTitle || '-' }}</span>
-            </div>
-            <div class="product-props" v-if="row.productProperties">
-              <span class="label">属性：</span>
-              <span>{{ row.productProperties }}</span>
-            </div>
-            <div class="product-quantity">
-              <span class="label">数量：</span>
-              <span>{{ row.quantity }}</span>
-            </div>
-          </div>
-        </template>
-      </el-table-column>
-
-      <!-- 5. SKU信息 -->
-      <el-table-column 
-        label="SKU信息" 
-        min-width="200"
-        class-name="text-left-column"
-        header-align="center"
-      >
-        <template #default="{ row }">
-          <div class="sku-info">
-            <div class="sku-item">
-              <span class="label">SKU编号：</span>
-              <span>{{ row.sku || '-' }}</span>
-            </div>
-            <div class="sku-item">
-              <span class="label">SKC编号：</span>
-              <span>{{ row.skc || '-' }}</span>
-            </div>
-            <div class="sku-item">
-              <span class="label">定制SKU：</span>
-              <span>{{ row.customSku || '-' }}</span>
-            </div>
-          </div>
-        </template>
-      </el-table-column>
-
-      <!-- 6. 定制文字列表 -->
-      <el-table-column label="定制文字列表" prop="customTextList" align="center" min-width="110" show-overflow-tooltip>
-        <template #default="{ row }">
-          <div v-if="row.customTextList">{{ row.customTextList }}</div>
-          <span v-else>-</span>
-        </template>
-      </el-table-column>
-
-      <!-- 7. 定制图片列表 -->
-      <el-table-column label="定制图片列表" align="center" prop="customImageUrls" min-width="150">
-        <template #default="{ row }">
-          <div class="custom-images-container" v-if="row.customImageUrls">
-            <div v-for="(item, index) in row.customImageUrls.split(',')" :key="index" class="image-item">
-              <el-image
-                :hide-on-click-modal="true"
-                :preview-teleported="true"
-                :src="item"
-                :preview-src-list="[item]"
-                style="width: 60px; height: 60px;"
-                fit="cover"
-              />
-            </div>
-          </div>
-          <span v-else>-</span>
-        </template>
-      </el-table-column>
-
-      <!-- 8. 合成预览图 -->
-      <el-table-column label="合成预览图" prop="effectiveImgUrl" align="center" min-width="110">
-        <template #default="{ row }">
-          <el-image
-            v-if="row.effectiveImgUrl"
-            :hide-on-click-modal="true"
-            :preview-teleported="true"
-            :src="row.effectiveImgUrl"
-            :preview-src-list="[row.effectiveImgUrl]"
-            style="width: 80px; height: 80px"
-            fit="cover"
-          />
-          <span v-else>-</span>
-        </template>
-      </el-table-column>
-
-      <!-- 9. 订单状态 -->
-      <el-table-column label="订单状态" prop="orderStatus" align="center" min-width="135">
-        <template #default="{ row }">
-          <el-tag :type="getOrderStatusType(row.orderStatus)" class="status-tag" size="large">
-            {{ getOrderStatusText(row.orderStatus) }}
-          </el-tag>
-        </template>
-      </el-table-column>
-
-      <!-- 10. 预订单创建时间 -->
-      <el-table-column label="发货订单创建时间" prop="createTime" align="center" min-width="140">
-        <template #default="{ row }">
-          <div class="create-time" v-if="row.createTime">
-            <div class="date">{{ formatDate(row.createTime, 'YYYY-MM-DD') }}</div>
-            <div class="time">{{ formatDate(row.createTime, 'HH:mm:ss') }}</div>
-          </div>
-          <span v-else>-</span>
-        </template>
-      </el-table-column>
-
-      <!-- 操作列 -->
-      <el-table-column label="操作" fixed="right" align="center" min-width="140">
-        <template #default="{ row }">
-          <div class="action-buttons">
-            <el-tooltip
-              effect="dark"
-              content="当前面单尚未上传，请联系相关人员及时上传！"
-              placement="left-start"
-              :disabled="!!row.expressImageUrl"
-              popper-class="custom-tooltip custom-tooltip-left"
-              :show-after="100"
-              :hide-after="200"
-              :enterable="false"
-              :offset="20"
-            >
-              <el-button
-                size="small"
-                type="primary"
-                plain
-                class="action-button"
-                :disabled="!row.expressImageUrl"
-                @click.stop="handlePrint(row.expressImageUrl)"
-              >
-                <el-icon><Printer /></el-icon>
-                打印面单
-              </el-button>
-            </el-tooltip>
-            <el-tooltip
-              effect="dark"
-              content="当前合规单尚未上传，请联系相关人员及时上传！"
-              placement="left-start"
-              :disabled="!!row.oldTypeUrl"
-              popper-class="custom-tooltip custom-tooltip-left"
-              :show-after="100"
-              :hide-after="200"
-              :enterable="false"
-              :offset="20"
-            >
-              <el-button
-                size="small"
-                type="warning"
-                plain
-                class="action-button"
-                :disabled="!row.oldTypeUrl"
-                @click.stop="handlePrint(row.oldTypeUrl)"
-              >
-                <el-icon><Printer /></el-icon>
-                打印合规单
-              </el-button>
-            </el-tooltip>
-            <el-tooltip
-              effect="dark"
-              content="当前商品条码尚未上传，请联系相关人员及时上传！"
-              placement="left-start"
-              :disabled="!!row.expressSkuImageUrl"
-              popper-class="custom-tooltip custom-tooltip-left"
-              :show-after="100"
-              :hide-after="200"
-              :enterable="false"
-              :offset="20"
-            >
-              <el-button
-                size="small"
-                type="info"
-                plain
-                class="action-button"
-                :disabled="!row.expressSkuImageUrl"
-                @click.stop="handlePrint(row.expressSkuImageUrl)"
-              >
-                <el-icon><Printer /></el-icon>
-                打印商品条码
-              </el-button>
-            </el-tooltip>
-          </div>
-        </template>
-      </el-table-column>
-    </el-table>
-    <!-- 分页 -->
-    <Pagination
-      :total="total"
-      v-model:page="queryParams.pageNo"
-      v-model:limit="queryParams.pageSize"
-      @pagination="getList"
-    />
-  </ContentWrap>
+        </el-table-column>
+      </el-table>
+      <!-- 分页 -->
+      <Pagination
+        :total="total"
+        v-model:page="queryParams.pageNo"
+        v-model:limit="queryParams.pageSize"
+        @pagination="getList"
+      />
+    </ContentWrap>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -725,13 +729,13 @@ const getOrderStatusType = (status: number) => {
     case 0:
       return 'info'
     case 1:
-      return 'warning'
+      return 'primary'  // 已下单待送产
     case 2:
-      return 'success'
+      return 'process'  // 已送产待生产 - 新增状态类型
     case 3:
-      return 'warning'
+      return 'warning'  // 已生产待发货
     case 4:
-      return 'success'
+      return 'success'  // 已发货
     default:
       return 'info'
   }
@@ -741,11 +745,11 @@ const getOrderStatusType = (status: number) => {
 const getOrderStatusText = (status: number) => {
   switch (status) {
     case 0:
-      return '待生产'
+      return '待下单'
     case 1:
-      return '生产中'
+      return '已下单待送产'
     case 2:
-      return '已生产'
+      return '已送产待生产'
     case 3:
       return '已生产待发货'
     case 4:
@@ -916,6 +920,17 @@ const handlePrint = async (url: string) => {
 </script>
 
 <style lang="scss" scoped>
+.shipping-container {
+  .custom-table {
+    // 设置表头样式
+    :deep(.el-table__header-wrapper) {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+  }
+}
+
 .custom-table {
   :deep(.el-table__row) {
     transition: all 0.3s ease;
@@ -1015,37 +1030,31 @@ const handlePrint = async (url: string) => {
   }
 
   .urgent-print-button {
-    width: 120px;
+    width: 110px;
     margin: 0;
-    border-radius: 20px;
+    border-radius: 4px;
     transition: all 0.3s ease;
     position: relative;
     overflow: hidden;
-    
-    &::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: linear-gradient(rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.2));
-      opacity: 0;
-      transition: opacity 0.3s ease;
-    }
+    background: #F5F7FA;
+    border: 1px solid #DCDFE6;
+    color: #606266;
+    height: 32px;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     
     &:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-      
-      &::before {
-        opacity: 1;
-      }
+      background: #fff;
+      border-color: #c6e2ff;
+      color: #409EFF;
     }
-
-    &:active {
-      transform: translateY(1px);
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    
+    &:disabled {
+      background: #F5F7FA;
+      border-color: #DCDFE6;
+      color: #C0C4CC;
     }
 
     .el-icon {
@@ -1055,25 +1064,35 @@ const handlePrint = async (url: string) => {
   }
 
   .ship-button {
-    width: 90px;  // 增加按钮宽度
-    height: 28px;  // 增加按钮高度
-    font-size: 14px;  // 增加字体大小
-    background: linear-gradient(135deg, #67c23a, #85ce61);
+    width: 110px;
+    height: 32px;
+    font-size: 14px;
+    background: #67C23A;
     border: none;
     color: white;
     font-weight: 500;
-    padding: 8px 16px;  // 增加内边距
-    // margin-right: 18px;
+    padding: 8px 16px;
     margin: 0 auto;
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(103, 194, 58, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
     
     &:hover {
-      background: linear-gradient(135deg, #85ce61, #95d475);
+      background: #85ce61;
       transform: translateY(-1px);
+      box-shadow: 0 4px 8px rgba(103, 194, 58, 0.25);
+    }
+
+    &:active {
+      transform: translateY(1px);
+      box-shadow: 0 1px 2px rgba(103, 194, 58, 0.2);
     }
 
     .el-icon {
-      font-size: 16px;  // 增加图标大小
-      margin-right: 6px;  // 调整图标间距
+      font-size: 16px;
+      margin-right: 6px;
       vertical-align: middle;
     }
   }
@@ -1175,18 +1194,113 @@ const handlePrint = async (url: string) => {
   }
 }
 
-// 状态标签
+// 状态标签样式优化
 .status-tag {
-  font-size: 14px;
-  padding: 8px 10px;
-  border-radius: 20px;
-  font-weight: 550;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  font-size: 13px;
+  padding: 6px 5px;
+  border-radius: 4px;
+  font-weight: 500;
+  position: relative;
   transition: all 0.3s ease;
+  min-width: 90px;
+  
+  // 待下单状态
+  &.el-tag--info {
+    background: #909399;
+    border: 1px solid #909399;
+    color: #fff;
+    opacity: 0.9;
+  }
+  
+  // 已下单待送产状态
+  &.el-tag--primary {
+    background: #ffa940;
+    border: 1px solid #ffa940;
+    color: #fff;
+    opacity: 0.8;
+
+    &::before {
+      content: '';
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: currentColor;
+      margin-right: 8px;
+      animation: pulse 1s infinite;
+    }
+  }
+  
+  // 已送产待生产状态
+  &.el-tag--process {
+    background: #9254de;
+    border: 1px solid #9254de;
+    color: #fff;
+    opacity: 0.8;
+
+    &::before {
+      content: '';
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: currentColor;
+      margin-right: 8px;
+      animation: pulse 1s infinite;
+    }
+  }
+  
+  // 已生产待发货状态
+  &.el-tag--warning {
+    background: #40a9ff;
+    border: 1px solid #40a9ff;
+    color: #fff;
+    opacity: 0.8;
+    
+    &::before {
+      content: '';
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: currentColor;
+      margin-right: 8px;
+      animation: pulse 1s infinite;
+    }
+  }
+  
+  // 已发货状态
+  &.el-tag--success {
+    background: #73d13d;
+    border: 1px solid #73d13d;
+    color: #fff;
+  
+
+    &::before {
+      content: '✓';
+      margin-right: 4px;
+      font-weight: bold;
+    }
+  }
 
   &:hover {
     transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  }
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(1.2);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
   }
 }
 
@@ -1198,54 +1312,49 @@ const handlePrint = async (url: string) => {
   padding: 4px;
 
   .action-button {
-    width: 120px;
+    width: 110px;
+    height: 30px;
     margin: 0;
-    border-radius: 20px;
+    border-radius: 4px;
     transition: all 0.3s ease;
     position: relative;
     overflow: hidden;
-    opacity: 0.85;
+    opacity: 1;
+    font-size: 13px;
     
-    &::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: linear-gradient(rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.2));
-      opacity: 0;
-      transition: opacity 0.3s ease;
+    // 统一所有打印按钮样式
+    &.el-button--primary,
+    &.el-button--warning,
+    &.el-button--info {
+      background: #F5F7FA;
+      border: 1px solid #DCDFE6;
+      color: #606266;
+      
+      &:hover {
+        background: #fff;
+        border-color: #c6e2ff;
+        color: #409EFF;
+      }
+      
+      &:disabled {
+        background: #F5F7FA;
+        border-color: #DCDFE6;
+        color: #C0C4CC;
+      }
     }
     
     &:hover {
       transform: translateY(-1px);
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-      
-      &::before {
-        opacity: 1;
-      }
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
     }
 
     &:active {
       transform: translateY(1px);
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     }
 
     .el-icon {
       margin-right: 4px;
       vertical-align: middle;
-    }
-
-    &.ship-button {
-      background: linear-gradient(135deg, #67c23a, #85ce61);
-      border: none;
-      color: white;
-      font-weight: 500;
-      
-      &:hover {
-        background: linear-gradient(135deg, #85ce61, #95d475);
-      }
     }
   }
 }

@@ -61,6 +61,8 @@
       :stripe="true"
       :show-overflow-tooltip="true"
       :default-expand-all="true"
+      height="calc(100vh - 280px)"
+      :header-cell-style="{ background: 'var(--el-bg-color)' }"
     >
       <el-table-column type="expand">
         <template #default="scope">
@@ -461,3 +463,20 @@ onMounted(() => {
   getList()
 })
 </script>
+
+<style lang="scss" scoped>
+:deep(.el-table__header-wrapper) {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+:deep(.el-table__row .el-table__expanded-cell) {
+  .el-table__header-wrapper {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: var(--el-bg-color);
+  }
+}
+</style>
