@@ -59,10 +59,10 @@
 
   <!-- 列表 -->
   <ContentWrap>
-    <el-table 
-      v-loading="loading" 
-      :data="list" 
-      :stripe="true" 
+    <el-table
+      v-loading="loading"
+      :data="list"
+      :stripe="true"
       :show-overflow-tooltip="true"
       height="calc(100vh - 280px)"
       :header-cell-style="{ background: 'var(--el-bg-color)' }"
@@ -86,14 +86,14 @@
         label="定价规则"
         align="center"
         prop="unitPrice"
-        min-width="120"
+        min-width="140"
       >
         <template #default="scope" >
           <div v-if="scope.row.ruleType===1&&(scope.row.unitPrice as RulePriceByNumber)&&(scope.row.unitPrice as RulePriceByNumber).unitPrice">
             <div
               v-for="(item, index) in sortRulePrice((scope.row.unitPrice as RulePriceByNumber).unitPrice)"
               :key="index"
-              class="mb-2 text-left flex"
+              class=" text-left flex"
             >
              <div>产品数量在 {{ index-1>=0? (scope.row.unitPrice as RulePriceByNumber).unitPrice[index-1].max : 0 }} - {{ item.max }} 个时，价格是¥{{ item.price }} 元</div>
             </div>
@@ -105,7 +105,7 @@
             <div v-for="(item, index) in sortRulePrice((scope.row.unitPrice as RulePriceByLayout).unitPrice)" :key="index">
               <div
                 v-if="item.max"
-                class="mb-2 text-left flex"
+                class=" text-left flex"
               >
                 <div>版面的数量在 {{ index-1>=0? (scope.row.unitPrice as RulePriceByLayout).unitPrice[index-1].max : 0 }} - {{ item.max }} 个时，价格是¥{{ item.price }}元</div>
               </div>
