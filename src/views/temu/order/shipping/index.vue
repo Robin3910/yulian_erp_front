@@ -91,12 +91,19 @@
         :show-overflow-tooltip="true"
         @selection-change="handleSelectionChange"
         :span-method="handleSpanMethod"
-        class="custom-table"
+        class="custom-table shipping-table"
         height="calc(100vh - 280px)"
         :header-cell-style="{ background: 'var(--el-bg-color)' }"
+        :row-class-name="tableRowClassName"
       >
         <!-- 物流单号列 -->
-        <el-table-column label="物流单号" align="center" min-width="140" fixed="left">
+        <el-table-column 
+          label="物流单号" 
+          align="center" 
+          min-width="140" 
+          fixed="left"
+          class-name="tracking-column"
+        >
           <template #default="{ row, $index }">
             <template v-if="spanArr.trackingSpans[$index] !== 0">
               <div class="tracking-number-cell">
@@ -139,12 +146,12 @@
           </template>
         </el-table-column>
 
-        <!-- 2. 订单编号 -->
-        <el-table-column 
-          label="订单信息" 
-          prop="orderNo" 
-          min-width="240" 
-          class-name="text-left-column"
+        <!-- 订单信息 -->
+        <el-table-column
+          label="订单信息"
+          prop="orderNo"
+          min-width="240"
+          class-name="text-left-column order-info-column"
           :show-overflow-tooltip="false"
         >
           <template #default="{ row, $index }">
@@ -169,7 +176,13 @@
         </el-table-column>
 
         <!-- 订单状态 -->
-        <el-table-column label="订单状态" prop="orderStatus" align="center" min-width="135">
+        <el-table-column 
+          label="订单状态" 
+          prop="orderStatus" 
+          align="center" 
+          min-width="135"
+          class-name="order-status-column"
+        >
           <template #default="{ row }">
             <el-tag :type="getOrderStatusType(row.orderStatus)" class="status-tag" size="large">
               {{ getOrderStatusText(row.orderStatus) }}
@@ -177,7 +190,7 @@
           </template>
         </el-table-column>
 
-        <!-- 3. 商品图片 -->
+        <!-- 产品图片 -->
         <el-table-column label="产品图片" align="center" prop="productImgUrl" min-width="110">
           <template #default="{ row }">
             <el-image
@@ -190,10 +203,10 @@
           </template>
         </el-table-column>
 
-        <!-- 4. 商品信息 -->
-        <el-table-column 
-          label="商品信息" 
-          min-width="180" 
+        <!-- 商品信息 -->
+        <el-table-column
+          label="商品信息"
+          min-width="180"
           class-name="text-left-column"
         >
           <template #default="{ row }">
@@ -214,9 +227,9 @@
           </template>
         </el-table-column>
 
-        <!-- 5. SKU信息 -->
-        <el-table-column 
-          label="SKU信息" 
+        <!-- SKU信息 -->
+        <el-table-column
+          label="SKU信息"
           min-width="200"
           class-name="text-left-column"
           header-align="center"
@@ -239,15 +252,21 @@
           </template>
         </el-table-column>
 
-        <!-- 6. 定制文字列表 -->
-        <el-table-column label="定制文字列表" prop="customTextList" align="center" min-width="110" show-overflow-tooltip>
+        <!-- 定制文字列表 -->
+        <el-table-column 
+          label="定制文字列表" 
+          prop="customTextList" 
+          align="center" 
+          min-width="110" 
+          show-overflow-tooltip
+        >
           <template #default="{ row }">
             <div v-if="row.customTextList">{{ row.customTextList }}</div>
             <span v-else>-</span>
           </template>
         </el-table-column>
 
-        <!-- 7. 定制图片列表 -->
+        <!-- 定制图片列表 -->
         <el-table-column label="定制图片列表" align="center" prop="customImageUrls" min-width="150">
           <template #default="{ row }">
             <div class="custom-images-container" v-if="row.customImageUrls">
@@ -266,7 +285,7 @@
           </template>
         </el-table-column>
 
-        <!-- 8. 合成预览图 -->
+        <!-- 合成预览图 -->
         <el-table-column label="合成预览图" prop="effectiveImgUrl" align="center" min-width="110">
           <template #default="{ row }">
             <el-image
@@ -282,7 +301,7 @@
           </template>
         </el-table-column>
 
-        <!-- 9. 预订单创建时间 -->
+        <!-- 发货订单创建时间 -->
         <el-table-column label="发货订单创建时间" prop="createTime" align="center" min-width="140">
           <template #default="{ row }">
             <div class="create-time" v-if="row.createTime">
@@ -472,7 +491,7 @@ const getList = async () => {
       pageNo: 1,
       pageSize: 999999 // 获取所有数据以便进行分组处理
     })
-    
+
     if (!data.list || data.list.length === 0) {
       list.value = []
       total.value = 0
@@ -511,12 +530,12 @@ const getList = async () => {
 
     // 按物流单号和订单编号分组处理数据
     const trackingGroups = new Map<string, Map<string, ExtendedOrderVO[]>>()
-    
+
     // 第一步：按物流单号和订单编号双重分组
     extendedList.forEach(item => {
       const trackingNumber = item.trackingNumber || ''
       const orderNo = item.orderNo || ''
-      
+
       if (trackingNumber) {
         if (!trackingGroups.has(trackingNumber)) {
           trackingGroups.set(trackingNumber, new Map())
@@ -556,10 +575,10 @@ const getList = async () => {
     const currentPage = queryParams.pageNo
     const startGroupIndex = (currentPage - 1) * pageSize
     const endGroupIndex = startGroupIndex + pageSize
-    
+
     // 第五步：只获取当前页的物流单号组
     const currentPageGroups = sortedTrackingGroups.slice(startGroupIndex, endGroupIndex)
-    
+
     // 第六步：展平当前页的数据
     const groupedData: ExtendedOrderVO[] = []
     const spanInfo: SpanInfo = {
@@ -585,7 +604,7 @@ const getList = async () => {
       // 添加物流单号的合并信息
       spanInfo.trackingSpans.push(totalItemsInTracking)
       spanInfo.trackingSpans.push(...Array(totalItemsInTracking - 1).fill(0))
-      
+
       // 处理每个订单组
       sortedOrders.forEach(([_, items]) => {
         // 为每个订单组添加合并信息
@@ -762,8 +781,8 @@ const getOrderStatusText = (status: number) => {
 // 添加判断是否可以发货的方法
 const canShip = (row: ExtendedOrderVO) => {
   // 检查当前物流单号下是否有状态为3的订单
-  const sameTrackingOrders = list.value.filter(item => 
-    item.trackingNumber === row.trackingNumber && 
+  const sameTrackingOrders = list.value.filter(item =>
+    item.trackingNumber === row.trackingNumber &&
     item.orderStatus === 3
   )
   return sameTrackingOrders.length > 0
@@ -773,34 +792,34 @@ const canShip = (row: ExtendedOrderVO) => {
 const handleShip = async (row: ExtendedOrderVO) => {
   try {
     // 获取同一物流单号下的所有可发货订单
-    const sameTrackingOrders = list.value.filter(item => 
-      item.trackingNumber === row.trackingNumber && 
+    const sameTrackingOrders = list.value.filter(item =>
+      item.trackingNumber === row.trackingNumber &&
       item.orderStatus === 3
     )
-    
+
     const orderIds = sameTrackingOrders.map(item => item.id)
-    
+
     if (orderIds.length === 0) {
       ElMessage.warning('没有找到可发货的订单')
       return
     }
 
     await ElMessageBox.confirm(
-      `确认发货该物流单号下的 ${orderIds.length} 个订单吗？该操作确认后无法撤回`, 
-      '提示', 
+      `确认发货该物流单号下的 ${orderIds.length} 个订单吗？该操作确认后无法撤回`,
+      '提示',
       {
         confirmButtonText: '确定',
         cancelButtonText: '取消',
         type: 'warning'
       }
     )
-    
+
     // 调用新的批量更新接口
     await OrderApi.batchUpdateOrderStatus({
       orderIds: orderIds,
       orderStatus: 4
     })
-    
+
     ElMessage.success('发货成功')
     getList()
   } catch (error) {
@@ -821,7 +840,7 @@ const handlePrint = async (url: string) => {
 
   // 处理URL中的@前缀
   const printUrl = url.startsWith('@') ? url.substring(1) : url
-  
+
   try {
     // 先尝试预加载文件
     const response = await fetch(printUrl)
@@ -830,7 +849,7 @@ const handlePrint = async (url: string) => {
     }
     const blob = await response.blob()
     const objectUrl = URL.createObjectURL(blob)
-    
+
     // 判断是否为PDF文件
     const isPDF = printUrl.toLowerCase().endsWith('.pdf')
 
@@ -883,8 +902,8 @@ const handlePrint = async (url: string) => {
             </style>
           </head>
           <body>
-            <img 
-              src="${objectUrl}" 
+            <img
+              src="${objectUrl}"
               onload="window.print()"
               onerror="window.parent.handleImageError()"
             />
@@ -917,6 +936,29 @@ const handlePrint = async (url: string) => {
   }
 }
 
+// 添加行类名处理函数
+const tableRowClassName = ({ row, rowIndex }: { row: any; rowIndex: number }) => {
+  if (rowIndex === 0) return ''
+  
+  const prevRow = list.value[rowIndex - 1]
+  const classes = []
+  
+  // 检查物流单号变化
+  if (row.trackingNumber !== prevRow.trackingNumber) {
+    classes.push('tracking-divider')
+  }
+  // 检查订单编号变化
+  else if (row.orderNo !== prevRow.orderNo) {
+    classes.push('order-divider')
+  }
+  // 同一订单内的行
+  else {
+    classes.push('same-order-divider')
+  }
+  
+  return classes.join(' ')
+}
+
 </script>
 
 <style lang="scss" scoped>
@@ -934,32 +976,36 @@ const handlePrint = async (url: string) => {
 .custom-table {
   :deep(.el-table__row) {
     transition: all 0.3s ease;
-    border-left: 3px solid transparent;
 
     &:nth-child(odd) {
       background-color: var(--el-bg-color);
     }
-    
+
     &:nth-child(even) {
       background-color: var(--el-fill-color-light);
     }
-    
+
     &:hover {
       td {
         background-color: inherit !important;
       }
     }
+
+    // 为所有行添加底部边框
+    td {
+      border-bottom: 1px solid #EBEEF5 !important;
+    }
   }
 
   :deep(.el-table__cell) {
-    border-bottom: 1px solid var(--el-border-color-darker);
+    border-bottom: 1px solid var(--el-border-color-darker) !important;
     transition: all 0.3s ease;
     background-color: transparent !important;
   }
 
   :deep(.el-table__header-wrapper) {
     .el-table__cell {
-      border-bottom: 1px solid var(--el-border-color-darker);
+      border-bottom: 1px solid var(--el-border-color-darker) !important;
     }
   }
 
@@ -967,13 +1013,30 @@ const handlePrint = async (url: string) => {
     tr.hover-row > td.el-table__cell {
       background-color: inherit !important;
     }
-    
+
     tr:hover > td.el-table__cell {
       background-color: inherit !important;
     }
 
     tr:last-child td {
-      border-bottom: 1px solid var(--el-border-color-darker);
+      border-bottom: 1px solid var(--el-border-color-darker) !important;
+    }
+
+    // 为三列添加垂直边框
+    .tracking-column,
+    .order-info-column {
+      position: relative;
+      
+      &::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        right: 0;
+        height: 100%;
+        width: 1px;
+        background-color: var(--el-border-color-darker);
+        z-index: 1;
+      }
     }
   }
 
@@ -983,11 +1046,11 @@ const handlePrint = async (url: string) => {
       &:nth-child(odd) {
         background-color: var(--el-bg-color-overlay);
       }
-      
+
       &:nth-child(even) {
         background-color: var(--el-bg-color);
       }
-      
+
       &:hover {
         background-color: inherit !important;
         box-shadow: none;
@@ -1007,7 +1070,7 @@ const handlePrint = async (url: string) => {
 :deep(.el-popper.custom-tooltip-left) {
   margin: 0 !important;
   padding: 5px 10px !important;
-  
+
   .el-popper__arrow {
     right: -6px !important;
   }
@@ -1044,13 +1107,13 @@ const handlePrint = async (url: string) => {
     display: flex;
     align-items: center;
     justify-content: center;
-    
+
     &:hover {
       background: #fff;
       border-color: #c6e2ff;
       color: #409EFF;
     }
-    
+
     &:disabled {
       background: #F5F7FA;
       border-color: #DCDFE6;
@@ -1078,7 +1141,7 @@ const handlePrint = async (url: string) => {
     display: flex;
     align-items: center;
     justify-content: center;
-    
+
     &:hover {
       background: #85ce61;
       transform: translateY(-1px);
@@ -1183,11 +1246,11 @@ const handlePrint = async (url: string) => {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  
+
   .image-item {
     border-radius: 4px;
     transition: transform 0.2s;
-    
+
     &:hover {
       transform: scale(1.05);
     }
@@ -1203,7 +1266,7 @@ const handlePrint = async (url: string) => {
   position: relative;
   transition: all 0.3s ease;
   min-width: 90px;
-  
+
   // 待下单状态
   &.el-tag--info {
     background: #909399;
@@ -1211,7 +1274,7 @@ const handlePrint = async (url: string) => {
     color: #fff;
     opacity: 0.9;
   }
-  
+
   // 已下单待送产状态
   &.el-tag--primary {
     background: #ffa940;
@@ -1230,7 +1293,7 @@ const handlePrint = async (url: string) => {
       animation: pulse 1s infinite;
     }
   }
-  
+
   // 已送产待生产状态
   &.el-tag--process {
     background: #9254de;
@@ -1249,14 +1312,14 @@ const handlePrint = async (url: string) => {
       animation: pulse 1s infinite;
     }
   }
-  
+
   // 已生产待发货状态
   &.el-tag--warning {
     background: #40a9ff;
     border: 1px solid #40a9ff;
     color: #fff;
     opacity: 0.8;
-    
+
     &::before {
       content: '';
       display: inline-block;
@@ -1268,13 +1331,13 @@ const handlePrint = async (url: string) => {
       animation: pulse 1s infinite;
     }
   }
-  
+
   // 已发货状态
   &.el-tag--success {
     background: #73d13d;
     border: 1px solid #73d13d;
     color: #fff;
-  
+
 
     &::before {
       content: '✓';
@@ -1321,7 +1384,7 @@ const handlePrint = async (url: string) => {
     overflow: hidden;
     opacity: 1;
     font-size: 13px;
-    
+
     // 统一所有打印按钮样式
     &.el-button--primary,
     &.el-button--warning,
@@ -1329,20 +1392,20 @@ const handlePrint = async (url: string) => {
       background: #F5F7FA;
       border: 1px solid #DCDFE6;
       color: #606266;
-      
+
       &:hover {
         background: #fff;
         border-color: #c6e2ff;
         color: #409EFF;
       }
-      
+
       &:disabled {
         background: #F5F7FA;
         border-color: #DCDFE6;
         color: #C0C4CC;
       }
     }
-    
+
     &:hover {
       transform: translateY(-1px);
       box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
@@ -1355,6 +1418,98 @@ const handlePrint = async (url: string) => {
     .el-icon {
       margin-right: 4px;
       vertical-align: middle;
+    }
+  }
+}
+
+.shipping-table {
+  // 移除表格默认边框
+  :deep(.el-table__inner-wrapper) {
+    border: none !important;
+  }
+
+  // 表头边框
+  :deep(.el-table__header-wrapper) {
+    th {
+      border-bottom: 1px solid var(--el-border-color) !important;
+    }
+  }
+
+  // 表格内容边框
+  :deep(.el-table__body-wrapper) {
+    tr {
+      // 统一所有行的边框
+      td {
+        border-bottom: 1px solid var(--el-border-color) !important;
+      }
+    }
+
+    // 同一订单内的行分隔
+    tr.same-order-divider td {
+      border-bottom: 1px solid var(--el-border-color) !important;
+    }
+
+    // 不同订单编号之间的分隔
+    tr.order-divider td {
+      border-bottom: 1px solid var(--el-border-color) !important;
+    }
+
+    // 不同物流单号之间的分隔
+    tr.tracking-divider td {
+      border-bottom: 1px solid var(--el-border-color) !important;
+    }
+  }
+
+  // 垂直分隔线
+  :deep(.el-table__body) {
+    .tracking-column,
+    .order-info-column {
+      position: relative;
+      
+      &::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        right: 0;
+        height: 100%;
+        width: 1px;
+        background-color: var(--el-border-color);
+        z-index: 1;
+      }
+    }
+  }
+
+  // 夜间模式边框颜色适配
+  :deep(.dark) {
+    // 表头边框
+    .el-table__header-wrapper th {
+      border-bottom: 1px solid var(--el-border-color-darker) !important;
+    }
+
+    // 所有行边框
+    .el-table__body-wrapper {
+      td {
+        border-bottom: 1px solid var(--el-border-color-darker) !important;
+      }
+
+      tr.same-order-divider td {
+        border-bottom: 1px solid var(--el-border-color-darker) !important;
+      }
+
+      tr.order-divider td {
+        border-bottom: 1px solid var(--el-border-color-darker) !important;
+      }
+
+      tr.tracking-divider td {
+        border-bottom: 1px solid var(--el-border-color-darker) !important;
+      }
+    }
+
+    // 垂直分隔线
+    .tracking-column::after,
+    .order-info-column::after {
+      background-color: var(--el-border-color-darker) !important;
+      opacity: 0.8;
     }
   }
 }
