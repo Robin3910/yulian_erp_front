@@ -375,15 +375,13 @@
       @pagination="getList"
     />
   </ContentWrap>
-  <PrintPreview ref="printPreviewRef" :url="currentPrintUrl" />
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
+import { ref, reactive, onMounted, onUnmounted } from 'vue'
 import { OrderApi, OrderVO } from '@/api/temu/order'
 import { TemuCommonApi } from '@/api/temu/common'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import PrintPreview from './components/PrintPreview.vue'
 import { Printer, Van } from '@element-plus/icons-vue'
 import { formatDate } from '@/utils/formatTime'
 
@@ -715,95 +713,6 @@ onMounted(() => {
   getShopList()
 })
 
-const printPreviewRef = useTemplateRef('printPreviewRef')
-const currentPrintUrl = ref('')
-
-// 打印处理函数
-const handlePrint = (url: string) => {
-  // 检查URL是否存在
-  if (!url) {
-    ElMessage.error('打印失败：未找到打印文件')
-    return
-  }
-
-  // 处理URL中的@前缀
-  const printUrl = url.startsWith('@') ? url.substring(1) : url
-  
-  // 创建一个隐藏的iframe
-  const iframe = document.createElement('iframe')
-  iframe.style.display = 'none'
-  document.body.appendChild(iframe)
-  
-  try {
-    // 写入打印内容
-    iframe.contentWindow?.document.write(`
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <title>打印面单</title>
-          <style>
-            @media print {
-              @page {
-                margin: 0;
-                size: auto;
-              }
-              html, body {
-                margin: 0;
-                padding: 0;
-                height: 100%;
-              }
-              body {
-                display: flex;
-                justify-content: center;
-                align-items: center;
-              }
-              img {
-                max-width: 100%;
-                max-height: 100%;
-                object-fit: contain;
-              }
-              ::-webkit-scrollbar {
-                display: none;
-              }
-            }
-          </style>
-        </head>
-        <body>
-          <img 
-            src="${printUrl}" 
-            onload="setTimeout(() => { window.print(); window.parent.document.body.removeChild(window.frameElement); }, 100)"
-            onerror="window.parent.handleImageError()"
-          >
-        </body>
-      </html>
-    `)
-    iframe.contentWindow?.document.close()
-
-    // 添加全局错误处理函数
-    window.handleImageError = () => {
-      ElMessage.error('打印失败：打印素材已失效，请联系相关人员重新上传！')
-      document.body.removeChild(iframe)
-    }
-
-    // 设置超时检查
-    const timeout = setTimeout(() => {
-      if (document.body.contains(iframe)) {
-        document.body.removeChild(iframe)
-        ElMessage.error('打印失败：打印素材加载超时！')
-      }
-    }, 10000) // 10秒超时
-
-    // 图片加载成功后清除超时检查
-    iframe.contentWindow?.document.querySelector('img')?.addEventListener('load', () => {
-      clearTimeout(timeout)
-    })
-
-  } catch (error) {
-    document.body.removeChild(iframe)
-    ElMessage.error('打印失败：' + (error instanceof Error ? error.message : '未知错误'))
-  }
-}
-
 // 清理全局函数
 onUnmounted(() => {
   // @ts-ignore
@@ -895,6 +804,112 @@ const handleShip = async (row: ExtendedOrderVO) => {
       console.error('发货失败:', error)
       ElMessage.error('发货失败')
     }
+  }
+}
+
+/** 打印处理函数 */
+const handlePrint = async (url: string) => {
+  // 检查URL是否存在
+  if (!url) {
+    ElMessage.error('打印失败：未找到打印文件')
+    return
+  }
+
+  // 处理URL中的@前缀
+  const printUrl = url.startsWith('@') ? url.substring(1) : url
+  
+  try {
+    // 先尝试预加载文件
+    const response = await fetch(printUrl)
+    if (!response.ok) {
+      throw new Error(`文件加载失败: ${response.status}`)
+    }
+    const blob = await response.blob()
+    const objectUrl = URL.createObjectURL(blob)
+    
+    // 判断是否为PDF文件
+    const isPDF = printUrl.toLowerCase().endsWith('.pdf')
+
+    // 创建隐藏的iframe用于打印
+    const printFrame = document.createElement('iframe')
+    printFrame.style.position = 'fixed'
+    printFrame.style.right = '0'
+    printFrame.style.bottom = '0'
+    printFrame.style.width = '0'
+    printFrame.style.height = '0'
+    printFrame.style.border = '0'
+    document.body.appendChild(printFrame)
+
+    if (isPDF) {
+      // PDF文件
+      printFrame.src = objectUrl
+      printFrame.onload = () => {
+        try {
+          printFrame.contentWindow?.focus()
+          printFrame.contentWindow?.print()
+        } catch (error) {
+          console.error('打印触发失败:', error)
+          ElMessage.error('打印失败，请重试')
+        }
+      }
+    } else {
+      // 图片文件
+      printFrame.contentWindow?.document.write(`
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <title>打印</title>
+            <style>
+              @media print {
+                @page {
+                  margin: 0;
+                  size: auto;
+                }
+                html, body {
+                  margin: 0;
+                  padding: 0;
+                  height: 100%;
+                }
+                img {
+                  max-width: 100%;
+                  max-height: 100%;
+                  object-fit: contain;
+                }
+              }
+            </style>
+          </head>
+          <body>
+            <img 
+              src="${objectUrl}" 
+              onload="window.print()"
+              onerror="window.parent.handleImageError()"
+            />
+          </body>
+        </html>
+      `)
+      printFrame.contentWindow?.document.close()
+    }
+
+    // 监听打印对话框关闭
+    const cleanup = () => {
+      if (document.body.contains(printFrame)) {
+        document.body.removeChild(printFrame)
+        URL.revokeObjectURL(objectUrl)
+      }
+    }
+
+    // 设置延时清理
+    setTimeout(cleanup, 10000) // 10秒后清理资源
+
+    // 添加全局错误处理函数
+    window.handleImageError = () => {
+      cleanup()
+      ElMessage.error('打印失败：图片加载失败')
+    }
+
+  } catch (error) {
+    console.error('打印错误:', error)
+    ElMessage.error('打印失败：' + (error instanceof Error ? error.message : '未知错误'))
   }
 }
 
