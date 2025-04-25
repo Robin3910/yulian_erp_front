@@ -151,28 +151,33 @@
         @selection-change="handleSelectionChange"
         row-key="id"
         ref="tableRef"
-        height="100%"
+        height="calc(100vh - 280px)"
+        fixed-header
       >
         <!--选择-->
         <el-table-column type="selection" width="55" align="center" reserve-selection fixed="left" />
         <!--订单编号和状态-->
-        <el-table-column label="订单编号/状态" align="center" prop="orderNo" min-width="180" fixed="left">
+        <el-table-column label="订单编号/状态" align="center" min-width="155" fixed="left">
           <template #default="{ row }">
-            <div>{{ row.orderNo }}</div>
-            <dict-tag :type="DICT_TYPE.TEMU_ORDER_STATUS" :value="row.orderStatus" />
+            <div class="flex flex-col items-center">
+              <div class="font-bold mb-2">{{ row.orderNo }}</div>
+              <el-tag :type="getOrderStatusType(row.orderStatus)" class="status-tag" size="large">
+                {{ getOrderStatusText(row.orderStatus) }}
+              </el-tag>
+            </div>
           </template>
         </el-table-column>
         <!--店铺信息-->
-        <el-table-column label="店铺信息" align="center" prop="shopId" min-width="150">
+        <el-table-column label="店铺信息" align="center" min-width="140" fixed="left">
           <template #default="{ row }">
-            <div class="text-left">
-              <div>{{ row.shopName }}</div>
+            <div class="text-left" >
+              <div class="font-bold text-center">{{ row.shopName }}</div>
               <div>{{ row.shopId }}</div>
             </div>
           </template>
         </el-table-column>
-        <!-- 产品图片 -->
-        <el-table-column label="产品图片" align="center" prop="productImgUrl" width="120">
+        <!--产品图片-->
+        <el-table-column label="产品图片" align="center" prop="productImgUrl" width="115">
           <template #default="{ row }">
             <div class="text-left">
               <el-image
@@ -186,25 +191,26 @@
           </template>
         </el-table-column>
         <!-- 商品信息 -->
-        <el-table-column label="商品信息" align="center" prop="productImgUrl" min-width="280">
+<el-table-column label="商品信息" align="center" prop="productImgUrl" min-width="245">
+  <template #default="{ row }">
+    <div class="text-left">
+      <!-- 修改标题容器 -->
+      <div class="product-title mb-2">
+        <span class="font-bold">产品标题：</span>{{ row.productTitle }}
+      </div>
+      
+      <!-- 商品属性 -->
+      <div class="flex items-start mb-2">
+        <div><span class="font-bold">商品属性:</span></div>
+        <div class="ml-2">{{ row.productProperties || '--' }}</div>
+      </div>
+    </div>
+  </template>
+</el-table-column>
+        <!-- 类目名称 -->
+        <el-table-column label="类目名称" align="center" prop="productCategoryName" min-width="235">
           <template #default="{ row }">
-            <div class="text-left">
-              <div class="truncate mb-2 font-bold">产品标题：{{ row.productTitle }}</div>
-              <div class="flex items-start mb-2">
-                <div>定制文字列表:</div>
-                <div class="ml-2">{{ row.customTextList || '--' }}</div>
-              </div>
-              <!-- 商品属性 -->
-              <div class="flex items-start mb-2">
-                <div>商品属性:</div>
-                <div class="ml-2">{{ row.productProperties || '--' }}</div>
-              </div>
-            </div>
-          </template>
-        </el-table-column>
-        <el-table-column label="类目名称" align="center" prop="productCategoryName" min-width="230">
-          <template #default="{ row }">
-            <div class="text-left" v-if="row.orderStatus === 0">
+            <div class="text-center" v-if="row.orderStatus === 0">
               <el-select
                 class="!w-[150px]"
                 filterable
@@ -229,9 +235,15 @@
                 </template>
               </el-popconfirm>
             </div>
-            <div class="text-left" v-else>
+            <div class="text-center" v-else>
               <div>{{ row.categoryName }}</div>
             </div>
+          </template>
+        </el-table-column>
+        <!-- 定制文字列表 -->
+        <el-table-column label="定制文字" align="center" min-width="150">
+          <template #default="{ row }">
+            <div class="text-left" style="text-align: center;">{{ row.customTextList || '' }}</div>
           </template>
         </el-table-column>
         <!-- 定制图片 -->
@@ -297,64 +309,123 @@
         width="150px"
       />
 
-        <el-table-column label="操作" fixed="right" align="center" min-width="120px">
+        <el-table-column label="操作" fixed="right" align="center" min-width="130px">
           <template #default="{ row }">
-            <el-button 
-              v-if="row.orderStatus === 0" 
-              size="small" 
-              type="primary"
-              @click="handleSingleOrder(row)"
-            >
-              下单
-            </el-button>
-            <el-popconfirm
-              title="确认是否修改当前订单状态为已送产待生产?"
-              placement="top-start"
-              @confirm="
-                handleUpdateRowStatus({
-                  id: row.id,
-                  orderStatus: 2
-                })
-              "
-            >
-              <template #reference>
-                <el-button v-if="row.orderStatus === 1" size="small" type="primary">
-                  已送产待生产
-                </el-button>
+            <div class="action-buttons">
+              <!-- 待下单状态 -->
+              <el-button 
+                v-if="row.orderStatus === 0" 
+                size="small" 
+                type="primary"
+                plain
+                class="action-button"
+                @click="handleSingleOrder(row)"
+              >
+                下单
+              </el-button>
+
+              <!-- 已下单待送产状态 -->
+              <template v-if="row.orderStatus === 1">
+                <el-popconfirm
+                  title="确认是否修改当前订单状态为已送产待生产?"
+                  placement="left"
+                  popper-class="custom-popconfirm"
+                  @confirm="
+                    handleUpdateRowStatus({
+                      id: row.id,
+                      orderStatus: 2
+                    })
+                  "
+                >
+                  <template #reference>
+                    <el-button size="small" type="primary" plain class="action-button">已送产待生产</el-button>
+                  </template>
+                </el-popconfirm>
+                <el-popconfirm
+                  title="确认取消订单吗？回退到待下单状态"
+                  placement="left"
+                  popper-class="custom-popconfirm"
+                  @confirm="
+                    handleUpdateRowStatus({
+                      id: row.id,
+                      orderStatus: 0
+                    })
+                  "
+                >
+                  <template #reference>
+                    <el-button size="small" type="info" plain class="action-button mt-2">取消订单</el-button>
+                  </template>
+                </el-popconfirm>
               </template>
-            </el-popconfirm>
-            <el-popconfirm
-              title="确认是否修改当前订单状态为已生产待发货?"
-              placement="top-start"
-              @confirm="
-                handleUpdateRowStatus({
-                  id: row.id,
-                  orderStatus: 3
-                })
-              "
-            >
-              <template #reference>
-                <el-button v-if="row.orderStatus === 2" size="small" type="primary">
-                  已生产待发货
-                </el-button>
+
+              <!-- 已送产待生产状态 -->
+              <template v-if="row.orderStatus === 2">
+                <el-popconfirm
+                  title="确认是否修改当前订单状态为已生产待发货?"
+                  placement="left"
+                  popper-class="custom-popconfirm"
+                  @confirm="
+                    handleUpdateRowStatus({
+                      id: row.id,
+                      orderStatus: 3
+                    })
+                  "
+                >
+                  <template #reference>
+                    <el-button size="small" type="primary" plain class="action-button">已生产待发货</el-button>
+                  </template>
+                </el-popconfirm>
+                <el-popconfirm
+                  title="确认取消订单吗？回退到待下单状态"
+                  placement="left"
+                  popper-class="custom-popconfirm"
+                  @confirm="
+                    handleUpdateRowStatus({
+                      id: row.id,
+                      orderStatus: 0
+                    })
+                  "
+                >
+                  <template #reference>
+                    <el-button size="small" type="info" plain class="action-button mt-2">取消订单</el-button>
+                  </template>
+                </el-popconfirm>
               </template>
-            </el-popconfirm>
-            <el-popconfirm
-              title="确认是否修改当前订单状态为已发货?"
-              placement="top-start"
-              @confirm="
-                handleUpdateRowStatus({
-                  id: row.id,
-                  orderStatus: 4
-                })
-              "
-            >
-              <template #reference>
-                <el-button v-if="row.orderStatus === 3" size="small" type="primary">
-                  已发货
-                </el-button>
+
+              <!-- 已生产待发货状态 -->
+              <template v-if="row.orderStatus === 3">
+                <el-popconfirm
+                  title="确认是否修改当前订单状态为已发货?"
+                  placement="left"
+                  popper-class="custom-popconfirm"
+                  @confirm="
+                    handleUpdateRowStatus({
+                      id: row.id,
+                      orderStatus: 4
+                    })
+                  "
+                >
+                  <template #reference>
+                    <el-button size="small" type="primary" plain class="action-button">已发货</el-button>
+                  </template>
+                </el-popconfirm>
+                <el-popconfirm
+                  title="确认取消订单吗？回退到待下单状态"
+                  placement="left"
+                  popper-class="custom-popconfirm"
+                  @confirm="
+                    handleUpdateRowStatus({
+                      id: row.id,
+                      orderStatus: 0
+                    })
+                  "
+                >
+                  <template #reference>
+                    <el-button size="small" type="info" plain class="action-button mt-2">取消订单</el-button>
+                  </template>
+                </el-popconfirm>
               </template>
-            </el-popconfirm>
+            </div>
           </template>
         </el-table-column>
       </el-table>
@@ -411,6 +482,43 @@ const selectedRows = ref<any[]>([])
 const orderStatusPopup = useTemplateRef('orderStatusPopup')
 // 批量下单弹窗引用
 const batchOrderPopupRef = useTemplateRef('batchOrderPopup')
+
+// 获取订单状态类型
+const getOrderStatusType = (status: number): 'success' | 'warning' | 'info' | 'primary' | 'process' => {
+  switch (status) {
+    case 0:
+      return 'info'     // 待下单 - 浅灰
+    case 1:
+      return 'primary'  // 已下单待送产 - 浅蓝
+    case 2:
+      return 'warning'  // 已送产待生产 - 浅紫
+    case 3:
+      return 'process'  // 已生产待发货 - 浅绿
+    case 4:
+      return 'success'  // 已发货 - 浅青
+    default:
+      return 'info'
+  }
+}
+
+// 获取订单状态文本
+const getOrderStatusText = (status: number) => {
+  switch (status) {
+    case 0:
+      return '待下单'
+    case 1:
+      return '已下单待送产'
+    case 2:
+      return '已送产待生产'
+    case 3:
+      return '已生产待发货'
+    case 4:
+      return '已发货'
+    default:
+      return '未知状态'
+  }
+}
+
 const queryParams = reactive({
   pageNo: 1,
   pageSize: 10,
@@ -601,3 +709,156 @@ onMounted(() => {
   getShopList()
 })
 </script>
+
+<style lang="scss" scoped>
+// 状态标签样式优化
+.status-tag {
+  font-size: 13px;
+  padding: 6px 5px;
+  border-radius: 4px;
+  font-weight: 500;
+  position: relative;
+  transition: all 0.3s ease;
+  min-width: 90px;
+
+  // 待下单状态
+  &.el-tag--info {
+    background: #c3c5c7;
+    border: 1px solid #c3c5c7;
+    color: white;
+
+    &:hover {
+      background: #a4a6a8;
+      color: #F0F4F8;
+    }
+  }
+
+  // 已下单待送产状态
+  &.el-tag--primary {
+    background: #E0F2FE;
+    border: 1px solid #E0F2FE;
+    color: #082F49;
+
+    &:hover {
+      background: #0EA5E9;
+      color: #E0F2FE;
+    }
+
+    &::before {
+      content: '';
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: #0EA5E9;
+      margin-right: 8px;
+      animation: pulse 1s infinite;
+    }
+  }
+
+  // 已送产待生产状态
+  &.el-tag--warning {
+    background: #E0E7FF;
+    border: 1px solid #E0E7FF;
+    color: #1E1B4B;
+
+    &:hover {
+      background: #6366F1;
+      color: #E0E7FF;
+    }
+
+    &::before {
+      content: '';
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: #6366F1;
+      margin-right: 8px;
+      animation: pulse 1s infinite;
+    }
+  }
+
+  // 已生产待发货状态
+  &.el-tag--process {
+    background: #5da2e7;
+    border: 1px solid #75bdec;
+    color: #fff;
+
+    &:hover {
+      background: #409eff;
+      color: #DCFCE7;
+    }
+
+    &::before {
+      content: '';
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: #f4f7f5;
+      margin-right: 8px;
+      animation: pulse 1s infinite;
+    }
+  }
+
+  // 已发货状态
+  &.el-tag--success {
+    background: #75c945;
+    border: 1px solid #73d13d;
+    color: #fff;
+
+    &:hover {
+      background: #73d13d;
+      color: #fff;
+    }
+
+    &::before {
+      content: '✓';
+      margin-right: 4px;
+      font-weight: bold;
+    }
+  }
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  }
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(1.2);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+// 操作按钮样式
+.action-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 4px;
+
+  .action-button {
+    width: 95px;
+    height: 30px;
+    margin: 0;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    opacity: 1;
+    font-size: 13px;
+  }
+}
+
+</style>

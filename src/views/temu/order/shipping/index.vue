@@ -262,7 +262,7 @@
         >
           <template #default="{ row }">
             <div v-if="row.customTextList">{{ row.customTextList }}</div>
-            <span v-else>-</span>
+            <span v-else></span>
           </template>
         </el-table-column>
 
@@ -743,18 +743,18 @@ onUnmounted(() => {
 })
 
 // 获取订单状态类型
-const getOrderStatusType = (status: number) => {
+const getOrderStatusType = (status: number): 'success' | 'warning' | 'info' | 'primary' | 'process' => {
   switch (status) {
     case 0:
-      return 'info'
+      return 'info'     // 待下单 - 浅灰
     case 1:
-      return 'primary'  // 已下单待送产
+      return 'primary'  // 已下单待送产 - 浅蓝
     case 2:
-      return 'process'  // 已送产待生产 - 新增状态类型
+      return 'warning'  // 已送产待生产 - 浅紫
     case 3:
-      return 'warning'  // 已生产待发货
+      return 'process'  // 已生产待发货 - 浅绿
     case 4:
-      return 'success'  // 已发货
+      return 'success'  // 已发货 - 浅青
     default:
       return 'info'
   }
@@ -1269,18 +1269,26 @@ const tableRowClassName = ({ row, rowIndex }: { row: any; rowIndex: number }) =>
 
   // 待下单状态
   &.el-tag--info {
-    background: #909399;
-    border: 1px solid #909399;
-    color: #fff;
-    opacity: 0.9;
+    background: #c3c5c7;
+    border: 1px solid #c3c5c7;
+    color: white;
+
+    &:hover {
+      background: #a4a6a8;
+      color: #F0F4F8;
+    }
   }
 
   // 已下单待送产状态
   &.el-tag--primary {
-    background: #ffa940;
-    border: 1px solid #ffa940;
-    color: #fff;
-    opacity: 0.8;
+    background: #E0F2FE;
+    border: 1px solid #E0F2FE;
+    color: #082F49;
+
+    &:hover {
+      background: #0EA5E9;
+      color: #E0F2FE;
+    }
 
     &::before {
       content: '';
@@ -1288,18 +1296,22 @@ const tableRowClassName = ({ row, rowIndex }: { row: any; rowIndex: number }) =>
       width: 8px;
       height: 8px;
       border-radius: 50%;
-      background-color: currentColor;
+      background-color: #0EA5E9;
       margin-right: 8px;
       animation: pulse 1s infinite;
     }
   }
 
   // 已送产待生产状态
-  &.el-tag--process {
-    background: #9254de;
-    border: 1px solid #9254de;
-    color: #fff;
-    opacity: 0.8;
+  &.el-tag--warning {
+    background: #E0E7FF;
+    border: 1px solid #E0E7FF;
+    color: #1E1B4B;
+
+    &:hover {
+      background: #6366F1;
+      color: #E0E7FF;
+    }
 
     &::before {
       content: '';
@@ -1307,18 +1319,22 @@ const tableRowClassName = ({ row, rowIndex }: { row: any; rowIndex: number }) =>
       width: 8px;
       height: 8px;
       border-radius: 50%;
-      background-color: currentColor;
+      background-color: #6366F1;
       margin-right: 8px;
       animation: pulse 1s infinite;
     }
   }
 
   // 已生产待发货状态
-  &.el-tag--warning {
-    background: #40a9ff;
-    border: 1px solid #40a9ff;
+  &.el-tag--process {
+    background: #5da2e7;
+    border: 1px solid #75bdec;
     color: #fff;
-    opacity: 0.8;
+
+    &:hover {
+      background: #409eff;
+      color: #DCFCE7;
+    }
 
     &::before {
       content: '';
@@ -1326,7 +1342,7 @@ const tableRowClassName = ({ row, rowIndex }: { row: any; rowIndex: number }) =>
       width: 8px;
       height: 8px;
       border-radius: 50%;
-      background-color: currentColor;
+      background-color: #f4f7f5;
       margin-right: 8px;
       animation: pulse 1s infinite;
     }
@@ -1334,10 +1350,14 @@ const tableRowClassName = ({ row, rowIndex }: { row: any; rowIndex: number }) =>
 
   // 已发货状态
   &.el-tag--success {
-    background: #73d13d;
+    background: #75c945;
     border: 1px solid #73d13d;
     color: #fff;
 
+    &:hover {
+      background: #73d13d;
+      color: #fff;
+    }
 
     &::before {
       content: '✓';
