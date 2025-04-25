@@ -288,6 +288,15 @@
           </template>
         </el-table-column>
 
+      <el-table-column
+        label="预定单创建时间"
+        align="center"
+        prop="bookingTime"
+        :formatter="dateFormatter"
+        :show-overflow-tooltip="false"
+        width="150px"
+      />
+
         <el-table-column label="操作" fixed="right" align="center" min-width="120px">
           <template #default="{ row }">
             <el-button 
