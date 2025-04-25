@@ -23,25 +23,53 @@
           <!-- 第一个上传框 key=0 -->
           <div class="flex flex-col items-center w-[160px]">
             <div class="mb-2 px-3 py-1 bg-primary rounded text-white text-sm font-medium">0+</div>
-            <UploadImg v-model="formData.oldTypeUrl['0']" :limit="1" width="160px" height="160px" />
+            <UploadImg 
+              v-model="formData.oldTypeUrl['0']" 
+              :limit="1" 
+              width="160px" 
+              height="160px"
+              :fileType="['image/jpeg', 'image/png', 'image/gif', 'application/pdf']"
+              @preview="handlePreview"
+            />
           </div>
 
           <!-- 第二个上传框 key=1 -->
           <div class="flex flex-col items-center w-[160px]">
             <div class="mb-2 px-3 py-1 bg-success rounded text-white text-sm font-medium">3+</div>
-            <UploadImg v-model="formData.oldTypeUrl['1']" :limit="1" width="160px" height="160px" />
+            <UploadImg 
+              v-model="formData.oldTypeUrl['1']" 
+              :limit="1" 
+              width="160px" 
+              height="160px"
+              :fileType="['image/jpeg', 'image/png', 'image/gif', 'application/pdf']"
+              @preview="handlePreview"
+            />
           </div>
 
           <!-- 第三个上传框 key=2 -->
           <div class="flex flex-col items-center w-[160px]">
             <div class="mb-2 px-3 py-1 bg-warning rounded text-white text-sm font-medium">14+</div>
-            <UploadImg v-model="formData.oldTypeUrl['2']" :limit="1" width="160px" height="160px" />
+            <UploadImg 
+              v-model="formData.oldTypeUrl['2']" 
+              :limit="1" 
+              width="160px" 
+              height="160px"
+              :fileType="['image/jpeg', 'image/png', 'image/gif', 'application/pdf']"
+              @preview="handlePreview"
+            />
           </div>
 
           <!-- 额外的上传框列表 -->
           <template v-for="(_, key) in extraOldTypeUrls" :key="key">
             <div class="flex flex-col items-center w-[160px] relative">
-              <UploadImg v-model="formData.oldTypeUrl[key.toString()]" :limit="1" width="160px" height="160px" />
+              <UploadImg 
+                v-model="formData.oldTypeUrl[key.toString()]" 
+                :limit="1" 
+                width="160px" 
+                height="160px"
+                :fileType="['image/jpeg', 'image/png', 'image/gif', 'application/pdf']"
+                @preview="handlePreview"
+              />
               <el-button
                 type="danger"
                 link
@@ -68,6 +96,13 @@
       <el-button @click="dialogVisible = false">取 消</el-button>
     </template>
   </Dialog>
+
+  <!-- 预览对话框 -->
+  <el-dialog v-model="previewVisible" title="文件预览" width="80%" append-to-body>
+    <div v-if="previewUrl" class="w-full h-[80vh]">
+      <img :src="previewUrl" class="max-w-full max-h-full mx-auto" />
+    </div>
+  </el-dialog>
 </template>
 <script setup lang="ts">
 import { ShopApi, ShopVO } from '@/api/temu/shop'
@@ -116,6 +151,20 @@ const addNewImage = () => {
 const removeExtraImage = (key: number) => {
   delete extraOldTypeUrls.value[key]
   delete formData.value.oldTypeUrl[key.toString()]
+}
+
+// 预览相关的状态
+const previewVisible = ref(false)
+const previewUrl = ref('')
+
+// 处理预览
+const handlePreview = (url: string) => {
+  if (url.toLowerCase().endsWith('.pdf')) {
+    window.open(url, '_blank')
+  } else {
+    previewUrl.value = url
+    previewVisible.value = true
+  }
 }
 
 /** 打开弹窗 */
@@ -169,7 +218,7 @@ const submitForm = async () => {
     if (!hasValue) {
       data.oldTypeUrl = null
     }
-    
+
     if (formType.value === 'create') {
       await ShopApi.createShop(data as unknown as ShopVO)
       message.success(t('common.createSuccess'))

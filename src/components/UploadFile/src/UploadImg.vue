@@ -15,15 +15,21 @@
       :show-file-list="false"
     >
       <template v-if="modelValue">
-        <img :src="modelValue" class="upload-image" />
+        <!-- PDF 预览 -->
+        <div v-if="isPdfFile" class="upload-pdf">
+          <Icon icon="ep:document-pdf" class="text-[40px] text-danger mb-2" />
+          <span class="text-xs text-gray-600">PDF 文件(点击下载)</span>
+        </div>
+        <!-- 图片预览 -->
+        <img v-else :src="modelValue" class="upload-image" />
         <div class="upload-handle" @click.stop>
           <div v-if="!disabled" class="handle-icon" @click="editImg">
             <Icon icon="ep:edit" />
             <span v-if="showBtnText">{{ t('action.edit') }}</span>
           </div>
           <div class="handle-icon" @click="imagePreview(modelValue)">
-            <Icon icon="ep:zoom-in" />
-            <span v-if="showBtnText">{{ t('action.detail') }}</span>
+            <Icon :icon="isPdfFile ? 'ep:download' : 'ep:zoom-in'" />
+            <span v-if="showBtnText">{{ isPdfFile ? '下载' : t('action.detail') }}</span>
           </div>
           <div v-if="showDelete && !disabled" class="handle-icon" @click="deleteImg">
             <Icon icon="ep:delete" />
@@ -35,7 +41,7 @@
         <div class="upload-empty">
           <slot name="empty">
             <Icon icon="ep:plus" />
-            <!-- <span>请上传图片</span> -->
+            <!-- <span>请上传文件</span> -->
           </slot>
         </div>
       </template>
@@ -67,33 +73,38 @@ type FileTypes =
   | 'image/tiff'
   | 'image/webp'
   | 'image/x-icon'
+  | 'application/pdf'
 
 // 接受父组件参数
 const props = defineProps({
   modelValue: propTypes.string.def(''),
   drag: propTypes.bool.def(true), // 是否支持拖拽上传 ==> 非必传（默认为 true）
   disabled: propTypes.bool.def(false), // 是否禁用上传组件 ==> 非必传（默认为 false）
-  fileSize: propTypes.number.def(5), // 图片大小限制 ==> 非必传（默认为 5M）
-  fileType: propTypes.array.def(['image/jpeg', 'image/png', 'image/gif']), // 图片类型限制 ==> 非必传（默认为 ["image/jpeg", "image/png", "image/gif"]）
+  fileSize: propTypes.number.def(5), // 文件大小限制 ==> 非必传（默认为 5M）
+  fileType: propTypes.array.def(['image/jpeg', 'image/png', 'image/gif', 'application/pdf']), // 文件类型限制
   height: propTypes.string.def('150px'), // 组件高度 ==> 非必传（默认为 150px）
   width: propTypes.string.def('150px'), // 组件宽度 ==> 非必传（默认为 150px）
   borderradius: propTypes.string.def('8px'), // 组件边框圆角 ==> 非必传（默认为 8px）
   showDelete: propTypes.bool.def(true), // 是否显示删除按钮
   showBtnText: propTypes.bool.def(true) // 是否显示按钮文字
 })
+
+const emit = defineEmits(['update:modelValue', 'preview'])
 const { t } = useI18n() // 国际化
 const message = useMessage() // 消息弹窗
+
 // 生成组件唯一id
 const uuid = ref('id-' + generateUUID())
-// 查看图片
-const imagePreview = (imgUrl: string) => {
-  createImageViewer({
-    zIndex: 9999999,
-    urlList: [imgUrl]
-  })
-}
 
-const emit = defineEmits(['update:modelValue'])
+// 判断是否为PDF文件
+const isPdfFile = computed(() => {
+  return props.modelValue?.toLowerCase().endsWith('.pdf')
+})
+
+// 查看文件
+const imagePreview = (url: string) => {
+  emit('preview', url)
+}
 
 const deleteImg = () => {
   emit('update:modelValue', '')
@@ -107,25 +118,26 @@ const editImg = () => {
 }
 
 const beforeUpload: UploadProps['beforeUpload'] = (rawFile) => {
-  const imgSize = rawFile.size / 1024 / 1024 < props.fileSize
-  const imgType = props.fileType
-  if (!imgType.includes(rawFile.type as FileTypes))
-    message.notifyWarning('上传图片不符合所需的格式！')
-  if (!imgSize) message.notifyWarning(`上传图片大小不能超过 ${props.fileSize}M！`)
-  return imgType.includes(rawFile.type as FileTypes) && imgSize
+  const fileSize = rawFile.size / 1024 / 1024 < props.fileSize
+  const fileType = props.fileType
+  if (!fileType.includes(rawFile.type as FileTypes))
+    message.notifyWarning('上传文件不符合所需的格式！')
+  if (!fileSize) message.notifyWarning(`上传文件大小不能超过 ${props.fileSize}M！`)
+  return fileType.includes(rawFile.type as FileTypes) && fileSize
 }
 
-// 图片上传成功提示
+// 文件上传成功提示
 const uploadSuccess: UploadProps['onSuccess'] = (res: any): void => {
   message.success('上传成功')
   emit('update:modelValue', res.data)
 }
 
-// 图片上传错误提示
+// 文件上传错误提示
 const uploadError = () => {
-  message.notifyError('图片上传失败，请您重新上传！')
+  message.notifyError('文件上传失败，请您重新上传！')
 }
 </script>
+
 <style lang="scss" scoped>
 .is-error {
   .upload {
@@ -267,5 +279,19 @@ const uploadError = () => {
     line-height: 18px;
     text-align: center;
   }
+}
+
+.upload-pdf {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  background-color: #f5f7fa;
+}
+
+.text-danger {
+  color: #f56c6c;
 }
 </style>
