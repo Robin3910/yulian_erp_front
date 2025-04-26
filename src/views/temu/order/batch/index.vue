@@ -18,6 +18,16 @@
         />
       </el-form-item>
 
+      <el-form-item label="定制SKU" prop="customSku">
+        <el-input
+          v-model="queryParams.customSku"
+          placeholder="请输入定制SKU"
+          clearable
+          @keyup.enter="handleQuery"
+          class="!w-240px"
+        />
+      </el-form-item>
+
       <el-form-item label="订单状态" prop="orderStatus" >
         <el-select v-model="queryParams.status" placeholder="请选择订单状态" clearable class="!w-220px">
           <el-option
@@ -60,7 +70,7 @@
       :data="list"
       :stripe="true"
       :show-overflow-tooltip="true"
-      :default-expand-all="true"
+      :default-expand-all="false"
       height="calc(100vh - 280px)"
       :header-cell-style="{ background: 'var(--el-bg-color)' }"
     >
@@ -99,14 +109,11 @@
                 </template>
               </el-table-column>
               <!-- 商品信息 -->
-              <el-table-column label="商品信息" align="center" prop="productImgUrl" min-width="280">
+              <el-table-column label="商品信息" align="center" prop="productImgUrl" min-width="240">
                 <template #default="{ row }">
                   <div class="text-left">
                     <div class="truncate mb-2 font-bold">产品标题：{{ row.productTitle }}</div>
-                    <div class="flex items-start mb-2">
-                      <div>定制文字列表:</div>
-                      <div class="ml-2">{{ row.customTextList || '--' }}</div>
-                    </div>
+            
                     <!-- 商品属性 -->
                     <div class="flex items-start mb-2">
                       <div>商品属性:</div>
@@ -115,9 +122,15 @@
                   </div>
                 </template>
               </el-table-column>
-              <el-table-column label="类目名称" align="center" prop="categoryName" min-width="230">
+              <el-table-column label="类目名称" align="center" prop="categoryName" min-width="150">
                 <template #default="{ row }">
                   <div>{{ row.categoryName }}</div>
+                </template>
+              </el-table-column>
+              <!-- 添加定制文字列 -->
+              <el-table-column label="定制文字" align="center" prop="customTextList" min-width="180">
+                <template #default="{ row }">
+                  <div class="text-center">{{ row.customTextList || '--' }}</div>
                 </template>
               </el-table-column>
               <!-- 定制图片 -->
@@ -191,7 +204,9 @@
 
               <el-table-column label="订单状态" align="center" prop="orderStatus" min-width="150">
                 <template #default="{ row }">
-                  <dict-tag :type="DICT_TYPE.TEMU_ORDER_STATUS" :value="row.orderStatus" />
+                  <el-tag :type="getOrderStatusType(row.orderStatus)" class="status-tag" size="large">
+                    {{ getOrderStatusText(row.orderStatus) }}
+                  </el-tag>
                 </template>
               </el-table-column>
 
@@ -203,56 +218,37 @@
                 :show-overflow-tooltip="false"
                 width="150px"
               />
-
-              <el-table-column label="物流信息" align="center" prop="shippingInfo" />
             </el-table>
           </div>
         </template>
       </el-table-column>
 
-      <el-table-column label="批次编号" align="center" prop="batchNo">
+      <el-table-column label="批次编号" align="center" prop="batchNo" min-width="140">
         <template #default="{ row }">
           <div class="font-bold">
             <div>{{ row.batchNo }}</div>
           </div>
         </template>
       </el-table-column>
-      <el-table-column label="打印文件地址" align="center" prop="fileUrl">
+      <el-table-column label="打印文件地址" align="center" prop="fileUrl" min-width="180">
         <template #default="{ row }">
           <div class="font-bold flex item-center justify-center" v-if="row.fileUrl">
             <a :href="row.fileUrl" :download="row.fileUrl">
-              <el-button type="primary" size="small">已作图,点击下载</el-button>
+              <el-button type="success" plain class="action-button">
+                <Icon icon="ep:download" class="mr-5px" />
+                下载作图文件
+              </el-button>
             </a>
-            <el-button  v-if="row.status === 0" class="ml-2" type="primary" @click="handlerHandleUpload(row)" size="small" >更换</el-button>
-            <!--<upload-file-->
-            <!--  :model-value="[]"-->
-            <!--  v-if="row.status === 0"-->
-            <!--  :file-size="100"-->
-            <!--  :is-show-tip="false"-->
-            <!--  :show-file-list="false"-->
-            <!--  :limit="1"-->
-            <!--  @upload-success="handleFileSuccess(row, $event)"-->
-            <!--&gt;-->
-            <!--  <template #default="scope">-->
-            <!--    <el-button class="ml-2" type="primary"  :loading="scope.loading" size="small" >更换</el-button>-->
-            <!--  </template>-->
-
-            <!--</upload-file>-->
+            <el-button v-if="row.status === 0" type="primary" plain @click="handlerHandleUpload(row)" class="action-button ml-2">
+              <Icon icon="ep:upload" class="mr-5px" />
+              重新上传
+            </el-button>
           </div>
           <div class="font-bold" v-else>
-            <el-button type="warning" size="small"  @click="handlerHandleUpload(row)">未作图,点击上传</el-button>
-            <!--<upload-file-->
-            <!--  :model-value="[]"-->
-            <!--  :file-size="100"-->
-            <!--  :is-show-tip="false"-->
-            <!--  :show-file-list="false"-->
-            <!--  :limit="1"-->
-            <!--  @upload-success="handleFileSuccess(row, $event)"-->
-            <!--&gt;-->
-            <!--  <template #default="scope">-->
-            <!--    <el-button type="warning" size="small"  :loading="scope.loading">未作图,点击上传</el-button>-->
-            <!--  </template>-->
-            <!--</upload-file>-->
+            <el-button type="primary" plain @click="handlerHandleUpload(row)" class="action-button">
+              <Icon icon="ep:upload" class="mr-5px" />
+              上传作图文件
+            </el-button>
           </div>
         </template>
       </el-table-column>
@@ -261,17 +257,21 @@
         align="center"
         prop="createTime"
         :formatter="dateFormatter"
+        min-width="90"
       />
-      <el-table-column label="" align="center" min-width="150">
+      <el-table-column label="定制图片（一键下载）" align="center" min-width="150">
         <template #default="{ row }">
           <div class="flex justify-center mt-2">
-            <el-button type="primary" size="small" @click="handleDownloadCustomImages(row)">下载定制图片</el-button>
+            <el-button type="success" plain @click="handleDownloadCustomImages(row)" class="action-button">
+              <Icon icon="ep:picture" class="mr-5px" />
+              下载定制图片
+            </el-button>
           </div>
         </template>
       </el-table-column>
       <el-table-column label="订单状态" align="center" prop="orderStatus" min-width="150">
         <template #default="{ row }">
-          <dict-tag :type="DICT_TYPE.TEMU_ORDER_BATCH_STATUS" :value="row.status" />
+          <dict-tag :type="DICT_TYPE.TEMU_ORDER_BATCH_STATUS" :value="row.status" class="batch-status-tag" />
         </template>
       </el-table-column>
       <el-table-column label="操作" align="center" width="120px" fixed="right">
@@ -283,7 +283,10 @@
               @confirm="handleUpdateBathchStatus(scope.row)"
             >
               <template #reference>
-                <el-button  type="success" size="small" > 完成生产</el-button>
+                <el-button type="warning" plain class="action-button">
+                  <Icon icon="ep:check" class="mr-5px" />
+                  确认完成
+                </el-button>
               </template>
             </el-popconfirm>
           </div>
@@ -320,7 +323,7 @@ const queryParams = reactive({
   pageNo: 1,
   pageSize: 10,
   batchNo: undefined,
-  fileUrl: undefined,
+  customSku: undefined,
   status: undefined,
   createTime: []
 })
@@ -331,10 +334,27 @@ const exportLoading = ref(false) // 导出的加载中
 const getList = async () => {
   loading.value = true
   try {
-    const data = await OrderBatchApi.getOrderBatchPage(queryParams)
-    list.value = data.list
-
-    total.value = data.total
+    // 修改分页参数，确保按批次号分页
+    const params = {
+      ...queryParams,
+      groupByBatch: true, // 添加分组标识，告诉后端按批次分组
+      pageSize: queryParams.pageSize,
+      pageNo: queryParams.pageNo
+    }
+    
+    const data = await OrderBatchApi.getOrderBatchPage(params)
+    
+    // 按批次号分组数据
+    const batchGroups = new Map()
+    data.list.forEach(item => {
+      if (!batchGroups.has(item.batchNo)) {
+        batchGroups.set(item.batchNo, item)
+      }
+    })
+    
+    // 将分组后的数据转换为数组
+    list.value = Array.from(batchGroups.values())
+    total.value = data.total // 使用服务端返回的批次总数
   } finally {
     loading.value = false
   }
@@ -420,7 +440,7 @@ const handleDownloadCustomImages = async (row: any) => {
             return response.blob()
           })
           .then(blob => {
-            return new Promise((resolve, reject) => {
+            return new Promise<void>((resolve, reject) => {
               // 创建一个临时的图片元素
               const img = new Image()
               img.onload = () => {
@@ -481,6 +501,43 @@ const handleDownloadCustomImages = async (row: any) => {
     loading.value = false
   }
 }
+
+// 获取订单状态类型
+const getOrderStatusType = (status: number): 'success' | 'warning' | 'info' | 'primary' | 'danger' => {
+  switch (status) {
+    case 0:
+      return 'info'     // 待下单 - 浅灰
+    case 1:
+      return 'primary'  // 已下单待送产 - 浅蓝
+    case 2:
+      return 'warning'  // 已送产待生产 - 浅紫
+    case 3:
+      return 'primary'  // 已生产待发货 - 浅绿
+    case 4:
+      return 'success'  // 已发货 - 浅青
+    default:
+      return 'info'
+  }
+}
+
+// 获取订单状态文本
+const getOrderStatusText = (status: number) => {
+  switch (status) {
+    case 0:
+      return '待下单'
+    case 1:
+      return '已下单待送产'
+    case 2:
+      return '已送产待生产'
+    case 3:
+      return '已生产待发货'
+    case 4:
+      return '已发货'
+    default:
+      return '未知状态'
+  }
+}
+
 /** 初始化 **/
 onMounted(() => {
   getList()
@@ -502,4 +559,178 @@ onMounted(() => {
     background: var(--el-bg-color);
   }
 }
+
+// 状态标签样式优化
+.status-tag {
+  font-size: 13px;
+  padding: 6px 5px;
+  border-radius: 4px;
+  font-weight: 500;
+  position: relative;
+  transition: all 0.3s ease;
+  min-width: 90px;
+
+  // 待下单状态
+  &.el-tag--info {
+    background: #c3c5c7;
+    border: 1px solid #c3c5c7;
+    color: white;
+
+    &:hover {
+      background: #a4a6a8;
+      color: #F0F4F8;
+    }
+  }
+
+  // 已下单待送产状态和已生产待发货状态
+  &.el-tag--primary {
+    background: #5da2e7;
+    border: 1px solid #75bdec;
+    color: #fff;
+
+    &:hover {
+      background: #409eff;
+      color: #DCFCE7;
+    }
+
+    &::before {
+      content: '';
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: #f4f7f5;
+      margin-right: 8px;
+      animation: pulse 1s infinite;
+    }
+  }
+
+  // 已送产待生产状态
+  &.el-tag--warning {
+    background: #E0E7FF;
+    border: 1px solid #E0E7FF;
+    color: #1E1B4B;
+
+    &:hover {
+      background: #6366F1;
+      color: #E0E7FF;
+    }
+
+    &::before {
+      content: '';
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: #6366F1;
+      margin-right: 8px;
+      animation: pulse 1s infinite;
+    }
+  }
+
+  // 已发货状态
+  &.el-tag--success {
+    background: #75c945;
+    border: 1px solid #73d13d;
+    color: #fff;
+
+    &:hover {
+      background: #73d13d;
+      color: #fff;
+    }
+
+    &::before {
+      content: '✓';
+      margin-right: 4px;
+      font-weight: bold;
+    }
+  }
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  }
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(1.2);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+// 操作按钮样式
+.action-button {
+  padding: 7px 14px;
+  font-size: 16px;
+  font-weight: 600;
+  border-radius: 4px;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  }
+  
+  .el-icon {
+    margin-right: 4px;
+    vertical-align: middle;
+  }
+
+  // 信息按钮样式（灰色）
+  &.el-button--info {
+    &.is-plain {
+      color: #757679;
+      background: #f4f4f5;
+      border-color: #dcdfe6;
+
+      &:hover {
+        color: #ffffff;
+        background: #909399;
+        border-color: #909399;
+      }
+    }
+  }
+
+  // 警告按钮样式
+  &.el-button--warning {
+    &.is-plain {
+      &:hover {
+        background: var(--el-color-warning);
+        border-color: var(--el-color-warning);
+        color: white;
+      }
+    }
+  }
+
+  // 成功按钮样式
+  &.el-button--success {
+  
+    &.is-plain {
+      &:hover {
+        background: var(--el-color-success);
+        border-color: var(--el-color-success);
+        color: white;
+      }
+    }
+  }
+}
+
+// 批次状态标签样式
+.batch-status-tag {
+  :deep(.el-tag) {
+    padding: 10px 18px;
+    font-size: 16px;
+    font-weight: 600;
+  }
+}
+
 </style>

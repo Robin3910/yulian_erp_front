@@ -171,7 +171,7 @@
       </ContentWrap>
     </div>
     <!-- 列表 -->
-    <ContentWrap class="flex-1 overflow-hidden">
+    <ContentWrap class="flex-1 overflow-hidden sticky-header">
       <el-table
         v-loading="loading"
         :data="list"
@@ -740,6 +740,13 @@ onMounted(() => {
 </script>
 
 <style lang="scss" scoped>
+.sticky-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background-color: var(--app-content-bg-color);
+}
+
 // 状态标签样式优化
 .status-tag {
   font-size: 13px;

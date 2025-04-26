@@ -148,7 +148,7 @@
   </ContentWrap>
 
   <!-- 列表 -->
-  <ContentWrap class="flex-1 overflow-hidden">
+  <ContentWrap class="sticky-header flex-1 overflow-hidden">
     <el-table
       v-loading="loading"
       :data="list"
@@ -640,7 +640,7 @@ const getOrderStatusType = (status: number) => {
     case 2:
       return 'warning'
     case 3:
-      return 'warning'
+      return 'process'
     case 4:
       return 'success'
     default:
@@ -675,6 +675,13 @@ onMounted(() => {
 </script>
 
 <style lang="scss" scoped>
+.sticky-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background-color: var(--app-content-bg-color);
+}
+
 // 状态标签样式优化
 .status-tag {
   font-size: 13px;
