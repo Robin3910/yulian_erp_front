@@ -1,6 +1,6 @@
 <template>
   <div class="h-full flex flex-col">
-    <div class="sticky top-0 z-10 bg-white">
+    <div class="sticky top-0 z-10 bg-white dark:bg-dark-500">
       <ContentWrap>
         <!-- 搜索工作栏 -->
         <el-form
@@ -125,8 +125,8 @@
         </el-form>
       </ContentWrap>
       <ContentWrap>
-        <el-row>
-          <el-col :span="24" :lg="6" class="color-orange-500">
+        <el-row class="items-center">
+          <el-col :span="8" class="color-orange-500">
             <div>
               <span class="!color-dark-50 mr-1" v-if="selectedRows && selectedRows.length > 0"
                 >已选中的订单数:{{ selectedRows.length }}
@@ -136,6 +136,35 @@
                   orderTotalPrice ? orderTotalPrice.toFixed(2) : '0.00'
                 }}</span
               >
+            </div>
+          </el-col>
+          <el-col :span="30">
+            <div class="flex items-center justify-end gap-2">
+              <el-tag type="info" class="status-tag" size="large">待下单</el-tag>
+              <div class="flow-arrow">
+                <span class="arrow-item">➤</span>
+                <span class="arrow-item">➤</span>
+                <span class="arrow-item">➤</span>
+              </div>
+              <el-tag type="primary" class="status-tag" size="large">已下单待送产</el-tag>
+              <div class="flow-arrow">
+                <span class="arrow-item">➤</span>
+                <span class="arrow-item">➤</span>
+                <span class="arrow-item">➤</span>
+              </div>
+              <el-tag type="warning" class="status-tag" size="large">已送产待生产</el-tag>
+              <div class="flow-arrow">
+                <span class="arrow-item">➤</span>
+                <span class="arrow-item">➤</span>
+                <span class="arrow-item">➤</span>
+              </div>
+              <el-tag type="process" class="status-tag" size="large">已生产待发货</el-tag>
+              <div class="flow-arrow">
+                <span class="arrow-item">➤</span>
+                <span class="arrow-item">➤</span>
+                <span class="arrow-item">➤</span>
+              </div>
+              <el-tag type="success" class="status-tag" size="large">已发货</el-tag>
             </div>
           </el-col>
         </el-row>
@@ -584,7 +613,7 @@ const resetQuery = () => {
 
 // 处理多选
 const handleSelectionChange = (selection: OrderVO[]) => {
-  console.log(selection)
+  console.log('选中的订单：', selection)
   selectedRows.value = selection
 }
 // 批量设置状态
@@ -861,4 +890,100 @@ onMounted(() => {
   }
 }
 
+// 状态流转指示器样式
+.status-flow-indicator {
+  background-color: #fff;
+  transition: all 0.3s ease;
+
+  .status-node {
+    padding: 4px 8px;
+    color: #838282;
+    font-weight: 500;
+    position: relative;
+    
+    &:hover {
+      color: #409EFF;
+    }
+  }
+
+  .status-arrow {
+    color: #818080;
+    margin: 0 4px;
+    font-weight: 500;
+  }
+
+  &:hover {
+    border-color: #666464;
+    box-shadow: 0 2px 12px 0 rgba(165, 163, 163, 0.1);
+  }
+}
+
+// 适配暗黑模式
+.dark {
+  .status-flow-indicator {
+    background-color: #1a1a1a;
+    border-color: rgba(24, 23, 23, 0.5);
+
+    .status-node {
+      color: #e0e0e0;
+      
+      &:hover {
+        color: #79bbff;
+      }
+    }
+
+    .status-arrow {
+      color: #696767;
+    }
+  }
+}
+
+.flow-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 60px;
+  overflow: hidden;
+  
+  .arrow-item {
+    font-size: 16px;
+    color: #474646;
+    margin: 0 -2px;
+    animation: flowAnimation 8s infinite;
+    opacity: 0.3;
+    
+    &:nth-child(2) {
+      animation-delay: 0.2s;
+      opacity: 0.6;
+    }
+    
+    &:nth-child(3) {
+      animation-delay: 0.4s;
+      opacity: 0.9;
+    }
+  }
+}
+
+@keyframes flowAnimation {
+  0% {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
+// 暗黑模式适配
+.dark {
+  .flow-arrow {
+    .arrow-item {
+      color: #d6d0d0;
+    }
+  }
+}
 </style>

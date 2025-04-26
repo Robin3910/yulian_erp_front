@@ -265,6 +265,9 @@ const filterOrderQuantity = (list: any[]) => {
     const properties = item.productProperties.toLowerCase()
     const productTitle = item.productTitle.toLowerCase()
     const productCategoryName = item.productCategoryName.toLowerCase()
+    const originalQuantity = item.quantity || 1 // 保存原始订单数量
+  
+    
     // 特殊情况处理：包含"熊"或"baer"字样，或包含尺寸单位"in"/"cm"
     if (
       properties.includes('熊') || properties.includes('象') || productCategoryName.includes("件套") ||
@@ -272,14 +275,23 @@ const filterOrderQuantity = (list: any[]) => {
       properties.includes('in') ||
       properties.includes('cm')
     ) {
-      item.quantity = 1
+      item.quantity = 1 * originalQuantity
+      
       return
     }
 
-    // 尝试匹配数量信息，如"1pc"、"2set"等
-    const quantityMatch = properties.match(/(\d+)\s*(pc|pcs|set|sets)/i)
+    // 尝试匹配数量信息，如"30pcs"、"2set"等
+    const quantityMatch = properties.match(/^(\d+)\s*(pc|pcs|set|sets|个|件|片|张)/i)
     if (quantityMatch) {
-      item.quantity = parseInt(quantityMatch[1], 10)
+      const propertyQuantity = parseInt(quantityMatch[1], 10)
+      
+      // 将商品属性中的数量与订单数量相乘
+      item.quantity = propertyQuantity * originalQuantity
+      console.log(`最终计算结果: ${propertyQuantity} * ${originalQuantity} = ${item.quantity}`)
+    } else {
+      // 如果没有匹配到数量信息，保持原始订单数量
+      item.quantity = originalQuantity
+      console.log('未匹配到数量信息，使用原始数量:', item.quantity)
     }
   })
 }

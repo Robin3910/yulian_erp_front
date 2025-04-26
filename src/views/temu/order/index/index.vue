@@ -112,25 +112,74 @@
   </ContentWrap>
   <ContentWrap>
     <el-row>
-      <el-col :span="24" :lg="6" class="color-orange-500">
-        <span>当前筛选条件下的订单总价:￥{{orderTotalPrice?orderTotalPrice.toFixed(2):'0.00'}}</span>
+      <el-col :span="8" class="color-orange-500">
+        <div>
+          <span class="!color-dark-50 mr-1" v-if="selectedRows && selectedRows.length > 0"
+            >已选中的订单数:{{ selectedRows.length }}
+          </span>
+          <span
+            >当前筛选条件下的订单总价:￥{{
+              orderTotalPrice ? orderTotalPrice.toFixed(2) : '0.00'
+            }}</span
+          >
+        </div>
+      </el-col>
+      <el-col :span="30">
+        <div class="flex items-center justify-end gap-2">
+          <el-tag type="info" class="status-tag" size="large">待下单</el-tag>
+          <div class="flow-arrow">
+            <span class="arrow-item">➤</span>
+            <span class="arrow-item">➤</span>
+            <span class="arrow-item">➤</span>
+          </div>
+          <el-tag type="primary" class="status-tag" size="large">已下单待送产</el-tag>
+          <div class="flow-arrow">
+            <span class="arrow-item">➤</span>
+            <span class="arrow-item">➤</span>
+            <span class="arrow-item">➤</span>
+          </div>
+          <el-tag type="warning" class="status-tag" size="large">已送产待生产</el-tag>
+          <div class="flow-arrow">
+            <span class="arrow-item">➤</span>
+            <span class="arrow-item">➤</span>
+            <span class="arrow-item">➤</span>
+          </div>
+          <el-tag type="process" class="status-tag" size="large">已生产待发货</el-tag>
+          <div class="flow-arrow">
+            <span class="arrow-item">➤</span>
+            <span class="arrow-item">➤</span>
+            <span class="arrow-item">➤</span>
+          </div>
+          <el-tag type="success" class="status-tag" size="large">已发货</el-tag>
+        </div>
       </el-col>
     </el-row>
   </ContentWrap>
 
   <!-- 列表 -->
-  <ContentWrap>
+  <ContentWrap class="flex-1 overflow-hidden">
     <el-table
       v-loading="loading"
       :data="list"
       :stripe="true"
       :show-overflow-tooltip="true"
       @selection-change="handleSelectionChange"
+      height="calc(100vh - 280px)"
+      fixed-header
     >
       <!--选择-->
-      <el-table-column type="selection" width="55" align="center" />
-      <!--订单编号-->
-      <el-table-column label="订单编号" align="center" prop="orderNo" min-width="150"/>
+      <el-table-column type="selection" width="55" align="center" fixed="left" />
+      <!--订单编号和状态-->
+      <el-table-column label="订单编号/状态" align="center" min-width="155" fixed="left">
+        <template #default="{ row }">
+          <div class="flex flex-col items-center">
+            <div class="font-bold mb-2">{{ row.orderNo }}</div>
+            <el-tag :type="getOrderStatusType(row.orderStatus)" class="status-tag" size="large">
+              {{ getOrderStatusText(row.orderStatus) }}
+            </el-tag>
+          </div>
+        </template>
+      </el-table-column>
       <!--店铺信息-->
       <el-table-column label="店铺信息" align="center" prop="shopId" min-width="150">
         <template #default="{ row }">
@@ -512,6 +561,43 @@ const handleBatchOrder = () => {
     batchOrderPopupRef.value?.setOrderList(selectedRows.value)
   })
 }
+
+// 获取订单状态类型
+const getOrderStatusType = (status: number): 'success' | 'warning' | 'info' | 'primary' | 'process' => {
+  switch (status) {
+    case 0:
+      return 'info'     // 待下单 - 浅灰
+    case 1:
+      return 'primary'  // 已下单待送产 - 浅蓝
+    case 2:
+      return 'warning'  // 已送产待生产 - 浅紫
+    case 3:
+      return 'process'  // 已生产待发货 - 浅绿
+    case 4:
+      return 'success'  // 已发货 - 浅青
+    default:
+      return 'info'
+  }
+}
+
+// 获取订单状态文本
+const getOrderStatusText = (status: number) => {
+  switch (status) {
+    case 0:
+      return '待下单'
+    case 1:
+      return '已下单待送产'
+    case 2:
+      return '已送产待生产'
+    case 3:
+      return '已生产待发货'
+    case 4:
+      return '已发货'
+    default:
+      return '未知状态'
+  }
+}
+
 /** 初始化 **/
 onMounted(() => {
   getList()
@@ -519,3 +605,184 @@ onMounted(() => {
   getShopList()
 })
 </script>
+
+<style lang="scss" scoped>
+// 状态标签样式优化
+.status-tag {
+  font-size: 13px;
+  padding: 6px 5px;
+  border-radius: 4px;
+  font-weight: 500;
+  position: relative;
+  transition: all 0.3s ease;
+  min-width: 90px;
+
+  // 待下单状态
+  &.el-tag--info {
+    background: #c3c5c7;
+    border: 1px solid #c3c5c7;
+    color: white;
+
+    &:hover {
+      background: #a4a6a8;
+      color: #F0F4F8;
+    }
+  }
+
+  // 已下单待送产状态
+  &.el-tag--primary {
+    background: #E0F2FE;
+    border: 1px solid #E0F2FE;
+    color: #082F49;
+
+    &:hover {
+      background: #0EA5E9;
+      color: #E0F2FE;
+    }
+
+    &::before {
+      content: '';
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: #0EA5E9;
+      margin-right: 8px;
+      animation: pulse 1s infinite;
+    }
+  }
+
+  // 已送产待生产状态
+  &.el-tag--warning {
+    background: #E0E7FF;
+    border: 1px solid #E0E7FF;
+    color: #1E1B4B;
+
+    &:hover {
+      background: #6366F1;
+      color: #E0E7FF;
+    }
+
+    &::before {
+      content: '';
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: #6366F1;
+      margin-right: 8px;
+      animation: pulse 1s infinite;
+    }
+  }
+
+  // 已生产待发货状态
+  &.el-tag--process {
+    background: #5da2e7;
+    border: 1px solid #75bdec;
+    color: #fff;
+
+    &:hover {
+      background: #409eff;
+      color: #DCFCE7;
+    }
+
+    &::before {
+      content: '';
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: #f4f7f5;
+      margin-right: 8px;
+      animation: pulse 1s infinite;
+    }
+  }
+
+  // 已发货状态
+  &.el-tag--success {
+    background: #75c945;
+    border: 1px solid #73d13d;
+    color: #fff;
+
+    &:hover {
+      background: #73d13d;
+      color: #fff;
+    }
+
+    &::before {
+      content: '✓';
+      margin-right: 4px;
+      font-weight: bold;
+    }
+  }
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  }
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(1.2);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.flow-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 60px;
+  overflow: hidden;
+  
+  .arrow-item {
+    font-size: 16px;
+    color: #474646;
+    margin: 0 -2px;
+    animation: flowAnimation 8s infinite;
+    opacity: 0.3;
+    
+    &:nth-child(2) {
+      animation-delay: 0.2s;
+      opacity: 0.6;
+    }
+    
+    &:nth-child(3) {
+      animation-delay: 0.4s;
+      opacity: 0.9;
+    }
+  }
+}
+
+@keyframes flowAnimation {
+  0% {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
+// 暗黑模式适配
+.dark {
+  .flow-arrow {
+    .arrow-item {
+      color: #d6d0d0;
+    }
+  }
+}
+</style>
