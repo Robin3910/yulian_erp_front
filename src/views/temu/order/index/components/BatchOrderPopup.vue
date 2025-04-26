@@ -191,7 +191,7 @@
                 :prop="`orderList.${index}.quantity`"
                 :rules="[{ required: true, message: '请输入数量', trigger: 'blur' }]"
               >
-                <el-input v-model.number="item.quantity" class="!w-240px" clearable disabled />
+                <el-input v-model.number="item.quantity" class="!w-240px" clearable />
               </el-form-item>
               <!-- 单价 -->
               <el-form-item label="单价：" class="mb-2 cursor-pointer">
