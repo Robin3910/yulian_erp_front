@@ -1,333 +1,309 @@
 <template>
-  <div class="h-full flex flex-col">
-    <div class="sticky top-0 z-10 bg-white dark:bg-dark-500">
-      <ContentWrap>
-        <!-- 搜索工作栏 -->
-        <el-form
-          class="-mb-15px"
-          :model="queryParams"
-          ref="queryFormRef"
-          :inline="true"
-          label-width="68px"
-        >
-          <el-row :gutter="20">
-            <el-col :span="24" :lg="6">
-              <el-form-item label="店铺" prop="shopId" class="w-full">
-                <el-select filterable v-model="queryParams.shopId" placeholder="请选择店铺" clearable>
-                  <el-option
-                    v-for="(item, index) in shopList"
-                    :key="index"
-                    :label="item.shopName"
-                    :value="item.shopId"
-                  />
-                </el-select>
-              </el-form-item>
-            </el-col>
-            <el-col :span="24" :lg="6">
-              <el-form-item label="SKU编号" prop="sku" class="w-full">
-                <el-input
-                  v-model="queryParams.sku"
-                  placeholder="请输入SKU编号"
-                  clearable
-                  @keyup.enter="handleQuery"
-                />
-              </el-form-item>
-            </el-col>
-            <el-col :span="24" :lg="6">
-              <el-form-item label="SKC编号" prop="skc" class="w-full">
-                <el-input
-                  v-model="queryParams.skc"
-                  placeholder="请输入SKC编号"
-                  clearable
-                  @keyup.enter="handleQuery"
-                />
-              </el-form-item>
-            </el-col>
-            <el-col :span="24" :lg="6">
-              <el-form-item label="定制SKU" prop="customSku" class="w-full">
-                <el-input
-                  v-model="queryParams.customSku"
-                  placeholder="请输入定制SKU"
-                  clearable
-                  @keyup.enter="handleQuery"
-                />
-              </el-form-item>
-            </el-col>
-            <el-col :span="24" :lg="6">
-              <el-form-item label="订单状态" prop="orderStatus" class="w-full">
-                <el-select v-model="queryParams.orderStatus" placeholder="请选择订单状态" clearable>
-                  <el-option
-                    v-for="dict in getStrDictOptions(DICT_TYPE.TEMU_ORDER_STATUS)"
-                    :key="dict.value"
-                    :label="dict.label"
-                    :value="dict.value"
-                  />
-                </el-select>
-              </el-form-item>
-            </el-col>
-            <el-col :span="24" :lg="6">
-              <el-form-item label="类目" prop="categoryId" class="w-full">
-                <el-select
-                  filterable
-                  v-model="queryParams.categoryId"
-                  placeholder="请选择类目"
-                  clearable
-                  multiple
-                >
-                  <el-option
-                    v-for="(item, index) in categoryList"
-                    :key="index"
-                    :label="item.categoryName"
-                    :value="item.id"
-                  />
-                </el-select>
-              </el-form-item>
-            </el-col>
-            <el-col :span="24" :lg="6">
-              <el-form-item label="创建时间" prop="bookingTime" class="w-full">
-                <el-date-picker
-                  v-model="queryParams.bookingTime"
-                  value-format="YYYY-MM-DD HH:mm:ss"
-                  type="daterange"
-                  start-placeholder="开始日期"
-                  end-placeholder="结束日期"
-                  :default-time="[new Date('1 00:00:00'), new Date('1 23:59:59')]"
-                />
-              </el-form-item>
-            </el-col>
-            <el-col :span="24" :lg="24">
-              <el-form-item>
-                <el-button @click="handleQuery">
-                  <Icon icon="ep:search" class="mr-5px" />
-                  搜索
-                </el-button>
-                <el-button @click="resetQuery">
-                  <Icon icon="ep:refresh" class="mr-5px" />
-                  重置
-                </el-button>
-                <el-button @click="handleBatchSetStatus">
-                  <Icon icon="ep:refresh" class="mr-5px" />
-                  批量设置状态
-                </el-button>
-                <el-button @click="handleBatchOrder" type="primary"> 批量下单</el-button>
-                <el-popconfirm
-                  title="是否把选中的订单打包成一个批次?"
-                  placement="top-start"
-                  @confirm="handleBatchGenerate"
-                >
-                  <template #reference>
-                    <el-button type="primary" plain>批次生成</el-button>
-                  </template>
-                </el-popconfirm>
-              </el-form-item>
-            </el-col>
-          </el-row>
-        </el-form>
-      </ContentWrap>
-      <ContentWrap>
-        <el-row class="items-center">
-          <el-col :span="8" class="color-orange-500">
-            <div>
-              <span class="!color-dark-50 mr-1" v-if="selectedRows && selectedRows.length > 0"
-                >已选中的订单数:{{ selectedRows.length }}
-              </span>
-              <span
-                >当前筛选条件下的订单总价:￥{{
-                  orderTotalPrice ? orderTotalPrice.toFixed(2) : '0.00'
-                }}</span
-              >
-            </div>
-          </el-col>
-          <el-col :span="30">
-            <div class="flex items-center justify-end gap-2">
-              <el-tag type="info" class="status-tag" size="large">待下单</el-tag>
-              <div class="flow-arrow">
-                <span class="arrow-item">➤</span>
-                <span class="arrow-item">➤</span>
-                <span class="arrow-item">➤</span>
-              </div>
-              <el-tag type="primary" class="status-tag" size="large">已下单待送产</el-tag>
-              <div class="flow-arrow">
-                <span class="arrow-item">➤</span>
-                <span class="arrow-item">➤</span>
-                <span class="arrow-item">➤</span>
-              </div>
-              <el-tag type="warning" class="status-tag" size="large">已送产待生产</el-tag>
-              <div class="flow-arrow">
-                <span class="arrow-item">➤</span>
-                <span class="arrow-item">➤</span>
-                <span class="arrow-item">➤</span>
-              </div>
-              <el-tag type="process" class="status-tag" size="large">已生产待发货</el-tag>
-              <div class="flow-arrow">
-                <span class="arrow-item">➤</span>
-                <span class="arrow-item">➤</span>
-                <span class="arrow-item">➤</span>
-              </div>
-              <el-tag type="success" class="status-tag" size="large">已发货</el-tag>
-            </div>
-          </el-col>
-        </el-row>
-      </ContentWrap>
-    </div>
-    <!-- 列表 -->
-    <ContentWrap class="flex-1 overflow-hidden">
-      <el-table
-        v-loading="loading"
-        :data="list"
-        :stripe="true"
-        :show-overflow-tooltip="true"
-        @selection-change="handleSelectionChange"
-        row-key="id"
-        ref="tableRef"
-        height="calc(100vh - 280px)"
-        fixed-header
-      >
-        <!--选择-->
-        <el-table-column type="selection" width="55" align="center" reserve-selection fixed="left" />
-        <!--订单编号和状态-->
-        <el-table-column label="订单编号/状态" align="center" min-width="155" fixed="left">
-          <template #default="{ row }">
-            <div class="flex flex-col items-center">
-              <div class="font-bold mb-2">{{ row.orderNo }}</div>
-              <el-tag :type="getOrderStatusType(row.orderStatus)" class="status-tag" size="large">
-                {{ getOrderStatusText(row.orderStatus) }}
-              </el-tag>
-            </div>
-          </template>
-        </el-table-column>
-        <!--店铺信息-->
-        <el-table-column label="店铺信息" align="center" min-width="140" fixed="left">
-          <template #default="{ row }">
-            <div class="text-left" >
-              <div class="font-bold text-center">{{ row.shopName }}</div>
-              <div>{{ row.shopId }}</div>
-            </div>
-          </template>
-        </el-table-column>
-        <!--产品图片-->
-        <el-table-column label="产品图片" align="center" prop="productImgUrl" width="115">
-          <template #default="{ row }">
-            <div class="text-left">
-              <el-image
-                class="w-80px h-80px"
-                :hide-on-click-modal="true"
-                :preview-teleported="true"
-                :src="row.productImgUrl"
-                :preview-src-list="[row.productImgUrl]"
+  <ContentWrap>
+    <!-- 搜索工作栏 -->
+    <el-form
+      class="-mb-15px"
+      :model="queryParams"
+      ref="queryFormRef"
+      :inline="true"
+      label-width="68px"
+    >
+      <el-row :gutter="20">
+        <el-col :span="24" :lg="6">
+          <el-form-item label="店铺" prop="shopId" class="w-full">
+            <el-select filterable v-model="queryParams.shopId" placeholder="请选择店铺" clearable>
+              <el-option
+                v-for="(item, index) in shopList"
+                :key="index"
+                :label="item.shopName"
+                :value="item.shopId"
               />
+            </el-select>
+          </el-form-item>
+        </el-col>
+        <el-col :span="24" :lg="6">
+          <el-form-item label="SKU编号" prop="sku" class="w-full">
+            <el-input
+              v-model="queryParams.sku"
+              placeholder="请输入SKU编号"
+              clearable
+              @keyup.enter="handleQuery"
+            />
+          </el-form-item>
+        </el-col>
+        <el-col :span="24" :lg="6">
+          <el-form-item label="SKC编号" prop="skc" class="w-full">
+            <el-input
+              v-model="queryParams.skc"
+              placeholder="请输入SKC编号"
+              clearable
+              @keyup.enter="handleQuery"
+            />
+          </el-form-item>
+        </el-col>
+        <el-col :span="24" :lg="6">
+          <el-form-item label="定制SKU" prop="customSku" class="w-full">
+            <el-input
+              v-model="queryParams.customSku"
+              placeholder="请输入定制SKU"
+              clearable
+              @keyup.enter="handleQuery"
+            />
+          </el-form-item>
+        </el-col>
+        <el-col :span="24" :lg="6">
+          <el-form-item label="订单状态" prop="orderStatus" class="w-full">
+            <el-select v-model="queryParams.orderStatus" placeholder="请选择订单状态" clearable>
+              <el-option
+                v-for="dict in getStrDictOptions(DICT_TYPE.TEMU_ORDER_STATUS)"
+                :key="dict.value"
+                :label="dict.label"
+                :value="dict.value"
+              />
+            </el-select>
+          </el-form-item>
+        </el-col>
+        <el-col :span="24" :lg="6">
+          <el-form-item label="类目" prop="categoryId" class="w-full">
+            <el-select
+              filterable
+              v-model="queryParams.categoryId"
+              placeholder="请选择类目"
+              clearable
+            >
+              <el-option
+                v-for="(item, index) in categoryList"
+                :key="index"
+                :label="item.categoryName"
+                :value="item.id"
+              />
+            </el-select>
+          </el-form-item>
+        </el-col>
+        <el-col :span="24" :lg="6">
+          <el-form-item label="创建时间" prop="bookingTime" class="w-full">
+            <el-date-picker
+              v-model="queryParams.bookingTime"
+              value-format="YYYY-MM-DD HH:mm:ss"
+              type="daterange"
+              start-placeholder="开始日期"
+              end-placeholder="结束日期"
+              :default-time="[new Date('1 00:00:00'), new Date('1 23:59:59')]"
+            />
+          </el-form-item>
+        </el-col>
+        <el-col :span="24" :lg="24">
+          <el-form-item>
+            <el-button @click="handleQuery">
+              <Icon icon="ep:search" class="mr-5px" />
+              搜索
+            </el-button>
+            <el-button @click="resetQuery">
+              <Icon icon="ep:refresh" class="mr-5px" />
+              重置
+            </el-button>
+
+            <el-button @click="handleBatchOrder" type="primary"> 批量下单</el-button>
+
+          </el-form-item>
+        </el-col>
+      </el-row>
+    </el-form>
+  </ContentWrap>
+  <ContentWrap>
+    <el-row>
+      <el-col :span="24" :lg="6" class="color-orange-500">
+        <span>当前筛选条件下的订单总价:￥{{orderTotalPrice?orderTotalPrice.toFixed(2):'0.00'}}</span>
+      </el-col>
+      <el-col :span="30">
+        <div class="flex items-center justify-end gap-2">
+          <el-tag type="info" class="status-tag" size="large">待下单</el-tag>
+          <div class="flow-arrow">
+            <span class="arrow-item">➤</span>
+            <span class="arrow-item">➤</span>
+            <span class="arrow-item">➤</span>
+          </div>
+          <el-tag type="primary" class="status-tag" size="large">已下单待送产</el-tag>
+          <div class="flow-arrow">
+            <span class="arrow-item">➤</span>
+            <span class="arrow-item">➤</span>
+            <span class="arrow-item">➤</span>
+          </div>
+          <el-tag type="warning" class="status-tag" size="large">已送产待生产</el-tag>
+          <div class="flow-arrow">
+            <span class="arrow-item">➤</span>
+            <span class="arrow-item">➤</span>
+            <span class="arrow-item">➤</span>
+          </div>
+          <el-tag type="process" class="status-tag" size="large">已生产待发货</el-tag>
+          <div class="flow-arrow">
+            <span class="arrow-item">➤</span>
+            <span class="arrow-item">➤</span>
+            <span class="arrow-item">➤</span>
+          </div>
+          <el-tag type="success" class="status-tag" size="large">已发货</el-tag>
+        </div>
+      </el-col>
+    </el-row>
+  </ContentWrap>
+
+  <!-- 列表 -->
+  <ContentWrap class="flex-1 overflow-hidden">
+    <el-table
+      v-loading="loading"
+      :data="list"
+      :stripe="true"
+      :show-overflow-tooltip="true"
+      @selection-change="handleSelectionChange"
+      row-key="id"
+      ref="tableRef"
+      height="calc(100vh - 280px)"
+      fixed-header
+    >
+      <!--选择-->
+      <el-table-column type="selection" width="55" align="center" reserve-selection fixed="left" />
+      <!--订单编号和状态-->
+      <el-table-column label="订单编号/状态" align="center" min-width="155" fixed="left">
+        <template #default="{ row }">
+          <div class="flex flex-col items-center">
+            <div class="font-bold mb-2">{{ row.orderNo }}</div>
+            <el-tag :type="getOrderStatusType(row.orderStatus)" class="status-tag" size="large">
+              {{ getOrderStatusText(row.orderStatus) }}
+            </el-tag>
+          </div>
+        </template>
+      </el-table-column>
+      <!--店铺信息-->
+      <el-table-column label="店铺信息" align="center" min-width="140" fixed="left">
+        <template #default="{ row }">
+          <div class="text-left" >
+            <div class="font-bold text-center">{{ row.shopName }}</div>
+            <div>{{ row.shopId }}</div>
+          </div>
+        </template>
+      </el-table-column>
+      <!--产品图片-->
+      <el-table-column label="产品图片" align="center" prop="productImgUrl" width="115">
+        <template #default="{ row }">
+          <div class="text-left">
+            <el-image
+              class="w-80px h-80px"
+              :hide-on-click-modal="true"
+              :preview-teleported="true"
+              :src="row.productImgUrl"
+              :preview-src-list="[row.productImgUrl]"
+            />
+          </div>
+        </template>
+      </el-table-column>
+      <!-- 商品信息 -->
+      <el-table-column label="商品信息" align="center" prop="productImgUrl" min-width="245">
+        <template #default="{ row }">
+          <div class="text-left">
+            <!-- 修改标题容器 -->
+            <div class="product-title mb-2">
+              <span class="font-bold">产品标题：</span>{{ row.productTitle }}
             </div>
-          </template>
-        </el-table-column>
-        <!-- 商品信息 -->
-<el-table-column label="商品信息" align="center" prop="productImgUrl" min-width="245">
-  <template #default="{ row }">
-    <div class="text-left">
-      <!-- 修改标题容器 -->
-      <div class="product-title mb-2">
-        <span class="font-bold">产品标题：</span>{{ row.productTitle }}
-      </div>
-      
-      <!-- 商品属性 -->
-      <div class="flex items-start mb-2">
-        <div><span class="font-bold">商品属性:</span></div>
-        <div class="ml-2">{{ row.productProperties || '--' }}</div>
-      </div>
-    </div>
-  </template>
-</el-table-column>
-        <!-- 类目名称 -->
-        <el-table-column label="类目名称" align="center" prop="productCategoryName" min-width="235">
-          <template #default="{ row }">
-            <div class="text-center" v-if="row.orderStatus === 0">
-              <el-select
-                class="!w-[150px]"
-                filterable
-                v-model="row.categoryId"
-                placeholder="请选择类目"
-                clearable
-              >
-                <el-option
-                  v-for="(item, index) in categoryList"
-                  :key="index"
-                  :label="item.categoryName"
-                  :value="item.id.toString()"
-                />
-              </el-select>
-              <el-popconfirm
-                title="是否更新类目?"
-                placement="top-start"
-                @confirm="handleUpdateCategory(row)"
-              >
-                <template #reference>
-                  <el-button class="ml-1" type="primary">更新</el-button>
-                </template>
-              </el-popconfirm>
+            
+            <!-- 商品属性 -->
+            <div class="flex items-start mb-2">
+              <div><span class="font-bold">商品属性:</span></div>
+              <div class="ml-2">{{ row.productProperties || '--' }}</div>
             </div>
-            <div class="text-center" v-else>
-              <div>{{ row.categoryName }}</div>
-            </div>
-          </template>
-        </el-table-column>
-        <!-- 定制文字列表 -->
-        <el-table-column label="定制文字" align="center" min-width="150">
-          <template #default="{ row }">
-            <div class="text-left" style="text-align: center;">{{ row.customTextList || '' }}</div>
-          </template>
-        </el-table-column>
-        <!-- 定制图片 -->
-        <el-table-column label="定制图片" align="center" prop="customImageUrls" min-width="180">
-          <template #default="{ row }">
-            <div class="flex flex-wrap" v-if="row.customImageUrls">
-              <div v-for="(item, index) in row.customImageUrls.split(',')" :key="index" class="ml-2">
-                <el-image
-                  class="w-60px h-60px"
-                  :hide-on-click-modal="true"
-                  :preview-teleported="true"
-                  :src="item"
-                  :preview-src-list="[item]"
-                />
-              </div>
-            </div>
-          </template>
-        </el-table-column>
-        <!--合成预览-->
-        <el-table-column label="合成预览" align="center" prop="effectiveImgUrl" min-width="120">
-          <template #default="{ row }">
-            <div class="text-left">
+          </div>
+        </template>
+      </el-table-column>
+      <!-- 类目名称 -->
+      <el-table-column label="类目名称" align="center" prop="productCategoryName" min-width="235">
+        <template #default="{ row }">
+          <div class="text-center" v-if="row.orderStatus === 0">
+            <el-select
+              class="!w-[150px]"
+              filterable
+              v-model="row.categoryId"
+              placeholder="请选择类目"
+              clearable
+            >
+              <el-option
+                v-for="(item, index) in categoryList"
+                :key="index"
+                :label="item.categoryName"
+                :value="item.id.toString()"
+              />
+            </el-select>
+            <el-popconfirm
+              title="是否更新类目?"
+              placement="top-start"
+              @confirm="handleUpdateCategory(row)"
+            >
+              <template #reference>
+                <el-button class="ml-1" type="primary">更新</el-button>
+              </template>
+            </el-popconfirm>
+          </div>
+          <div class="text-center" v-else>
+            <div>{{ row.categoryName }}</div>
+          </div>
+        </template>
+      </el-table-column>
+      <!-- 定制文字列表 -->
+      <el-table-column label="定制文字" align="center" min-width="150">
+        <template #default="{ row }">
+          <div class="text-left" style="text-align: center;">{{ row.customTextList || '' }}</div>
+        </template>
+      </el-table-column>
+      <!-- 定制图片 -->
+      <el-table-column label="定制图片" align="center" prop="customImageUrls" min-width="180">
+        <template #default="{ row }">
+          <div class="flex flex-wrap" v-if="row.customImageUrls">
+            <div v-for="(item, index) in row.customImageUrls.split(',')" :key="index" class="ml-2">
               <el-image
                 class="w-60px h-60px"
-                v-if="row.effectiveImgUrl"
                 :hide-on-click-modal="true"
                 :preview-teleported="true"
-                :preview-src-list="[row.effectiveImgUrl]"
-                :src="row.effectiveImgUrl"
+                :src="item"
+                :preview-src-list="[item]"
               />
             </div>
-          </template>
-        </el-table-column>
-        <el-table-column label="价格信息" min-width="120">
-          <template #default="{ row }">
+          </div>
+        </template>
+      </el-table-column>
+      <!--合成预览-->
+      <el-table-column label="合成预览" align="center" prop="effectiveImgUrl" min-width="120">
+        <template #default="{ row }">
+          <div class="text-left">
+            <el-image
+              class="w-60px h-60px"
+              v-if="row.effectiveImgUrl"
+              :hide-on-click-modal="true"
+              :preview-teleported="true"
+              :preview-src-list="[row.effectiveImgUrl]"
+              :src="row.effectiveImgUrl"
+            />
+          </div>
+        </template>
+      </el-table-column>
+      <el-table-column label="价格信息" min-width="120">
+        <template #default="{ row }">
+          <div>
             <div>
-              <div>
-                <div>数量：{{ row.quantity || '--' }}</div>
-                <div>单价：{{ row.unitPrice ? '￥' + row.unitPrice.toFixed(6) : '--' }}</div>
-                <div>总价：{{ row.totalPrice ? '￥' + row.totalPrice.toFixed(2) : '--' }}</div>
-              </div>
+              <div>数量：{{ row.quantity || '--' }}</div>
+              <div>单价：{{ row.unitPrice ? '￥' + row.unitPrice.toFixed(6) : '--' }}</div>
+              <div>总价：{{ row.totalPrice ? '￥' + row.totalPrice.toFixed(2) : '--' }}</div>
             </div>
-          </template>
-        </el-table-column>
+          </div>
+        </template>
+      </el-table-column>
 
-        <!-- <el-table-column label="商品属性" align="center" prop="productProperties" min-width="200" /> -->
-        <el-table-column label="SKU信息" align="center" prop="productTitle" min-width="200">
-          <template #default="{ row }">
-            <div class="text-left">
-              <div>SKU编号:{{ row.sku }}</div>
-              <div>SKC编号:{{ row.skc }}</div>
-              <div>定制SKU:{{ row.customSku }}</div>
-            </div>
-          </template>
-        </el-table-column>
+      <el-table-column label="SKU信息" align="center" prop="productTitle" min-width="200">
+        <template #default="{ row }">
+          <div class="text-left">
+            <div>SKU编号:{{ row.sku }}</div>
+            <div>SKC编号:{{ row.skc }}</div>
+            <div>定制SKU:{{ row.customSku }}</div>
+          </div>
+        </template>
+      </el-table-column>
 
       <el-table-column
         label="预定单创建时间"
@@ -338,135 +314,134 @@
         width="150px"
       />
 
-        <el-table-column label="操作" fixed="right" align="center" min-width="130px">
-          <template #default="{ row }">
-            <div class="action-buttons">
-              <!-- 待下单状态 -->
-              <el-button 
-                v-if="row.orderStatus === 0" 
-                size="small" 
-                type="primary"
-                plain
-                class="action-button"
-                @click="handleSingleOrder(row)"
+      <el-table-column label="操作" fixed="right" align="center" min-width="130px">
+        <template #default="{ row }">
+          <div class="action-buttons">
+            <!-- 待下单状态 -->
+            <el-button 
+              v-if="row.orderStatus === 0" 
+              size="small" 
+              type="primary"
+              plain
+              class="action-button"
+              @click="handleSingleOrder(row)"
+            >
+              下单
+            </el-button>
+
+            <!-- 已下单待送产状态 -->
+            <template v-if="row.orderStatus === 1">
+              <el-popconfirm
+                title="确认是否修改当前订单状态为已送产待生产?"
+                placement="left"
+                popper-class="custom-popconfirm"
+                @confirm="
+                  handleUpdateRowStatus({
+                    id: row.id,
+                    orderStatus: 2
+                  })
+                "
               >
-                下单
-              </el-button>
+                <template #reference>
+                  <el-button size="small" type="primary" plain class="action-button">已送产待生产</el-button>
+                </template>
+              </el-popconfirm>
+              <el-popconfirm
+                title="确认取消订单吗？回退到待下单状态"
+                placement="left"
+                popper-class="custom-popconfirm"
+                @confirm="
+                  handleUpdateRowStatus({
+                    id: row.id,
+                    orderStatus: 0
+                  })
+                "
+              >
+                <template #reference>
+                  <el-button size="small" type="info" plain class="action-button mt-2">取消订单</el-button>
+                </template>
+              </el-popconfirm>
+            </template>
 
-              <!-- 已下单待送产状态 -->
-              <template v-if="row.orderStatus === 1">
-                <el-popconfirm
-                  title="确认是否修改当前订单状态为已送产待生产?"
-                  placement="left"
-                  popper-class="custom-popconfirm"
-                  @confirm="
-                    handleUpdateRowStatus({
-                      id: row.id,
-                      orderStatus: 2
-                    })
-                  "
-                >
-                  <template #reference>
-                    <el-button size="small" type="primary" plain class="action-button">已送产待生产</el-button>
-                  </template>
-                </el-popconfirm>
-                <el-popconfirm
-                  title="确认取消订单吗？回退到待下单状态"
-                  placement="left"
-                  popper-class="custom-popconfirm"
-                  @confirm="
-                    handleUpdateRowStatus({
-                      id: row.id,
-                      orderStatus: 0
-                    })
-                  "
-                >
-                  <template #reference>
-                    <el-button size="small" type="info" plain class="action-button mt-2">取消订单</el-button>
-                  </template>
-                </el-popconfirm>
-              </template>
+            <!-- 已送产待生产状态 -->
+            <template v-if="row.orderStatus === 2">
+              <el-popconfirm
+                title="确认是否修改当前订单状态为已生产待发货?"
+                placement="left"
+                popper-class="custom-popconfirm"
+                @confirm="
+                  handleUpdateRowStatus({
+                    id: row.id,
+                    orderStatus: 3
+                  })
+                "
+              >
+                <template #reference>
+                  <el-button size="small" type="primary" plain class="action-button">已生产待发货</el-button>
+                </template>
+              </el-popconfirm>
+              <el-popconfirm
+                title="确认取消订单吗？回退到待下单状态"
+                placement="left"
+                popper-class="custom-popconfirm"
+                @confirm="
+                  handleUpdateRowStatus({
+                    id: row.id,
+                    orderStatus: 0
+                  })
+                "
+              >
+                <template #reference>
+                  <el-button size="small" type="info" plain class="action-button mt-2">取消订单</el-button>
+                </template>
+              </el-popconfirm>
+            </template>
 
-              <!-- 已送产待生产状态 -->
-              <template v-if="row.orderStatus === 2">
-                <el-popconfirm
-                  title="确认是否修改当前订单状态为已生产待发货?"
-                  placement="left"
-                  popper-class="custom-popconfirm"
-                  @confirm="
-                    handleUpdateRowStatus({
-                      id: row.id,
-                      orderStatus: 3
-                    })
-                  "
-                >
-                  <template #reference>
-                    <el-button size="small" type="primary" plain class="action-button">已生产待发货</el-button>
-                  </template>
-                </el-popconfirm>
-                <el-popconfirm
-                  title="确认取消订单吗？回退到待下单状态"
-                  placement="left"
-                  popper-class="custom-popconfirm"
-                  @confirm="
-                    handleUpdateRowStatus({
-                      id: row.id,
-                      orderStatus: 0
-                    })
-                  "
-                >
-                  <template #reference>
-                    <el-button size="small" type="info" plain class="action-button mt-2">取消订单</el-button>
-                  </template>
-                </el-popconfirm>
-              </template>
-
-              <!-- 已生产待发货状态 -->
-              <template v-if="row.orderStatus === 3">
-                <el-popconfirm
-                  title="确认是否修改当前订单状态为已发货?"
-                  placement="left"
-                  popper-class="custom-popconfirm"
-                  @confirm="
-                    handleUpdateRowStatus({
-                      id: row.id,
-                      orderStatus: 4
-                    })
-                  "
-                >
-                  <template #reference>
-                    <el-button size="small" type="primary" plain class="action-button">已发货</el-button>
-                  </template>
-                </el-popconfirm>
-                <el-popconfirm
-                  title="确认取消订单吗？回退到待下单状态"
-                  placement="left"
-                  popper-class="custom-popconfirm"
-                  @confirm="
-                    handleUpdateRowStatus({
-                      id: row.id,
-                      orderStatus: 0
-                    })
-                  "
-                >
-                  <template #reference>
-                    <el-button size="small" type="info" plain class="action-button mt-2">取消订单</el-button>
-                  </template>
-                </el-popconfirm>
-              </template>
-            </div>
-          </template>
-        </el-table-column>
-      </el-table>
-      <!-- 分页 -->
-      <Pagination
-        :total="total"
-        v-model:page="queryParams.pageNo"
-        v-model:limit="queryParams.pageSize"
-        @pagination="getList"
-      />
-    </ContentWrap>
-  </div>
+            <!-- 已生产待发货状态 -->
+            <template v-if="row.orderStatus === 3">
+              <el-popconfirm
+                title="确认是否修改当前订单状态为已发货?"
+                placement="left"
+                popper-class="custom-popconfirm"
+                @confirm="
+                  handleUpdateRowStatus({
+                    id: row.id,
+                    orderStatus: 4
+                  })
+                "
+              >
+                <template #reference>
+                  <el-button size="small" type="primary" plain class="action-button">已发货</el-button>
+                </template>
+              </el-popconfirm>
+              <el-popconfirm
+                title="确认取消订单吗？回退到待下单状态"
+                placement="left"
+                popper-class="custom-popconfirm"
+                @confirm="
+                  handleUpdateRowStatus({
+                    id: row.id,
+                    orderStatus: 0
+                  })
+                "
+              >
+                <template #reference>
+                  <el-button size="small" type="info" plain class="action-button mt-2">取消订单</el-button>
+                </template>
+              </el-popconfirm>
+            </template>
+          </div>
+        </template>
+      </el-table-column>
+    </el-table>
+    <!-- 分页 -->
+    <Pagination
+      :total="total"
+      v-model:page="queryParams.pageNo"
+      v-model:limit="queryParams.pageSize"
+      @pagination="getList"
+    />
+  </ContentWrap>
   <!--状态修改确认弹窗-->
   <OrderStatusPopup ref="orderStatusPopup" @confirm="handleUpdateStatus" />
   <!--批量下单组件-->
@@ -484,18 +459,17 @@
 </template>
 
 <script setup lang="ts">
-import OrderStatusPopup from '@/views/temu/order/admin/components/OrderStatusPopup.vue'
-import BatchOrderPopup from '@/views/temu/order/admin/components/BatchOrderPopup.vue'
+import OrderStatusPopup from '@/views/temu/order/index/components/OrderStatusPopup.vue'
 import { DICT_TYPE } from '@/utils/dict'
 import { dateFormatter } from '@/utils/formatTime'
 import { OrderApi, OrderVO } from '@/api/temu/order'
 import { TemuCommonApi } from '@/api/temu/common'
 import { getStrDictOptions } from '@/utils/dict'
-import {ElMessage, ElMessageBox, ElTable} from 'element-plus'
-import { OrderBatchApi } from '@/api/temu/order-batch'
+import { ElMessage,ElTable } from 'element-plus'
+import BatchOrderPopup from "@/views/temu/order/index/components/BatchOrderPopup.vue";
 
 /** 订单 列表 */
-defineOptions({ name: 'TemuOrderAdmin' })
+defineOptions({ name: 'TemuOrderIndex' })
 
 const loading = ref(true) // 列表的加载中
 const list = ref<OrderVO[]>([]) // 列表的数据
@@ -511,43 +485,6 @@ const selectedRows = ref<any[]>([])
 const orderStatusPopup = useTemplateRef('orderStatusPopup')
 // 批量下单弹窗引用
 const batchOrderPopupRef = useTemplateRef('batchOrderPopup')
-
-// 获取订单状态类型
-const getOrderStatusType = (status: number): 'success' | 'warning' | 'info' | 'primary' | 'process' => {
-  switch (status) {
-    case 0:
-      return 'info'     // 待下单 - 浅灰
-    case 1:
-      return 'primary'  // 已下单待送产 - 浅蓝
-    case 2:
-      return 'warning'  // 已送产待生产 - 浅紫
-    case 3:
-      return 'process'  // 已生产待发货 - 浅绿
-    case 4:
-      return 'success'  // 已发货 - 浅青
-    default:
-      return 'info'
-  }
-}
-
-// 获取订单状态文本
-const getOrderStatusText = (status: number) => {
-  switch (status) {
-    case 0:
-      return '待下单'
-    case 1:
-      return '已下单待送产'
-    case 2:
-      return '已送产待生产'
-    case 3:
-      return '已生产待发货'
-    case 4:
-      return '已发货'
-    default:
-      return '未知状态'
-  }
-}
-
 const queryParams = reactive({
   pageNo: 1,
   pageSize: 10,
@@ -579,8 +516,8 @@ const getList = async () => {
   tableRef&&tableRef.value&&tableRef.value.clearSelection()
   loading.value = true
   try {
-    const data = await OrderApi.getOrderPageByAdmin(queryParams)
-    const { totalPrice } = await OrderApi.getAdminOrderAmountStatistics(queryParams)
+    const data = await OrderApi.getOrderPage(queryParams)
+    const { totalPrice } = await OrderApi.getOrderAmountStatistics(queryParams)
     orderTotalPrice.value = totalPrice
     list.value = data.list
     total.value = data.total
@@ -613,7 +550,7 @@ const resetQuery = () => {
 
 // 处理多选
 const handleSelectionChange = (selection: OrderVO[]) => {
-  console.log('选中的订单：', selection)
+  console.log(selection)
   selectedRows.value = selection
 }
 // 批量设置状态
@@ -662,18 +599,17 @@ const handleUpdateCategory = async (row: { id: number; categoryId: number }) => 
   ElMessage.success('操作成功')
   getList()
 }
-
 const handleBatchOrder = () => {
   if (selectedRows.value.length === 0) {
     ElMessage.warning('请选择要操作的订单')
     return
   }
-  if (selectedRows.value.some((item) => !item.categoryId)) {
-    ElMessage.error('存在未设置分类的订单请先设置分类')
+  if(selectedRows.value.some(item=>!item.categoryId)){
+    ElMessage.error('存在未设置分类的订单请先设置分类');
     return
   }
-  if (selectedRows.value.some((item) => item.orderStatus != 0)) {
-    ElMessage.error('只允许未下单的订单进行批量下单')
+  if(selectedRows.value.some(item=>item.orderStatus!=0)){
+    ElMessage.error('只允许未下单的订单进行批量下单');
     return
   }
   batchOrderPopup.value = true
@@ -694,41 +630,40 @@ const handleSingleOrder = (row: OrderVO) => {
   })
 }
 
-const handleBatchGenerate = async () => {
-  if (selectedRows.value.length === 0) {
-    ElMessage.warning('请选择要操作的订单')
-    return
+// 获取订单状态类型
+const getOrderStatusType = (status: number) => {
+  switch (status) {
+    case 0:
+      return 'info'
+    case 1:
+      return 'warning'
+    case 2:
+      return 'warning'
+    case 3:
+      return 'warning'
+    case 4:
+      return 'success'
+    default:
+      return 'info'
   }
-  if (selectedRows.value.some((item) => !item.categoryId)) {
-    ElMessage.error('存在未设置分类的订单请先设置分类')
-    return
+}
+
+// 获取订单状态文本
+const getOrderStatusText = (status: number) => {
+  switch (status) {
+    case 0:
+      return '待下单'
+    case 1:
+      return '已下单待送产'
+    case 2:
+      return '已送产待生产'
+    case 3:
+      return '已生产待发货'
+    case 4:
+      return '已发货'
+    default:
+      return '未知状态'
   }
-  if (selectedRows.value.some((item) => item.orderStatus != 1)) {
-    ElMessage.error('只允许已下单待送产的订单进行批次生成')
-    return
-  }
-  // 检查选中数据中的分类是否一致  如果不一致 需要弹窗让用确认如果一致则进行批次生成
-  const categoryList = selectedRows.value.map((item) => item.categoryId)
-  if (new Set(categoryList).size > 1) {
-    await new Promise((resolve, reject) => {
-      ElMessageBox.confirm('选中的订单存在不同分类是否要继续打包成一个批次？', '温馨提示', {
-        confirmButtonText: '确认',
-        cancelButtonText: '取消',
-        type: 'warning'
-      })
-        .then(() => {
-          resolve(true)
-        })
-        .catch(() => {
-          reject(false)
-        })
-    })
-  }
-  await OrderBatchApi.createOrderBatch({
-    orderIds: selectedRows.value.map((item) => item.id)
-  })
-  ElMessage.success('操作成功')
-  await getList()
 }
 
 /** 初始化 **/
