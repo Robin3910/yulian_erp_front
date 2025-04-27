@@ -70,7 +70,7 @@
       :data="list"
       :stripe="true"
       :show-overflow-tooltip="true"
-      :default-expand-all="false"
+      :default-expand-all="true"
       height="calc(100vh - 280px)"
       :header-cell-style="{ background: 'var(--el-bg-color)' }"
     >
