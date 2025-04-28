@@ -281,7 +281,7 @@ const filterOrderQuantity = (list: any[]) => {
     }
 
     // 尝试匹配数量信息，如"30pcs"、"2set"等
-    const quantityMatch = properties.match(/^(\d+)\s*(pc|pcs|set|sets|个|件|片|张)/i)
+    const quantityMatch = properties.match(/(\d+)\s*(pc|pcs|set|sets|个|件|片|张)/i);
     if (quantityMatch) {
       const propertyQuantity = parseInt(quantityMatch[1], 10)
       
