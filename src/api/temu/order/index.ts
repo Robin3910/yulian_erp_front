@@ -65,7 +65,7 @@ export const OrderApi = {
     return await request.put({ url: `/temu/order-shipping/update`, data })
   },
   // 批量更新订单发货状态
-  batchUpdateOrderStatus: async (data: { orderIds: number[]; orderStatus: number }) => {
+  batchUpdateOrderStatus: async (data: { orderIds: number[]; orderStatus: number; trackingNumber: string }) => {
     return await request.put({ url: '/temu/order-shipping/batch-update-status', data })
   },
   // 分页查询用户店铺待发货订单

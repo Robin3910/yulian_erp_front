@@ -817,7 +817,8 @@ const handleShip = async (row: ExtendedOrderVO) => {
     // 调用新的批量更新接口
     await OrderApi.batchUpdateOrderStatus({
       orderIds: orderIds,
-      orderStatus: 4
+      orderStatus: 4,
+      trackingNumber: row.trackingNumber
     })
 
     ElMessage.success('发货成功')
