@@ -425,31 +425,35 @@ interface OrderItem {
   customSku: string;
   quantity: number;
   productProperties: string;
-  bookingTime: number;
   shopId: number;
   customImageUrls: string;
   customTextList: string | null;
   productImgUrl: string;
   categoryId: string;
-  categoryName: string;
   effectiveImgUrl: string;
+  oldTypeUrl: string | null;
+}
+
+interface OrderNoGroup {
+  orderNo: string;
+  orderList: OrderItem[];
 }
 
 interface ShippingOrder {
   id: number;
-  orderNo: string | null;
+  orderNoList: OrderNoGroup[];
   trackingNumber: string;
+  shopId: number;
+  shopName: string;
   expressImageUrl: string;
   expressOutsideImageUrl: string;
   expressSkuImageUrl: string;
-  oldTypeUrl: string;
-  shopId: number;
-  shopName: string;
+  shippingStatus: string | null;
   createTime: number;
-  orderList: OrderItem[];
+  updateTime: number;
 }
 
-type ExtendedOrderVO = Omit<ShippingOrder, 'orderList' | 'orderNo'> & OrderItem;
+type ExtendedOrderVO = Omit<ShippingOrder, 'orderNoList'> & OrderItem;
 
 /** 订单 列表 */
 defineOptions({ name: 'TemuOrderIndex' })
@@ -485,11 +489,8 @@ const spanArr = ref<SpanInfo>({ trackingSpans: [], orderSpans: [] })
 const getList = async () => {
   loading.value = true
   try {
-    // 获取所有数据
     const data = await OrderApi.getShippingOrderPage({
-      ...queryParams,
-      pageNo: 1,
-      pageSize: 999999 // 获取所有数据以便进行分组处理
+      ...queryParams
     })
 
     if (!data.list || data.list.length === 0) {
@@ -499,122 +500,81 @@ const getList = async () => {
       return
     }
 
-    // 处理数据，将orderList中的数据展开
+    // 处理数据，将orderNoList中的数据展开
     const extendedList: ExtendedOrderVO[] = []
-    ;(data.list as ShippingOrder[]).forEach((shippingOrder) => {
-      if (shippingOrder.orderList && shippingOrder.orderList.length > 0) {
-        // 按订单编号分组
-        const orderGroups = new Map<string, OrderItem[]>()
-        shippingOrder.orderList.forEach(orderItem => {
-          const orderNo = orderItem.orderNo
-          if (!orderGroups.has(orderNo)) {
-            orderGroups.set(orderNo, [])
-          }
-          orderGroups.get(orderNo)!.push(orderItem)
-        })
-
-        // 处理每个订单组
-        orderGroups.forEach((items, orderNo) => {
-          items.forEach(orderItem => {
-            // 移除orderItem中的createTime，使用外层的createTime
-            const { createTime: itemCreateTime, ...restOrderItem } = orderItem
-            const { orderList, orderNo: shippingOrderNo, ...restShippingData } = shippingOrder
-            extendedList.push({
-              ...restShippingData, // 这里包含了外层的createTime
-              ...restOrderItem // 这里不包含orderItem的createTime
-            })
-          })
-        })
-      }
-    })
-
-    // 按物流单号和订单编号分组处理数据
-    const trackingGroups = new Map<string, Map<string, ExtendedOrderVO[]>>()
-
-    // 第一步：按物流单号和订单编号双重分组
-    extendedList.forEach(item => {
-      const trackingNumber = item.trackingNumber || ''
-      const orderNo = item.orderNo || ''
-
-      if (trackingNumber) {
-        if (!trackingGroups.has(trackingNumber)) {
-          trackingGroups.set(trackingNumber, new Map())
-        }
-        const orderGroup = trackingGroups.get(trackingNumber)!
-        if (!orderGroup.has(orderNo)) {
-          orderGroup.set(orderNo, [])
-        }
-        orderGroup.get(orderNo)!.push(item)
-      }
-    })
-
-    // 第二步：对每个分组内的数据按createTime排序
-    trackingGroups.forEach(orderGroups => {
-      orderGroups.forEach(items => {
-        items.sort((a, b) => {
-          const aTime = Number((a as any).createTime) || 0
-          const bTime = Number((b as any).createTime) || 0
-          return bTime - aTime // 降序排序
-        })
-      })
-    })
-
-    // 第三步：将物流单号组转换为数组并排序
-    const sortedTrackingGroups = Array.from(trackingGroups.entries())
-      .sort(([_, aOrders], [__, bOrders]) => {
-        const aTime = Number((Array.from(aOrders.values())[0]?.[0] as any)?.createTime) || 0
-        const bTime = Number((Array.from(bOrders.values())[0]?.[0] as any)?.createTime) || 0
-        return bTime - aTime // 降序排序
-      })
-
-    // 更新总数为物流单号的数量
-    total.value = trackingGroups.size
-
-    // 第四步：计算当前页需要显示的物流单号范围
-    const pageSize = queryParams.pageSize
-    const currentPage = queryParams.pageNo
-    const startGroupIndex = (currentPage - 1) * pageSize
-    const endGroupIndex = startGroupIndex + pageSize
-
-    // 第五步：只获取当前页的物流单号组
-    const currentPageGroups = sortedTrackingGroups.slice(startGroupIndex, endGroupIndex)
-
-    // 第六步：展平当前页的数据
-    const groupedData: ExtendedOrderVO[] = []
     const spanInfo: SpanInfo = {
       trackingSpans: [],
       orderSpans: []
     }
 
-    currentPageGroups.forEach(([_, orderGroups]) => {
-      // 对每个物流单号内的订单按时间降序排序
-      const sortedOrders = Array.from(orderGroups.entries())
-        .sort(([_, aItems], [__, bItems]) => {
-          const aTime = Number((aItems[0] as any)?.createTime) || 0
-          const bTime = Number((bItems[0] as any)?.createTime) || 0
-          return bTime - aTime // 降序排序
+    ;(data.list as ShippingOrder[]).forEach((shippingOrder) => {
+      if (shippingOrder.orderNoList && shippingOrder.orderNoList.length > 0) {
+        let totalItemsInTracking = 0
+        let hasValidOrders = false
+        
+        // 计算该物流单号下的所有有效订单项总数
+        shippingOrder.orderNoList.forEach(orderNoGroup => {
+          if (orderNoGroup.orderList && orderNoGroup.orderList.length > 0) {
+            totalItemsInTracking += orderNoGroup.orderList.length
+            hasValidOrders = true
+          }
         })
 
-      // 计算当前物流单号下的所有订单数量
-      let totalItemsInTracking = 0
-      sortedOrders.forEach(([_, items]) => {
-        totalItemsInTracking += items.length
-      })
+        // 如果没有有效订单，至少显示一行数据
+        if (!hasValidOrders) {
+          totalItemsInTracking = 1
+          spanInfo.trackingSpans.push(1)
+          spanInfo.orderSpans.push(1)
+          
+          // 创建一个空的订单项用于显示
+          extendedList.push({
+            ...shippingOrder,
+            id: shippingOrder.id,
+            orderNo: shippingOrder.orderNoList[0]?.orderNo || '',
+            productTitle: '',
+            orderStatus: 0,
+            sku: '',
+            skc: '',
+            salePrice: 0,
+            customSku: '',
+            quantity: 0,
+            productProperties: '',
+            customImageUrls: '',
+            customTextList: null,
+            productImgUrl: '',
+            categoryId: '',
+            effectiveImgUrl: '',
+            oldTypeUrl: null
+          } as ExtendedOrderVO)
+        } else {
+          // 添加物流单号的合并信息
+          spanInfo.trackingSpans.push(totalItemsInTracking)
+          spanInfo.trackingSpans.push(...Array(totalItemsInTracking - 1).fill(0))
 
-      // 添加物流单号的合并信息
-      spanInfo.trackingSpans.push(totalItemsInTracking)
-      spanInfo.trackingSpans.push(...Array(totalItemsInTracking - 1).fill(0))
+          // 处理每个订单组
+          shippingOrder.orderNoList.forEach(orderNoGroup => {
+            if (orderNoGroup.orderList && orderNoGroup.orderList.length > 0) {
+              // 为每个订单组添加合并信息
+              const orderItemCount = orderNoGroup.orderList.length
+              spanInfo.orderSpans.push(orderItemCount)
+              spanInfo.orderSpans.push(...Array(orderItemCount - 1).fill(0))
 
-      // 处理每个订单组
-      sortedOrders.forEach(([_, items]) => {
-        // 为每个订单组添加合并信息
-        spanInfo.orderSpans.push(items.length)
-        spanInfo.orderSpans.push(...Array(items.length - 1).fill(0))
-        groupedData.push(...items)
-      })
+              // 添加订单项
+              orderNoGroup.orderList.forEach(orderItem => {
+                const { orderNoList, ...restShippingData } = shippingOrder
+                extendedList.push({
+                  ...restShippingData,
+                  ...orderItem
+                } as ExtendedOrderVO)
+              })
+            }
+          })
+        }
+      }
     })
 
-    list.value = groupedData
+    list.value = extendedList
+    total.value = data.total
     spanArr.value = spanInfo
   } catch (error) {
     console.error('获取数据失败:', error)
@@ -650,12 +610,11 @@ const resetQuery = () => {
 
 // 处理多选
 const handleSelectionChange = (selection: OrderVO[]) => {
-  console.log(selection)
   selectedRows.value = selection.map(item => {
-    const { orderList, ...rest } = item as unknown as ShippingOrder
+    const { orderNoList, ...rest } = item as unknown as ShippingOrder
     return {
       ...rest,
-      ...(orderList?.[0] || {}),
+      ...(orderNoList?.[0]?.orderList?.[0] || {}),
       orderId: item.id
     }
   }) as ExtendedOrderVO[]
@@ -666,10 +625,14 @@ const handleBatchSetStatus = async () => {
     ElMessage.warning('请选择要操作的订单')
     return
   }
-  if (orderStatusPopup && orderStatusPopup.value) {
-    console.log('>>>>>>>>orderStatusPopup.value', orderStatusPopup.value)
-    orderStatusPopup.value.setVisible(true)
+  // 检查所有已经选择的订单状态是否一致
+  const statusList = selectedRows.value.map((item) => item.orderStatus)
+  if (new Set(statusList).size > 1) {
+    ElMessage.warning('已选择的订单状态不一致，请重新选择')
+    return
   }
+  // TODO: 实现批量设置状态的逻辑
+  ElMessage.info('功能开发中...')
 }
 // 处理状态修改确认弹窗的回调
 const handleUpdateStatus = async (status: number) => {
@@ -814,7 +777,7 @@ const handleShip = async (row: ExtendedOrderVO) => {
       }
     )
 
-    // 调用新的批量更新接口
+    // 调用批量更新接口
     await OrderApi.batchUpdateOrderStatus({
       orderIds: orderIds,
       orderStatus: 4,
@@ -942,7 +905,7 @@ const tableRowClassName = ({ row, rowIndex }: { row: any; rowIndex: number }) =>
   if (rowIndex === 0) return ''
   
   const prevRow = list.value[rowIndex - 1]
-  const classes = []
+  const classes: string[] = []
   
   // 检查物流单号变化
   if (row.trackingNumber !== prevRow.trackingNumber) {
