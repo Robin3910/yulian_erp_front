@@ -711,7 +711,7 @@ const getOrderStatusType = (status: number): 'success' | 'warning' | 'info' | 'p
     case 2:
       return 'warning'  // 已送产待生产 - 浅紫
     case 3:
-      return 'primary'  // 已生产待发货 - 浅绿，改为primary
+      return 'process'  // 已生产待发货 - 浅绿，改为primary
     case 4:
       return 'success'  // 已发货 - 浅青
     default:

@@ -5,6 +5,12 @@
         <el-form-item label="" v-for="(item, index) in formData.orderList" :key="index">
           <div class="flex flex-col">
             <div class="text-shadow-color-blueGray text-xl">{{ `订单号:${item.orderNo}` }}</div>
+            <!--店铺名称-->
+            <el-form-item label="店铺名称：" class="mb-2 cursor-pointer">
+              <div class="text-left" :title="item.shopName" v-if="item.shopName"  style="font-weight: bolder;font-size: 18px">
+                {{ item.shopName }}
+              </div>
+            </el-form-item>
             <div class="flex flex-col">
               <!--产品名称-->
               <el-form-item label="产品名称：" class="mb-2 cursor-pointer">
