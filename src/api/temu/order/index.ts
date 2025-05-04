@@ -68,13 +68,12 @@ export const OrderApi = {
   batchUpdateOrderStatus: async (data: { orderIds: number[]; orderStatus: number; trackingNumber: string }) => {
     return await request.put({ url: '/temu/order-shipping/batch-update-status', data })
   },
-  //根据订单ID获取合规单信息和商品码
-  getOrderExtraInfo: async (orderId: number) => {
-    return await request.get({ url: `/temu/order/get-order-extra-info/${orderId}` })
-  },
-  },
   // 分页查询用户店铺待发货订单
   getShippingOrderPageByUser: async (params: any) => {
     return await request.get({ url: `/temu/order-shipping/user-page`, params })
+  },
+  //根据订单ID获取合规单信息和商品码
+  getOrderExtraInfo: async (orderId: number) => {
+    return await request.get({ url: `/temu/order/get-order-extra-info/${orderId}` })
   },
 }
