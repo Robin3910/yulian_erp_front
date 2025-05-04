@@ -489,7 +489,7 @@ const spanArr = ref<SpanInfo>({ trackingSpans: [], orderSpans: [] })
 const getList = async () => {
   loading.value = true
   try {
-    const data = await OrderApi.getShippingOrderPage({
+    const data = await OrderApi.getShippingOrderPageByUser({
       ...queryParams
     })
 
@@ -625,14 +625,10 @@ const handleBatchSetStatus = async () => {
     ElMessage.warning('请选择要操作的订单')
     return
   }
-  // 检查所有已经选择的订单状态是否一致
-  const statusList = selectedRows.value.map((item) => item.orderStatus)
-  if (new Set(statusList).size > 1) {
-    ElMessage.warning('已选择的订单状态不一致，请重新选择')
-    return
+  if (orderStatusPopup && orderStatusPopup.value) {
+    console.log('>>>>>>>>orderStatusPopup.value', orderStatusPopup.value)
+    orderStatusPopup.value.setVisible(true)
   }
-  // TODO: 实现批量设置状态的逻辑
-  ElMessage.info('功能开发中...')
 }
 // 处理状态修改确认弹窗的回调
 const handleUpdateStatus = async (status: number) => {
@@ -706,7 +702,7 @@ onUnmounted(() => {
 })
 
 // 获取订单状态类型
-const getOrderStatusType = (status: number): 'success' | 'warning' | 'info' | 'primary' | 'process' => {
+const getOrderStatusType = (status: number): 'success' | 'warning' | 'info' | 'primary' | 'danger' => {
   switch (status) {
     case 0:
       return 'info'     // 待下单 - 浅灰
@@ -715,7 +711,7 @@ const getOrderStatusType = (status: number): 'success' | 'warning' | 'info' | 'p
     case 2:
       return 'warning'  // 已送产待生产 - 浅紫
     case 3:
-      return 'process'  // 已生产待发货 - 浅绿
+      return 'process'  // 已生产待发货 - 浅绿，改为primary
     case 4:
       return 'success'  // 已发货 - 浅青
     default:
@@ -905,7 +901,7 @@ const tableRowClassName = ({ row, rowIndex }: { row: any; rowIndex: number }) =>
   if (rowIndex === 0) return ''
   
   const prevRow = list.value[rowIndex - 1]
-  const classes: string[] = []
+  const classes = []
   
   // 检查物流单号变化
   if (row.trackingNumber !== prevRow.trackingNumber) {

@@ -5,6 +5,12 @@
         <el-form-item label="" v-for="(item, index) in formData.orderList" :key="index">
           <div class="flex flex-col">
             <div class="text-shadow-color-blueGray text-xl">{{ `订单号:${item.orderNo}` }}</div>
+            <!--店铺名称-->
+            <el-form-item label="店铺名称：" class="mb-2 cursor-pointer">
+              <div class="text-left" :title="item.shopName" v-if="item.shopName"  style="font-weight: bolder;font-size: 18px">
+                {{ item.shopName }}
+              </div>
+            </el-form-item>
             <div class="flex flex-col">
               <!--产品名称-->
               <el-form-item label="产品名称：" class="mb-2 cursor-pointer">
@@ -263,11 +269,36 @@ const sortRulePrice = (arr: rulePrice[]) => {
 // 按照的规则过滤订单的数量
 const filterOrderQuantity = (list: any[]) => {
   list.forEach((item) => {
+  
     const properties = item.productProperties.toLowerCase()
     const productTitle = item.productTitle.toLowerCase()
     const productCategoryName = item.productCategoryName.toLowerCase()
     const originalQuantity = item.quantity || 1 // 保存原始订单数量
     
+    // 特殊处理 rainbow 情况 - 移到最前面
+    if (properties.includes('rainbow')) {
+     
+      // 使用更宽松的匹配模式
+      const rainbowMatch = properties.match(/(\d+)[\s\u00A0-]*(pc|pcs|set|sets|个|件|片|张)/i)
+    
+      if (rainbowMatch) {
+        const propertyQuantity = parseInt(rainbowMatch[1], 10)
+        item.quantity = propertyQuantity * originalQuantity
+        return
+      } else {
+    
+        // 尝试其他匹配方式
+        const altMatch = properties.match(/(\d+)\s*(pc|pcs|set|sets|个|件|片|张)/i)
+    
+        if (altMatch) {
+          const propertyQuantity = parseInt(altMatch[1], 10)
+          item.quantity = propertyQuantity * originalQuantity
+
+          return
+        }
+      }
+    }
+
     // 特殊情况处理：包含"熊"或"baer"字样，或包含尺寸单位"in"/"cm"
     if (
       properties.includes('熊') || properties.includes('象') || productCategoryName.includes("件套") ||
@@ -275,19 +306,24 @@ const filterOrderQuantity = (list: any[]) => {
       properties.includes('in') ||
       properties.includes('cm')
     ) {
+      console.log('匹配到特殊情况（熊/象/件套/baer/拼图/in/cm）')
       item.quantity = 1 * originalQuantity
       return
     }
 
     // 尝试匹配数量信息，如"30pcs"、"2set"等
-    const quantityMatch = properties.match(/^(\d+)\s*(pc|pcs|set|sets|个|件|片|张)/i)
+    const quantityMatch = properties.match(/(\d+)[\s\u00A0-]*(pc|pcs|set|sets|个|件|片|张)/i)
+    console.log('常规匹配结果:', quantityMatch)
     if (quantityMatch) {
       const propertyQuantity = parseInt(quantityMatch[1], 10)
+      console.log('常规匹配提取到的数量:', propertyQuantity)
       // 将商品属性中的数量与订单数量相乘
       item.quantity = propertyQuantity * originalQuantity
+      console.log(`最终计算结果: ${propertyQuantity} * ${originalQuantity} = ${item.quantity}`)
     } else {
       // 如果没有匹配到数量信息，保持原始订单数量
       item.quantity = originalQuantity
+      console.log('未匹配到数量信息，使用原始数量:', item.quantity)
     }
   })
 }

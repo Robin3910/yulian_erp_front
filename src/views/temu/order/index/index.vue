@@ -636,7 +636,7 @@ const getOrderStatusType = (status: number) => {
     case 0:
       return 'info'
     case 1:
-      return 'warning'
+      return 'primary'
     case 2:
       return 'warning'
     case 3:
