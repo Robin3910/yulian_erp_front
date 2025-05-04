@@ -28,8 +28,13 @@
         />
       </el-form-item>
 
-      <el-form-item label="订单状态" prop="orderStatus" >
-        <el-select v-model="queryParams.status" placeholder="请选择订单状态" clearable class="!w-220px">
+      <el-form-item label="订单状态" prop="orderStatus">
+        <el-select
+          v-model="queryParams.status"
+          placeholder="请选择订单状态"
+          clearable
+          class="!w-220px"
+        >
           <el-option
             v-for="dict in getStrDictOptions(DICT_TYPE.TEMU_ORDER_BATCH_STATUS)"
             :key="dict.value"
@@ -58,7 +63,6 @@
           <Icon icon="ep:refresh" class="mr-5px" />
           重置
         </el-button>
-
       </el-form-item>
     </el-form>
   </ContentWrap>
@@ -84,7 +88,23 @@
               :show-overflow-tooltip="true"
             >
               <!--订单编号-->
-              <el-table-column label="订单编号" align="center" prop="orderNo" min-width="150" />
+              <el-table-column label="订单编号" align="center" prop="orderNo" min-width="150">
+                <template #default="{ row }">
+                  <div class="text-left">
+                    <div>{{ row.orderNo }}</div>
+                    <div>
+                      <el-button type="primary" @click="handlerPrintGoodsSn(row, 1)" size="small">
+                        打印商品条码
+                      </el-button>
+                    </div>
+                    <div>
+                      <el-button type="success" @click="handlerPrintGoodsSn(row, 2)" size="small">
+                        打印合规单
+                      </el-button>
+                    </div>
+                  </div>
+                </template>
+              </el-table-column>
               <!--店铺信息-->
               <el-table-column label="店铺信息" align="center" prop="shopId" min-width="150">
                 <template #default="{ row }">
@@ -113,7 +133,7 @@
                 <template #default="{ row }">
                   <div class="text-left">
                     <div class="truncate mb-2 font-bold">产品标题：{{ row.productTitle }}</div>
-            
+
                     <!-- 商品属性 -->
                     <div class="flex items-start mb-2">
                       <div>商品属性:</div>
@@ -128,7 +148,12 @@
                 </template>
               </el-table-column>
               <!-- 添加定制文字列 -->
-              <el-table-column label="定制文字" align="center" prop="customTextList" min-width="180">
+              <el-table-column
+                label="定制文字"
+                align="center"
+                prop="customTextList"
+                min-width="180"
+              >
                 <template #default="{ row }">
                   <div class="text-center">{{ row.customTextList || '--' }}</div>
                 </template>
@@ -204,7 +229,11 @@
 
               <el-table-column label="订单状态" align="center" prop="orderStatus" min-width="150">
                 <template #default="{ row }">
-                  <el-tag :type="getOrderStatusType(row.orderStatus)" class="status-tag" size="large">
+                  <el-tag
+                    :type="getOrderStatusType(row.orderStatus)"
+                    class="status-tag"
+                    size="large"
+                  >
                     {{ getOrderStatusText(row.orderStatus) }}
                   </el-tag>
                 </template>
@@ -239,7 +268,13 @@
                 下载作图文件
               </el-button>
             </a>
-            <el-button v-if="row.status === 0" type="primary" plain @click="handlerHandleUpload(row)" class="action-button ml-2">
+            <el-button
+              v-if="row.status === 0"
+              type="primary"
+              plain
+              @click="handlerHandleUpload(row)"
+              class="action-button ml-2"
+            >
               <Icon icon="ep:upload" class="mr-5px" />
               重新上传
             </el-button>
@@ -262,7 +297,12 @@
       <el-table-column label="定制图片（一键下载）" align="center" min-width="150">
         <template #default="{ row }">
           <div class="flex justify-center mt-2">
-            <el-button type="success" plain @click="handleDownloadCustomImages(row)" class="action-button">
+            <el-button
+              type="success"
+              plain
+              @click="handleDownloadCustomImages(row)"
+              class="action-button"
+            >
               <Icon icon="ep:picture" class="mr-5px" />
               下载定制图片
             </el-button>
@@ -271,7 +311,11 @@
       </el-table-column>
       <el-table-column label="订单状态" align="center" prop="orderStatus" min-width="150">
         <template #default="{ row }">
-          <dict-tag :type="DICT_TYPE.TEMU_ORDER_BATCH_STATUS" :value="row.status" class="batch-status-tag" />
+          <dict-tag
+            :type="DICT_TYPE.TEMU_ORDER_BATCH_STATUS"
+            :value="row.status"
+            class="batch-status-tag"
+          />
         </template>
       </el-table-column>
       <el-table-column label="操作" align="center" width="120px" fixed="right">
@@ -306,9 +350,11 @@
 <script setup lang="ts">
 import { dateFormatter } from '@/utils/formatTime'
 import { OrderBatchApi, OrderBatchVO } from '@/api/temu/order-batch'
-import {DICT_TYPE, getStrDictOptions} from '@/utils/dict'
+import { DICT_TYPE, getStrDictOptions } from '@/utils/dict'
 import { ElMessageBox,ElMessage } from 'element-plus'
 import JSZip from 'jszip'
+import { OrderApi, OrderVO } from '@/api/temu/order'
+import printJS from 'print-js'
 
 /** 订单批次 列表 */
 defineOptions({ name: 'BatchOrderPopup' })
@@ -341,17 +387,17 @@ const getList = async () => {
       pageSize: queryParams.pageSize,
       pageNo: queryParams.pageNo
     }
-    
+
     const data = await OrderBatchApi.getOrderBatchPage(params)
-    
+
     // 按批次号分组数据
     const batchGroups = new Map()
-    data.list.forEach(item => {
+    data.list.forEach((item) => {
       if (!batchGroups.has(item.batchNo)) {
         batchGroups.set(item.batchNo, item)
       }
     })
-    
+
     // 将分组后的数据转换为数组
     list.value = Array.from(batchGroups.values())
     total.value = data.total // 使用服务端返回的批次总数
@@ -372,9 +418,24 @@ const resetQuery = () => {
   handleQuery()
 }
 
-/** 添加/修改操作 */
-const formRef = ref()
-
+const handlerPrintGoodsSn = async (row: OrderVO, type: string | number) => {
+  let { goodsSn, oldTypeUrl } = await OrderApi.getOrderExtraInfo(row.id)
+  switch (type) {
+    case 1:
+      if(!goodsSn){
+        ElMessage.warning('商品条码没有设置无法打印!')
+        return
+      }
+      printJS(goodsSn)
+      break
+    case 2:
+      if(!oldTypeUrl){
+        ElMessage.warning('合规单没有设置无法打印!')
+        return
+      }
+      printJS(oldTypeUrl, 'image')
+  }
+}
 const handleFileSuccess = async (row: any, res: any) => {
   if (!res) {
     return
@@ -384,17 +445,15 @@ const handleFileSuccess = async (row: any, res: any) => {
   message.success('操作成功')
   await getList()
 }
-const handlerHandleUpload = async (row:any) => {
+const handlerHandleUpload = async (row: any) => {
   ElMessageBox.prompt('请输入要上传的文件地址例如：https://xxx.com/xxx.zip', '提示', {
     confirmButtonText: '确认',
     cancelButtonText: '取消',
-    inputPattern:
-      /^(http|https):\/\/.+\.(zip|rar|7z|docx|doc|xls|xlsx)$/,
-    inputErrorMessage: '无效的地址',
+    inputPattern: /^(http|https):\/\/.+\.(zip|rar|7z|docx|doc|xls|xlsx)$/,
+    inputErrorMessage: '无效的地址'
+  }).then(({ value }) => {
+    handleFileSuccess(row, value)
   })
-    .then(({ value }) => {
-      handleFileSuccess(row,value)
-    })
 }
 const handleUpdateBathchStatus = async (row: any) => {
   try {
@@ -419,27 +478,27 @@ const handleDownloadCustomImages = async (row: any) => {
       message.warning('该批次没有订单信息！')
       return
     }
-    
+
     loading.value = true
     const zip = new JSZip()
     const promises: Promise<void>[] = []
     let hasImages = false
-    
+
     // 遍历所有订单
     row.orderList.forEach((order: any, orderIndex: number) => {
       if (!order.customImageUrls) return
-      
+
       const urls = order.customImageUrls.split(',')
       urls.forEach((url: string, imgIndex: number) => {
         if (!url) return
-        
+
         hasImages = true
         const promise = fetch(url)
-          .then(response => {
+          .then((response) => {
             if (!response.ok) throw new Error(`Network response was not ok for image: ${url}`)
             return response.blob()
           })
-          .then(blob => {
+          .then((blob) => {
             return new Promise<void>((resolve, reject) => {
               // 创建一个临时的图片元素
               const img = new Image()
@@ -450,47 +509,51 @@ const handleDownloadCustomImages = async (row: any) => {
                 canvas.height = img.height
                 const ctx = canvas.getContext('2d')
                 ctx?.drawImage(img, 0, 0)
-                
+
                 // 转换为jpg格式
-                canvas.toBlob((jpgBlob) => {
-                  if (jpgBlob) {
-                    // 使用订单号和图片索引构建文件名
-                    const fileName = `订单${orderIndex+1}_${order.orderNo}_图片${imgIndex+1}.jpg`
-                    zip.file(fileName, jpgBlob)
-                    resolve()
-                  } else {
-                    reject(new Error('Failed to convert image to JPG'))
-                  }
-                }, 'image/jpeg', 0.8) // 0.8是压缩质量，范围0-1
+                canvas.toBlob(
+                  (jpgBlob) => {
+                    if (jpgBlob) {
+                      // 使用订单号和图片索引构建文件名
+                      const fileName = `订单${orderIndex + 1}_${order.orderNo}_图片${imgIndex + 1}.jpg`
+                      zip.file(fileName, jpgBlob)
+                      resolve()
+                    } else {
+                      reject(new Error('Failed to convert image to JPG'))
+                    }
+                  },
+                  'image/jpeg',
+                  0.8
+                ) // 0.8是压缩质量，范围0-1
               }
               img.onerror = () => reject(new Error('Failed to load image'))
               img.src = URL.createObjectURL(blob)
             })
           })
-          .catch(error => {
+          .catch((error) => {
             console.error(`Error processing image ${url}:`, error)
           })
-          
+
         promises.push(promise)
       })
     })
-    
+
     if (!hasImages) {
       message.warning('没有找到可下载的定制图片！')
       loading.value = false
       return
     }
-    
+
     // 等待所有图片加载完成
     await Promise.all(promises)
-    
+
     // 生成zip文件并下载
     const content = await zip.generateAsync({ type: 'blob' })
     const link = document.createElement('a')
     link.href = URL.createObjectURL(content)
     link.download = `${row.batchNo}_定制图片.zip`
     link.click()
-    
+
     // 释放URL对象
     URL.revokeObjectURL(link.href)
     message.success('定制图片打包下载成功！')
@@ -503,18 +566,20 @@ const handleDownloadCustomImages = async (row: any) => {
 }
 
 // 获取订单状态类型
-const getOrderStatusType = (status: number): 'success' | 'warning' | 'info' | 'primary' | 'danger' => {
+const getOrderStatusType = (
+  status: number
+): 'success' | 'warning' | 'info' | 'primary' | 'danger' => {
   switch (status) {
     case 0:
-      return 'info'     // 待下单 - 浅灰
+      return 'info' // 待下单 - 浅灰
     case 1:
-      return 'primary'  // 已下单待送产 - 浅蓝
+      return 'primary' // 已下单待送产 - 浅蓝
     case 2:
-      return 'warning'  // 已送产待生产 - 浅紫
+      return 'warning' // 已送产待生产 - 浅紫
     case 3:
-      return 'primary'  // 已生产待发货 - 浅绿
+      return 'primary' // 已生产待发货 - 浅绿
     case 4:
-      return 'success'  // 已发货 - 浅青
+      return 'success' // 已发货 - 浅青
     default:
       return 'info'
   }
@@ -578,7 +643,7 @@ onMounted(() => {
 
     &:hover {
       background: #a4a6a8;
-      color: #F0F4F8;
+      color: #f0f4f8;
     }
   }
 
@@ -590,7 +655,7 @@ onMounted(() => {
 
     &:hover {
       background: #409eff;
-      color: #DCFCE7;
+      color: #dcfce7;
     }
 
     &::before {
@@ -607,13 +672,13 @@ onMounted(() => {
 
   // 已送产待生产状态
   &.el-tag--warning {
-    background: #E0E7FF;
-    border: 1px solid #E0E7FF;
-    color: #1E1B4B;
+    background: #e0e7ff;
+    border: 1px solid #e0e7ff;
+    color: #1e1b4b;
 
     &:hover {
-      background: #6366F1;
-      color: #E0E7FF;
+      background: #6366f1;
+      color: #e0e7ff;
     }
 
     &::before {
@@ -622,7 +687,7 @@ onMounted(() => {
       width: 8px;
       height: 8px;
       border-radius: 50%;
-      background-color: #6366F1;
+      background-color: #6366f1;
       margin-right: 8px;
       animation: pulse 1s infinite;
     }
@@ -674,12 +739,12 @@ onMounted(() => {
   font-weight: 600;
   border-radius: 4px;
   transition: all 0.3s ease;
-  
+
   &:hover {
     transform: translateY(-1px);
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
   }
-  
+
   .el-icon {
     margin-right: 4px;
     vertical-align: middle;
@@ -713,7 +778,6 @@ onMounted(() => {
 
   // 成功按钮样式
   &.el-button--success {
-  
     &.is-plain {
       &:hover {
         background: var(--el-color-success);
@@ -732,5 +796,4 @@ onMounted(() => {
     font-weight: 600;
   }
 }
-
 </style>

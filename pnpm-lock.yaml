@@ -125,6 +125,9 @@ importers:
       pinia-plugin-persistedstate:
         specifier: ^3.2.1
         version: 3.2.3(pinia@2.2.8(typescript@5.3.3)(vue@3.5.12(typescript@5.3.3)))
+      print-js:
+        specifier: ^1.6.0
+        version: 1.6.0
       qrcode:
         specifier: ^1.5.3
         version: 1.5.4
@@ -4777,6 +4780,9 @@ packages:
   pretty-format@29.7.0:
     resolution: {integrity: sha512-Pdlw/oPxN+aXdmM9R00JVC9WVFoCLTKJvDVLgmJ+qAffBMxsV85l/Lu7sNx4zSzPyoL2euImuEwHhOXdEgNFZQ==, tarball: https://registry.npmmirror.com/pretty-format/-/pretty-format-29.7.0.tgz}
     engines: {node: ^14.15.0 || ^16.10.0 || >=18.0.0}
+
+  print-js@1.6.0:
+    resolution: {integrity: sha512-BfnOIzSKbqGRtO4o0rnj/K3681BSd2QUrsIZy/+WdCIugjIswjmx3lDEZpXB2ruGf9d4b3YNINri81+J0FsBWg==}
 
   prismjs@1.29.0:
     resolution: {integrity: sha512-Kx/1w86q/epKcmte75LNrEoT+lX8pBpavuAbvJWRXar7Hz8jrtF+e3vY751p0R8H9HdArwaCTNDDzHg/ScJK1Q==, tarball: https://registry.npmmirror.com/prismjs/-/prismjs-1.29.0.tgz}
@@ -10894,6 +10900,8 @@ snapshots:
       '@jest/schemas': 29.6.3
       ansi-styles: 5.2.0
       react-is: 18.3.1
+
+  print-js@1.6.0: {}
 
   prismjs@1.29.0: {}
 

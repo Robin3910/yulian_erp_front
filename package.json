@@ -25,6 +25,7 @@
     "lint:lint-staged": "lint-staged -c "
   },
   "dependencies": {
+    "print-js":"^1.6.0",
     "@element-plus/icons-vue": "^2.1.0",
     "@form-create/designer": "^3.2.6",
     "@form-create/element-ui": "^3.2.11",
