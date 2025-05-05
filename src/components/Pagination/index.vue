@@ -5,7 +5,7 @@
     v-model:current-page="currentPage"
     v-model:page-size="pageSize"
     :background="true"
-    :page-sizes="[10, 20, 30, 50, 100]"
+    :page-sizes="[10, 20, 30, 50, 100, 200]"
     :pager-count="pagerCount"
     :total="total"
     :small="isSmall"
