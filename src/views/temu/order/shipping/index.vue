@@ -437,6 +437,9 @@ interface OrderItem {
 interface OrderNoGroup {
   orderNo: string;
   orderList: OrderItem[];
+  expressImageUrl: string;
+  expressOutsideImageUrl: string;
+  expressSkuImageUrl: string;
 }
 
 interface ShippingOrder {
@@ -544,7 +547,11 @@ const getList = async () => {
             productImgUrl: '',
             categoryId: '',
             effectiveImgUrl: '',
-            oldTypeUrl: null
+            oldTypeUrl: null,
+            // 添加URL字段
+            expressImageUrl: shippingOrder.orderNoList[0]?.expressImageUrl || '',
+            expressOutsideImageUrl: shippingOrder.orderNoList[0]?.expressOutsideImageUrl || '',
+            expressSkuImageUrl: shippingOrder.orderNoList[0]?.expressSkuImageUrl || ''
           } as ExtendedOrderVO)
         } else {
           // 添加物流单号的合并信息
@@ -564,7 +571,11 @@ const getList = async () => {
                 const { orderNoList, ...restShippingData } = shippingOrder
                 extendedList.push({
                   ...restShippingData,
-                  ...orderItem
+                  ...orderItem,
+                  // 添加URL字段
+                  expressImageUrl: orderNoGroup.expressImageUrl || '',
+                  expressOutsideImageUrl: orderNoGroup.expressOutsideImageUrl || '',
+                  expressSkuImageUrl: orderNoGroup.expressSkuImageUrl || ''
                 } as ExtendedOrderVO)
               })
             }

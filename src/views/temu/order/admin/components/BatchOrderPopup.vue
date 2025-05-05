@@ -278,7 +278,7 @@ const filterOrderQuantity = (list: any[]) => {
     if (properties.includes('rainbow')) {
      
       // 使用更宽松的匹配模式
-      const rainbowMatch = properties.match(/(\d+)[\s\u00A0-]*(pc|pcs|set|sets|个|件|片|张)/i)
+      const rainbowMatch = properties.match(/(\d+)[\s\u00A0-]*(|cps|pc|pcs|set|sets|个|件|片|张)/i)
     
       if (rainbowMatch) {
         const propertyQuantity = parseInt(rainbowMatch[1], 10)
@@ -287,7 +287,7 @@ const filterOrderQuantity = (list: any[]) => {
       } else {
     
         // 尝试其他匹配方式
-        const altMatch = properties.match(/(\d+)\s*(pc|pcs|set|sets|个|件|片|张)/i)
+        const altMatch = properties.match(/(\d+)\s*(|cps|pc|pcs|set|sets|个|件|片|张)/i)
     
         if (altMatch) {
           const propertyQuantity = parseInt(altMatch[1], 10)
@@ -311,7 +311,7 @@ const filterOrderQuantity = (list: any[]) => {
     }
 
     // 尝试匹配数量信息，如"30pcs"、"2set"等
-    const quantityMatch = properties.match(/(\d+)[\s\u00A0-]*(pc|pcs|set|sets|个|件|片|张)/i)
+    const quantityMatch = properties.match(/(\d+)[\s\u00A0-]*(|cps|pc|pcs|set|sets|个|件|片|张)/i)
     console.log('常规匹配结果:', quantityMatch)
     if (quantityMatch) {
       const propertyQuantity = parseInt(quantityMatch[1], 10)
