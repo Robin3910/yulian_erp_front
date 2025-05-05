@@ -499,36 +499,11 @@ const handleDownloadCustomImages = async (row: any) => {
             return response.blob()
           })
           .then((blob) => {
-            return new Promise<void>((resolve, reject) => {
-              // 创建一个临时的图片元素
-              const img = new Image()
-              img.onload = () => {
-                // 创建canvas
-                const canvas = document.createElement('canvas')
-                canvas.width = img.width
-                canvas.height = img.height
-                const ctx = canvas.getContext('2d')
-                ctx?.drawImage(img, 0, 0)
-
-                // 转换为jpg格式
-                canvas.toBlob(
-                  (jpgBlob) => {
-                    if (jpgBlob) {
-                      // 使用订单号和图片索引构建文件名
-                      const fileName = `订单${orderIndex + 1}_${order.orderNo}_图片${imgIndex + 1}.jpg`
-                      zip.file(fileName, jpgBlob)
-                      resolve()
-                    } else {
-                      reject(new Error('Failed to convert image to JPG'))
-                    }
-                  },
-                  'image/jpeg',
-                  0.8
-                ) // 0.8是压缩质量，范围0-1
-              }
-              img.onerror = () => reject(new Error('Failed to load image'))
-              img.src = URL.createObjectURL(blob)
-            })
+            // 使用订单号和图片索引构建文件名，保留原始扩展名
+            const urlParts = url.split('.')
+            const extension = urlParts[urlParts.length - 1] || 'png'
+            const fileName = `订单${orderIndex + 1}_${order.orderNo}_图片${imgIndex + 1}.${extension}`
+            zip.file(fileName, blob)
           })
           .catch((error) => {
             console.error(`Error processing image ${url}:`, error)
@@ -577,7 +552,7 @@ const getOrderStatusType = (
     case 2:
       return 'warning' // 已送产待生产 - 浅紫
     case 3:
-      return 'primary' // 已生产待发货 - 浅绿
+      return 'process' // 已生产待发货 - 浅绿
     case 4:
       return 'success' // 已发货 - 浅青
     default:

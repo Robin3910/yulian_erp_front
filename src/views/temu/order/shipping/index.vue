@@ -146,32 +146,77 @@
           </template>
         </el-table-column>
 
-        <!-- 订单信息 -->
-        <el-table-column
-          label="订单信息"
-          prop="orderNo"
+        <!-- 订单信息列 -->
+        <el-table-column 
+          label="订单信息" 
+          align="center" 
           min-width="240"
-          class-name="text-left-column order-info-column"
-          :show-overflow-tooltip="false"
+          class-name="order-info-column"
         >
-          <template #default="{ row, $index }">
-            <template v-if="spanArr.orderSpans[$index] !== 0">
-              <div class="order-info">
-                <div class="order-number">
-                  <span class="label">订单编号：</span>
-                  {{ (row as any).orderNo || '-' }}</div>
-                <div class="shop-info">
-                  <div class="shop-name">
-                    <span class="label">店铺名称：</span>
-                    <span>{{ row.shopName || '-' }}</span>
-                  </div>
-                  <div class="shop-id">
-                    <span class="label">店铺ID：</span>
-                    <span>{{ row.shopId || '-' }}</span>
-                  </div>
+          <template #default="{ row }">
+            <div class="order-info">
+              <div class="order-number">
+                <div>订单号：{{ row.orderNo }}</div>
+              </div>
+              <div class="shop-info">
+                <div class="shop-name">
+                  <span class="label">店铺名称：</span>
+                  {{ row.shopName }}
+                </div>
+                <div class="shop-id">
+                  <span class="label">店铺ID：</span>
+                  {{ row.shopId }}
+                </div>
+                <div class="mt-2 flex justify-center gap-2">
+                  <el-tooltip
+                    effect="dark"
+                    content="当前面单尚未上传，请联系相关人员及时上传！"
+                    placement="top"
+                    :disabled="!!row.expressImageUrl"
+                    popper-class="custom-tooltip"
+                    :show-after="100"
+                    :hide-after="200"
+                    :enterable="false"
+                    :offset="20"
+                  >
+                    <el-button
+                      size="small"
+                      type="primary"
+                      plain
+                      class="action-button urgent-print-button"
+                      :disabled="!row.expressImageUrl"
+                      @click.stop="handlePrint(row.expressImageUrl)"
+                    >
+                      <el-icon><Printer /></el-icon>
+                      打印面单
+                    </el-button>
+                  </el-tooltip>
+                  <el-tooltip
+                    effect="dark"
+                    content="当前商品条码尚未上传，请联系相关人员及时上传！"
+                    placement="top"
+                    :disabled="!!row.expressSkuImageUrl"
+                    popper-class="custom-tooltip"
+                    :show-after="100"
+                    :hide-after="200"
+                    :enterable="false"
+                    :offset="20"
+                  >
+                    <el-button
+                      size="small"
+                      type="info"
+                      plain
+                      class="action-button urgent-print-button"
+                      :disabled="!row.expressSkuImageUrl"
+                      @click.stop="handlePrint(row.expressSkuImageUrl)"
+                    >
+                      <el-icon><Printer /></el-icon>
+                      打印商品条码
+                    </el-button>
+                  </el-tooltip>
                 </div>
               </div>
-            </template>
+            </div>
           </template>
         </el-table-column>
 
@@ -181,7 +226,6 @@
           prop="orderStatus" 
           align="center" 
           min-width="135"
-          class-name="order-status-column"
         >
           <template #default="{ row }">
             <el-tag :type="getOrderStatusType(row.orderStatus)" class="status-tag" size="large">
@@ -313,32 +357,9 @@
         </el-table-column>
 
         <!-- 操作列 -->
-        <el-table-column label="操作" fixed="right" align="center" min-width="140">
+        <el-table-column label="操作" fixed="right" align="center" min-width="120">
           <template #default="{ row }">
             <div class="action-buttons">
-              <el-tooltip
-                effect="dark"
-                content="当前面单尚未上传，请联系相关人员及时上传！"
-                placement="left-start"
-                :disabled="!!row.expressImageUrl"
-                popper-class="custom-tooltip custom-tooltip-left"
-                :show-after="100"
-                :hide-after="200"
-                :enterable="false"
-                :offset="20"
-              >
-                <el-button
-                  size="small"
-                  type="primary"
-                  plain
-                  class="action-button"
-                  :disabled="!row.expressImageUrl"
-                  @click.stop="handlePrint(row.expressImageUrl)"
-                >
-                  <el-icon><Printer /></el-icon>
-                  打印面单
-                </el-button>
-              </el-tooltip>
               <el-tooltip
                 effect="dark"
                 content="当前合规单尚未上传，请联系相关人员及时上传！"
@@ -360,29 +381,6 @@
                 >
                   <el-icon><Printer /></el-icon>
                   打印合规单
-                </el-button>
-              </el-tooltip>
-              <el-tooltip
-                effect="dark"
-                content="当前商品条码尚未上传，请联系相关人员及时上传！"
-                placement="left-start"
-                :disabled="!!row.expressSkuImageUrl"
-                popper-class="custom-tooltip custom-tooltip-left"
-                :show-after="100"
-                :hide-after="200"
-                :enterable="false"
-                :offset="20"
-              >
-                <el-button
-                  size="small"
-                  type="info"
-                  plain
-                  class="action-button"
-                  :disabled="!row.expressSkuImageUrl"
-                  @click.stop="handlePrint(row.expressSkuImageUrl)"
-                >
-                  <el-icon><Printer /></el-icon>
-                  打印商品条码
                 </el-button>
               </el-tooltip>
             </div>
@@ -1506,6 +1504,59 @@ const tableRowClassName = ({ row, rowIndex }: { row: any; rowIndex: number }) =>
       background-color: var(--el-border-color-darker) !important;
       opacity: 0.8;
     }
+  }
+}
+
+// 订单信息列的分隔线
+:deep(.el-table__body) {
+  .order-info-column {
+    position: relative;
+    
+    &::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      right: 0;
+      height: 100%;
+      width: 1px;
+      background-color: var(--el-border-color-darker);
+      z-index: 1;
+    }
+  }
+}
+
+// 修改打印按钮样式，与加急面单按钮保持一致
+.urgent-print-button {
+  width: 110px;
+  margin: 0;
+  border-radius: 4px;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  background: #F5F7FA;
+  border: 1px solid #DCDFE6;
+  color: #606266;
+  height: 32px;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &:hover {
+    background: #fff;
+    border-color: #c6e2ff;
+    color: #409EFF;
+  }
+
+  &:disabled {
+    background: #F5F7FA;
+    border-color: #DCDFE6;
+    color: #C0C4CC;
+  }
+
+  .el-icon {
+    margin-right: 4px;
+    vertical-align: middle;
   }
 }
 </style>
