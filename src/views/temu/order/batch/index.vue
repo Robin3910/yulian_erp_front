@@ -69,6 +69,12 @@
 
   <!-- 列表 -->
   <ContentWrap>
+    <div class="mb-10px flex justify-end">
+      <el-button type="primary" @click="handlePrintBatch" plain>
+        <Icon icon="ep:printer" class="mr-5px" />
+        打印所有批次箱贴
+      </el-button>
+    </div>
     <el-table
       v-loading="loading"
       :data="list"
@@ -419,7 +425,9 @@ const resetQuery = () => {
 }
 
 const handlerPrintGoodsSn = async (row: OrderVO, type: string | number) => {
-  let { goodsSn, oldTypeUrl } = await OrderApi.getOrderExtraInfo(row.id)
+  // let { goodsSn, oldTypeUrl } = await OrderApi.getOrderExtraInfo(row.id)
+  let goodsSn = row.goodsSn;
+  let oldTypeUrl = row.complianceUrl;
   switch (type) {
     case 1:
       if(!goodsSn){
@@ -433,7 +441,7 @@ const handlerPrintGoodsSn = async (row: OrderVO, type: string | number) => {
         ElMessage.warning('合规单没有设置无法打印!')
         return
       }
-      printJS(oldTypeUrl, 'image')
+      printJS(oldTypeUrl)
   }
 }
 const handleFileSuccess = async (row: any, res: any) => {
@@ -552,7 +560,7 @@ const getOrderStatusType = (
     case 2:
       return 'warning' // 已送产待生产 - 浅紫
     case 3:
-      return 'process' // 已生产待发货 - 浅绿
+      return 'primary' // 已生产待发货 - 浅绿
     case 4:
       return 'success' // 已发货 - 浅青
     default:
@@ -576,6 +584,49 @@ const getOrderStatusText = (status: number) => {
     default:
       return '未知状态'
   }
+}
+
+/** 打印批次信息 */
+const handlePrintBatch = () => {
+  // 创建打印内容
+  const printContent = list.value.map(batch => {
+    // 获取该批次下所有不重复的品类信息
+    const allCategories = Array.from(new Set(batch.orderList?.map(order => order.categoryName) || []))
+    const categories = allCategories.slice(0, 5)
+    const hasMore = allCategories.length > 5
+    
+    return `
+      <div style="width: 100mm; min-height: 100mm; padding: 8mm; box-sizing: border-box; font-family: Arial, sans-serif; display: flex; flex-direction: column;">
+        <div style="text-align: center; margin-bottom: 6mm;">
+          <div style="font-size: 36pt; font-weight: bold; word-break: break-all;">${batch.batchNo}</div>
+        </div>
+        <div>
+          <div style="font-size: 12pt; margin-bottom: 3mm;">品类信息：</div>
+          <div style="font-size: 10pt; line-height: 1.4; word-break: break-all;">
+            ${categories.join('、')}${hasMore ? '等' : ''}
+          </div>
+        </div>
+      </div>
+    `
+  }).join('<div style="page-break-after: always;"></div>')
+
+  // 使用 print-js 打印
+  printJS({
+    printable: printContent,
+    type: 'raw-html',
+    style: `
+      @page {
+        size: 100mm 100mm;
+        margin: 0;
+      }
+      @media print {
+        body {
+          margin: 0;
+          padding: 0;
+        }
+      }
+    `
+  })
 }
 
 /** 初始化 **/

@@ -364,7 +364,7 @@
                 effect="dark"
                 content="当前合规单尚未上传，请联系相关人员及时上传！"
                 placement="left-start"
-                :disabled="!!row.oldTypeUrl"
+                :disabled="!!row.complianceUrl"
                 popper-class="custom-tooltip custom-tooltip-left"
                 :show-after="100"
                 :hide-after="200"
@@ -376,8 +376,8 @@
                   type="warning"
                   plain
                   class="action-button"
-                  :disabled="!row.oldTypeUrl"
-                  @click.stop="handlePrint(row.oldTypeUrl)"
+                  :disabled="!row.complianceUrl"
+                  @click.stop="handlePrint(row.complianceUrl)"
                 >
                   <el-icon><Printer /></el-icon>
                   打印合规单
