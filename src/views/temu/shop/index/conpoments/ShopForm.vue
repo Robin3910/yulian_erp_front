@@ -22,73 +22,88 @@
 
       <!-- 添加合规单上传 -->
       <el-form-item label="合规单">
-        <div class="flex flex-wrap gap-6">
+        <div class="flex justify-between gap-4">
           <!-- 第一个上传框 key=0 -->
-          <div class="flex flex-col items-center w-[160px]">
-            <div class="mb-2 px-3 py-1 bg-primary rounded text-white text-sm font-medium">0+</div>
-            <UploadImg
-              v-model="formData.oldTypeUrl['0']"
-              :limit="1"
-              width="160px"
-              height="160px"
-              :fileType="['image/jpeg', 'image/png', 'image/gif', 'application/pdf']"
-              @preview="handlePreview"
-            />
-          </div>
-
-          <!-- 第二个上传框 key=1 -->
-          <div class="flex flex-col items-center w-[160px]">
-            <div class="mb-2 px-3 py-1 bg-success rounded text-white text-sm font-medium">3+</div>
-            <UploadImg
-              v-model="formData.oldTypeUrl['1']"
-              :limit="1"
-              width="160px"
-              height="160px"
-              :fileType="['image/jpeg', 'image/png', 'image/gif', 'application/pdf']"
-              @preview="handlePreview"
-            />
-          </div>
-
-          <!-- 第三个上传框 key=2 -->
-          <div class="flex flex-col items-center w-[160px]">
-            <div class="mb-2 px-3 py-1 bg-warning rounded text-white text-sm font-medium">14+</div>
-            <UploadImg
-              v-model="formData.oldTypeUrl['2']"
-              :limit="1"
-              width="160px"
-              height="160px"
-              :fileType="['image/jpeg', 'image/png', 'image/gif', 'application/pdf']"
-              @preview="handlePreview"
-            />
-          </div>
-
-          <!-- 额外的上传框列表 -->
-          <template v-for="(_, key) in extraOldTypeUrls" :key="key">
-            <div class="flex flex-col items-center w-[160px] relative">
+          <div class="compliance-card">
+            <div class="compliance-header bg-primary">
+              <span class="text-lg font-medium">0+</span>
+              <el-tooltip content="适用于0岁及以上的产品" placement="top">
+                <Icon icon="ep:info-filled" class="text-white text-sm" />
+              </el-tooltip>
+            </div>
+            <div class="compliance-body">
               <UploadImg
-                v-model="formData.oldTypeUrl[key.toString()]"
+                v-model="formData.oldTypeUrl['0']"
                 :limit="1"
                 width="160px"
                 height="160px"
                 :fileType="['image/jpeg', 'image/png', 'image/gif', 'application/pdf']"
                 @preview="handlePreview"
               />
-              <el-button
-                type="danger"
-                link
-                @click="removeExtraImage(key)"
-                class="delete-btn"
+              <el-button 
+                type="primary"
+                class="mt-3 w-full"
+                @click="handleOpenSkcDialog('0')"
+                :disabled="!formData.shopId"
               >
-                <Icon icon="ep:delete" />
+                SKC管理
               </el-button>
             </div>
-          </template>
+          </div>
 
-          <!-- 新增按钮 -->
-          <div v-if="Object.keys(extraOldTypeUrls).length < 7" class="w-[160px] h-[160px] border border-dashed border-[var(--el-border-color)] rounded-lg hover:border-primary cursor-pointer flex items-center justify-center" @click="addNewImage">
-            <div class="flex flex-col items-center gap-2 text-[var(--el-text-color-secondary)]">
-              <Icon icon="ep:plus" class="text-24px" />
-              <span class="text-sm">新增图片</span>
+          <!-- 第二个上传框 key=1 -->
+          <div class="compliance-card">
+            <div class="compliance-header bg-success">
+              <span class="text-lg font-medium">3+</span>
+              <el-tooltip content="适用于3岁及以上的产品" placement="top">
+                <Icon icon="ep:info-filled" class="text-white text-sm" />
+              </el-tooltip>
+            </div>
+            <div class="compliance-body">
+              <UploadImg
+                v-model="formData.oldTypeUrl['1']"
+                :limit="1"
+                width="160px"
+                height="160px"
+                :fileType="['image/jpeg', 'image/png', 'image/gif', 'application/pdf']"
+                @preview="handlePreview"
+              />
+              <el-button 
+                type="primary"
+                class="mt-3 w-full"
+                @click="handleOpenSkcDialog('1')"
+                :disabled="!formData.shopId"
+              >
+                SKC管理
+              </el-button>
+            </div>
+          </div>
+
+          <!-- 第三个上传框 key=2 -->
+          <div class="compliance-card">
+            <div class="compliance-header bg-warning">
+              <span class="text-lg font-medium">14+</span>
+              <el-tooltip content="适用于14岁及以上的产品" placement="top">
+                <Icon icon="ep:info-filled" class="text-white text-sm" />
+              </el-tooltip>
+            </div>
+            <div class="compliance-body">
+              <UploadImg
+                v-model="formData.oldTypeUrl['2']"
+                :limit="1"
+                width="160px"
+                height="160px"
+                :fileType="['image/jpeg', 'image/png', 'image/gif', 'application/pdf']"
+                @preview="handlePreview"
+              />
+              <el-button 
+                type="primary"
+                class="mt-3 w-full"
+                @click="handleOpenSkcDialog('2')"
+                :disabled="!formData.shopId"
+              >
+                SKC管理
+              </el-button>
             </div>
           </div>
         </div>
@@ -106,11 +121,20 @@
       <img :src="previewUrl" class="max-w-full max-h-full mx-auto" />
     </div>
   </el-dialog>
+
+  <!-- SKC管理对话框 -->
+  <ShopSkcDialog
+    ref="skcDialogRef"
+    :shopId="Number(formData.shopId)"
+    :oldType="currentOldType"
+    @success="handleSkcSuccess"
+  />
 </template>
 <script setup lang="ts">
-import { ShopApi, ShopVO } from '@/api/temu/shop'
+import { ShopApi, ShopVO, ShopOldTypeVO } from '@/api/temu/shop'
 import { UploadImg } from '@/components/UploadFile'
 import { Icon } from '@/components/Icon'
+import ShopSkcDialog from './ShopSkcDialog.vue'
 
 /** 店铺 表单 */
 defineOptions({ name: 'ShopForm' })
@@ -127,11 +151,12 @@ const formData = ref({
   shopId: undefined,
   shopName: undefined,
   webhook: undefined,
-  accessToken:undefined,
+  accessToken: undefined,
+  oldTypes: [] as ShopOldTypeVO[],
   oldTypeUrl: {
-    '0': undefined,
-    '1': undefined,
-    '2': undefined
+    '0': undefined as string | undefined,
+    '1': undefined as string | undefined,
+    '2': undefined as string | undefined
   }
 })
 const formRules = reactive({
@@ -171,39 +196,112 @@ const handlePreview = (url: string) => {
   }
 }
 
+// 监听shopId变化
+watch(() => formData.value.shopId, async (newShopId) => {
+  if (newShopId) {
+    try {
+      // 打印请求参数和响应数据，用于调试
+      console.log('请求参数 shopId:', newShopId)
+      const response = await ShopApi.getShopOldType(newShopId)
+      console.log('获取到的合规单数据:', response)
+
+      // response直接就是数组数据
+      if (response && response.length > 0) {
+        // 保存原始数据
+        formData.value.oldTypes = response
+
+        // 按oldType分组并更新显示
+        const groupedData = response.reduce((acc: { [key: string]: ShopOldTypeVO[] }, item: ShopOldTypeVO) => {
+          if (!acc[item.oldType]) {
+            acc[item.oldType] = []
+          }
+          acc[item.oldType].push(item)
+          return acc
+        }, {})
+
+        console.log('分组后的数据:', groupedData)
+
+        // 更新oldTypeUrl，每组取第一个URL
+        const newOldTypeUrl = {
+          '0': groupedData['0']?.[0]?.oldTypeUrl,
+          '1': groupedData['1']?.[0]?.oldTypeUrl,
+          '2': groupedData['2']?.[0]?.oldTypeUrl
+        }
+        console.log('设置的oldTypeUrl:', newOldTypeUrl)
+        formData.value.oldTypeUrl = newOldTypeUrl
+      } else {
+        // 如果没有数据，重置为空
+        formData.value.oldTypes = []
+        formData.value.oldTypeUrl = {
+          '0': undefined,
+          '1': undefined,
+          '2': undefined
+        }
+      }
+    } catch (error) {
+      console.error('获取合规单数据失败:', error)
+      message.error('获取合规单数据失败')
+    }
+  }
+})
+
 /** 打开弹窗 */
 const open = async (type: string, id?: number) => {
   dialogVisible.value = true
   dialogTitle.value = t('action.' + type)
   formType.value = type
   resetForm()
-  // 修改时，设置数据
-  if (id) {
-    formLoading.value = true
-    try {
+  
+  formLoading.value = true
+  try {
+    // 修改时，设置数据
+    if (id) {
       const data = await ShopApi.getShop(id)
-      // 处理 oldTypeUrl 为 null 的情况
       formData.value = {
         ...data,
-        oldTypeUrl: data.oldTypeUrl || {
+        oldTypes: [],
+        oldTypeUrl: {
           '0': undefined,
           '1': undefined,
           '2': undefined
         }
       }
-      // 如果有额外的图片，需要更新 extraOldTypeUrls
-      if (data.oldTypeUrl) {
-        Object.keys(data.oldTypeUrl).forEach(key => {
-          const keyNum = parseInt(key)
-          if (keyNum >= 3) {
-            extraOldTypeUrls.value[keyNum] = ''
-            nextImageKey = Math.max(nextImageKey, keyNum + 1)
+
+      // 如果有shopId，获取合规单数据
+      if (formData.value.shopId) {
+        console.log('open方法中获取合规单，shopId:', formData.value.shopId)
+        const response = await ShopApi.getShopOldType(formData.value.shopId)
+        console.log('open方法中获取到的合规单数据:', response)
+
+        // response直接就是数组数据
+        if (response && response.length > 0) {
+          // 保存原始数据
+          formData.value.oldTypes = response
+
+          // 按oldType分组并更新显示
+          const groupedData = response.reduce((acc: { [key: string]: ShopOldTypeVO[] }, item: ShopOldTypeVO) => {
+            if (!acc[item.oldType]) {
+              acc[item.oldType] = []
+            }
+            acc[item.oldType].push(item)
+            return acc
+          }, {})
+
+          console.log('open方法中分组后的数据:', groupedData)
+
+          // 更新oldTypeUrl，每组取第一个URL
+          const newOldTypeUrl = {
+            '0': groupedData['0']?.[0]?.oldTypeUrl,
+            '1': groupedData['1']?.[0]?.oldTypeUrl,
+            '2': groupedData['2']?.[0]?.oldTypeUrl
           }
-        })
+          console.log('open方法中设置的oldTypeUrl:', newOldTypeUrl)
+          formData.value.oldTypeUrl = newOldTypeUrl
+        }
       }
-    } finally {
-      formLoading.value = false
     }
+  } finally {
+    formLoading.value = false
   }
 }
 defineExpose({ open }) // 提供 open 方法，用于打开弹窗
@@ -217,19 +315,45 @@ const submitForm = async () => {
   formLoading.value = true
   try {
     const data = { ...formData.value }
-    // 检查 oldTypeUrl 是否所有值都为 undefined
-    const hasValue = Object.values(data.oldTypeUrl).some(url => url !== undefined)
-    if (!hasValue) {
-      data.oldTypeUrl = null
-    }
+    // 更新oldTypes数据
+    const oldTypes = Object.entries(data.oldTypeUrl)
+      .filter(([_, url]) => url !== undefined)
+      .map(([oldType, oldTypeUrl]) => ({
+        shopId: String(data.shopId || ''),
+        skc: '', // 这里可能需要根据业务需求设置skc
+        oldTypeUrl: oldTypeUrl as string,
+        oldType
+      }))
 
+    const submitData = {
+      ...data,
+      oldTypes
+    }
+    // 移除临时使用的oldTypeUrl
+    delete (submitData as any).oldTypeUrl
+
+    // 1. 先调用原有的创建/更新接口
     if (formType.value === 'create') {
-      await ShopApi.createShop(data as unknown as ShopVO)
+      await ShopApi.createShop(submitData as unknown as ShopVO)
       message.success(t('common.createSuccess'))
     } else {
-      await ShopApi.updateShop(data as unknown as ShopVO)
+      await ShopApi.updateShop(submitData as unknown as ShopVO)
       message.success(t('common.updateSuccess'))
     }
+
+    // 2. 调用 /temu/shop-oldType/update 接口
+    // 从formData.oldTypes中获取所有SKC信息并按要求格式化
+    const skcData = formData.value.oldTypes.map(item => ({
+      shopId: Number(data.shopId),
+      skc: item.skc,
+      oldTypeUrl: formData.value.oldTypeUrl[item.oldType], // 使用对应oldType的URL
+      oldType: item.oldType
+    }))
+
+    if (skcData.length > 0) {
+      await ShopApi.updateShopOldType(skcData)
+    }
+
     dialogVisible.value = false
     // 发送操作成功的事件
     emit('success')
@@ -245,6 +369,8 @@ const resetForm = () => {
     shopId: undefined,
     shopName: undefined,
     webhook: undefined,
+    accessToken: undefined,
+    oldTypes: [],
     oldTypeUrl: {
       '0': undefined,
       '1': undefined,
@@ -254,6 +380,43 @@ const resetForm = () => {
   extraOldTypeUrls.value = {}
   nextImageKey = 4
   formRef.value?.resetFields()
+}
+
+const skcDialogRef = ref()
+const currentOldType = ref('')
+
+// 打开SKC管理对话框
+const handleOpenSkcDialog = (oldType: string) => {
+  if (!formData.value.shopId) {
+    message.warning('请先输入店铺ID')
+    return
+  }
+  currentOldType.value = oldType
+  skcDialogRef.value.open()
+}
+
+// SKC管理成功回调
+const handleSkcSuccess = async () => {
+  // 重新加载合规单数据
+  if (formData.value.shopId) {
+    const response = await ShopApi.getShopOldType(formData.value.shopId)
+    if (response && response.length > 0) {
+      formData.value.oldTypes = response
+      const groupedData = response.reduce((acc: { [key: string]: ShopOldTypeVO[] }, item: ShopOldTypeVO) => {
+        if (!acc[item.oldType]) {
+          acc[item.oldType] = []
+        }
+        acc[item.oldType].push(item)
+        return acc
+      }, {})
+
+      formData.value.oldTypeUrl = {
+        '0': groupedData['0']?.[0]?.oldTypeUrl,
+        '1': groupedData['1']?.[0]?.oldTypeUrl,
+        '2': groupedData['2']?.[0]?.oldTypeUrl
+      }
+    }
+  }
 }
 </script>
 
@@ -270,21 +433,31 @@ const resetForm = () => {
 .text-white {
   color: white;
 }
-.hover\:border-primary:hover {
-  border-color: var(--el-color-primary);
+.compliance-card {
+  width: 185px;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  flex: 1;
+  max-width: 300px;
 }
-.delete-btn {
-  position: absolute;
-  top: 0;
-  right: 0;
-  padding: 4px;
-  border-radius: 50%;
-  background-color: rgba(0, 0, 0, 0.5);
+.compliance-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px 0 rgba(0, 0, 0, 0.15);
+}
+.compliance-header {
+  padding: 12px;
   color: white;
-  z-index: 1;
-  margin: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
-.delete-btn:hover {
-  background-color: var(--el-color-danger);
+.compliance-body {
+  padding: 16px;
+  background-color: white;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 </style>
