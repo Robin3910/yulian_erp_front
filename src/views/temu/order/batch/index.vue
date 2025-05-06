@@ -318,6 +318,7 @@
           />
         </template>
       </el-table-column>
+      <el-table-column label="备注" align="center" prop="remark" width="150" :show-overflow-tooltip="true" />
       <el-table-column label="操作" align="center" width="120px" fixed="right">
         <template #default="scope">
           <div class="flex justify-center" v-if="scope.row.status === 0">
@@ -334,6 +335,7 @@
               </template>
             </el-popconfirm>
           </div>
+          <el-button  size="normal" type="text" @click="handlerRemark(scope.row)">备注</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -345,6 +347,8 @@
       @pagination="getList"
     />
   </ContentWrap>
+  <!--修改备注-->
+  <OrderRemarkPopup @confirm="handlerRemarkConfirm" ref="orderRemarkPopup" />
 </template>
 
 <script setup lang="ts">
@@ -355,6 +359,7 @@ import { ElMessageBox,ElMessage } from 'element-plus'
 import JSZip from 'jszip'
 import { OrderApi, OrderVO } from '@/api/temu/order'
 import printJS from 'print-js'
+import OrderRemarkPopup from "@/views/temu/order/batch/components/OrderRemarkPopup.vue";
 
 /** 订单批次 列表 */
 defineOptions({ name: 'BatchOrderPopup' })
@@ -375,7 +380,8 @@ const queryParams = reactive({
 })
 const queryFormRef = ref() // 搜索的表单
 const exportLoading = ref(false) // 导出的加载中
-
+// 备注引用
+const orderRemarkPopup = useTemplateRef('orderRemarkPopup')
 /** 查询列表 */
 const getList = async () => {
   loading.value = true
@@ -577,7 +583,18 @@ const getOrderStatusText = (status: number) => {
       return '未知状态'
   }
 }
-
+const handlerRemark = async (row: OrderBatchVO) => {
+  if (orderRemarkPopup.value) {
+    orderRemarkPopup.value.setVisible(true)
+    orderRemarkPopup.value.formData.orderId = row.id
+    orderRemarkPopup.value.formData.remark = row.remark
+  }
+}
+const handlerRemarkConfirm = async (data: any) => {
+  await OrderBatchApi.updateOrderBatchRemark(data)
+  ElMessage.success('操作成功')
+  getList()
+}
 /** 初始化 **/
 onMounted(() => {
   getList()

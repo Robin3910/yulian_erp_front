@@ -13,7 +13,12 @@
           <el-row :gutter="20">
             <el-col :span="24" :lg="6">
               <el-form-item label="店铺" prop="shopId" class="w-full">
-                <el-select filterable v-model="queryParams.shopId" placeholder="请选择店铺" clearable>
+                <el-select
+                  filterable
+                  v-model="queryParams.shopId"
+                  placeholder="请选择店铺"
+                  clearable
+                >
                   <el-option
                     v-for="(item, index) in shopList"
                     :key="index"
@@ -184,7 +189,13 @@
         fixed-header
       >
         <!--选择-->
-        <el-table-column type="selection" width="55" align="center" reserve-selection fixed="left" />
+        <el-table-column
+          type="selection"
+          width="55"
+          align="center"
+          reserve-selection
+          fixed="left"
+        />
         <!--订单编号和状态-->
         <el-table-column label="订单编号/状态" align="center" min-width="155" fixed="left">
           <template #default="{ row }">
@@ -199,7 +210,7 @@
         <!--店铺信息-->
         <el-table-column label="店铺信息" align="center" min-width="140" fixed="left">
           <template #default="{ row }">
-            <div class="text-left" >
+            <div class="text-left">
               <div class="font-bold text-center">{{ row.shopName }}</div>
               <div>{{ row.shopId }}</div>
             </div>
@@ -220,22 +231,22 @@
           </template>
         </el-table-column>
         <!-- 商品信息 -->
-<el-table-column label="商品信息" align="center" prop="productImgUrl" min-width="245">
-  <template #default="{ row }">
-    <div class="text-left">
-      <!-- 修改标题容器 -->
-      <div class="product-title mb-2">
-        <span class="font-bold">产品标题：</span>{{ row.productTitle }}
-      </div>
-      
-      <!-- 商品属性 -->
-      <div class="flex items-start mb-2">
-        <div><span class="font-bold">商品属性:</span></div>
-        <div class="ml-2">{{ row.productProperties || '--' }}</div>
-      </div>
-    </div>
-  </template>
-</el-table-column>
+        <el-table-column label="商品信息" align="center" prop="productImgUrl" min-width="245">
+          <template #default="{ row }">
+            <div class="text-left">
+              <!-- 修改标题容器 -->
+              <div class="product-title mb-2">
+                <span class="font-bold">产品标题：</span>{{ row.productTitle }}
+              </div>
+
+              <!-- 商品属性 -->
+              <div class="flex items-start mb-2">
+                <div><span class="font-bold">商品属性:</span></div>
+                <div class="ml-2">{{ row.productProperties || '--' }}</div>
+              </div>
+            </div>
+          </template>
+        </el-table-column>
         <!-- 类目名称 -->
         <el-table-column label="类目名称" align="center" prop="productCategoryName" min-width="235">
           <template #default="{ row }">
@@ -272,14 +283,18 @@
         <!-- 定制文字列表 -->
         <el-table-column label="定制文字" align="center" min-width="150">
           <template #default="{ row }">
-            <div class="text-left" style="text-align: center;">{{ row.customTextList || '' }}</div>
+            <div class="text-left" style="text-align: center">{{ row.customTextList || '' }}</div>
           </template>
         </el-table-column>
         <!-- 定制图片 -->
         <el-table-column label="定制图片" align="center" prop="customImageUrls" min-width="180">
           <template #default="{ row }">
             <div class="flex flex-wrap" v-if="row.customImageUrls">
-              <div v-for="(item, index) in row.customImageUrls.split(',')" :key="index" class="ml-2">
+              <div
+                v-for="(item, index) in row.customImageUrls.split(',')"
+                :key="index"
+                class="ml-2"
+              >
                 <el-image
                   class="w-60px h-60px"
                   :hide-on-click-modal="true"
@@ -329,22 +344,22 @@
           </template>
         </el-table-column>
 
-      <el-table-column
-        label="预定单创建时间"
-        align="center"
-        prop="bookingTime"
-        :formatter="dateFormatter"
-        :show-overflow-tooltip="false"
-        width="150px"
-      />
+        <el-table-column
+          label="预定单创建时间"
+          align="center"
+          prop="bookingTime"
+          :formatter="dateFormatter"
+          :show-overflow-tooltip="false"
+          width="150px"
+        />
 
         <el-table-column label="操作" fixed="right" align="center" min-width="130px">
           <template #default="{ row }">
             <div class="action-buttons">
               <!-- 待下单状态 -->
-              <el-button 
-                v-if="row.orderStatus === 0" 
-                size="small" 
+              <el-button
+                v-if="row.orderStatus === 0"
+                size="small"
                 type="primary"
                 plain
                 class="action-button"
@@ -367,7 +382,9 @@
                   "
                 >
                   <template #reference>
-                    <el-button size="small" type="primary" plain class="action-button">已送产待生产</el-button>
+                    <el-button size="small" type="primary" plain class="action-button">
+                      已送产待生产
+                    </el-button>
                   </template>
                 </el-popconfirm>
                 <el-popconfirm
@@ -382,7 +399,9 @@
                   "
                 >
                   <template #reference>
-                    <el-button size="small" type="info" plain class="action-button mt-2">取消订单</el-button>
+                    <el-button size="small" type="info" plain class="action-button mt-2"
+                      >取消订单
+                    </el-button>
                   </template>
                 </el-popconfirm>
               </template>
@@ -401,7 +420,9 @@
                   "
                 >
                   <template #reference>
-                    <el-button size="small" type="primary" plain class="action-button">已生产待发货</el-button>
+                    <el-button size="small" type="primary" plain class="action-button">
+                      已生产待发货
+                    </el-button>
                   </template>
                 </el-popconfirm>
                 <el-popconfirm
@@ -416,7 +437,9 @@
                   "
                 >
                   <template #reference>
-                    <el-button size="small" type="info" plain class="action-button mt-2">取消订单</el-button>
+                    <el-button size="small" type="info" plain class="action-button mt-2"
+                      >取消订单
+                    </el-button>
                   </template>
                 </el-popconfirm>
               </template>
@@ -435,7 +458,9 @@
                   "
                 >
                   <template #reference>
-                    <el-button size="small" type="primary" plain class="action-button">已发货</el-button>
+                    <el-button size="small" type="primary" plain class="action-button"
+                      >已发货
+                    </el-button>
                   </template>
                 </el-popconfirm>
                 <el-popconfirm
@@ -450,10 +475,13 @@
                   "
                 >
                   <template #reference>
-                    <el-button size="small" type="info" plain class="action-button mt-2">取消订单</el-button>
+                    <el-button size="small" type="info" plain class="action-button mt-2"
+                      >取消订单
+                    </el-button>
                   </template>
                 </el-popconfirm>
               </template>
+              <el-button  size="small" type="text" @click="handlerRemark(row)">备注</el-button>
             </div>
           </template>
         </el-table-column>
@@ -481,6 +509,8 @@
     v-if="batchOrderPopup"
     @confirm="getList"
   />
+  <!--修改备注-->
+  <OrderRemarkPopup @confirm="handlerRemarkConfirm" ref="orderRemarkPopup" />
 </template>
 
 <script setup lang="ts">
@@ -491,8 +521,9 @@ import { dateFormatter } from '@/utils/formatTime'
 import { OrderApi, OrderVO } from '@/api/temu/order'
 import { TemuCommonApi } from '@/api/temu/common'
 import { getStrDictOptions } from '@/utils/dict'
-import {ElMessage, ElMessageBox, ElTable} from 'element-plus'
+import { ElMessage, ElMessageBox, ElTable } from 'element-plus'
 import { OrderBatchApi } from '@/api/temu/order-batch'
+import OrderRemarkPopup from '@/views/temu/order/admin/components/OrderRemarkPopup.vue'
 
 /** 订单 列表 */
 defineOptions({ name: 'TemuOrderAdmin' })
@@ -502,7 +533,7 @@ const list = ref<OrderVO[]>([]) // 列表的数据
 const total = ref(0) // 列表的总页数
 const categoryList = ref<any[]>([])
 const batchOrderPopup = ref(false)
-const tableRef=useTemplateRef<InstanceType<typeof ElTable>>('tableRef')
+const tableRef = useTemplateRef<InstanceType<typeof ElTable>>('tableRef')
 // 店铺列表
 const shopList = ref<any[]>([])
 // 多选
@@ -511,20 +542,24 @@ const selectedRows = ref<any[]>([])
 const orderStatusPopup = useTemplateRef('orderStatusPopup')
 // 批量下单弹窗引用
 const batchOrderPopupRef = useTemplateRef('batchOrderPopup')
+// 备注引用
+const orderRemarkPopup = useTemplateRef('orderRemarkPopup')
 
 // 获取订单状态类型
-const getOrderStatusType = (status: number): 'success' | 'warning' | 'info' | 'primary' | 'process' => {
+const getOrderStatusType = (
+  status: number
+): 'success' | 'warning' | 'info' | 'primary' | 'process' => {
   switch (status) {
     case 0:
-      return 'info'     // 待下单 - 浅灰
+      return 'info' // 待下单 - 浅灰
     case 1:
-      return 'primary'  // 已下单待送产 - 浅蓝
+      return 'primary' // 已下单待送产 - 浅蓝
     case 2:
-      return 'warning'  // 已送产待生产 - 浅紫
+      return 'warning' // 已送产待生产 - 浅紫
     case 3:
-      return 'process'  // 已生产待发货 - 浅绿
+      return 'process' // 已生产待发货 - 浅绿
     case 4:
-      return 'success'  // 已发货 - 浅青
+      return 'success' // 已发货 - 浅青
     default:
       return 'info'
   }
@@ -576,7 +611,7 @@ const queryFormRef = ref() // 搜索的表单
 const orderTotalPrice = ref(0)
 /** 查询列表 */
 const getList = async () => {
-  tableRef&&tableRef.value&&tableRef.value.clearSelection()
+  tableRef && tableRef.value && tableRef.value.clearSelection()
   loading.value = true
   try {
     const data = await OrderApi.getOrderPageByAdmin(queryParams)
@@ -730,7 +765,18 @@ const handleBatchGenerate = async () => {
   ElMessage.success('操作成功')
   await getList()
 }
-
+const handlerRemark = async (row: OrderVO) => {
+  if (orderRemarkPopup.value) {
+    orderRemarkPopup.value.setVisible(true)
+    orderRemarkPopup.value.formData.orderId = row.id
+    orderRemarkPopup.value.formData.remark = row.remark
+  }
+}
+const handlerRemarkConfirm = async (data: any) => {
+  await OrderApi.updateOrderRemark(data)
+  ElMessage.success('操作成功')
+  getList()
+}
 /** 初始化 **/
 onMounted(() => {
   getList()
@@ -765,19 +811,19 @@ onMounted(() => {
 
     &:hover {
       background: #a4a6a8;
-      color: #F0F4F8;
+      color: #f0f4f8;
     }
   }
 
   // 已下单待送产状态
   &.el-tag--primary {
-    background: #E0F2FE;
-    border: 1px solid #E0F2FE;
-    color: #082F49;
+    background: #e0f2fe;
+    border: 1px solid #e0f2fe;
+    color: #082f49;
 
     &:hover {
-      background: #0EA5E9;
-      color: #E0F2FE;
+      background: #0ea5e9;
+      color: #e0f2fe;
     }
 
     &::before {
@@ -786,7 +832,7 @@ onMounted(() => {
       width: 8px;
       height: 8px;
       border-radius: 50%;
-      background-color: #0EA5E9;
+      background-color: #0ea5e9;
       margin-right: 8px;
       animation: pulse 1s infinite;
     }
@@ -794,13 +840,13 @@ onMounted(() => {
 
   // 已送产待生产状态
   &.el-tag--warning {
-    background: #E0E7FF;
-    border: 1px solid #E0E7FF;
-    color: #1E1B4B;
+    background: #e0e7ff;
+    border: 1px solid #e0e7ff;
+    color: #1e1b4b;
 
     &:hover {
-      background: #6366F1;
-      color: #E0E7FF;
+      background: #6366f1;
+      color: #e0e7ff;
     }
 
     &::before {
@@ -809,7 +855,7 @@ onMounted(() => {
       width: 8px;
       height: 8px;
       border-radius: 50%;
-      background-color: #6366F1;
+      background-color: #6366f1;
       margin-right: 8px;
       animation: pulse 1s infinite;
     }
@@ -823,7 +869,7 @@ onMounted(() => {
 
     &:hover {
       background: #409eff;
-      color: #DCFCE7;
+      color: #dcfce7;
     }
 
     &::before {
@@ -907,9 +953,9 @@ onMounted(() => {
     color: #838282;
     font-weight: 500;
     position: relative;
-    
+
     &:hover {
-      color: #409EFF;
+      color: #409eff;
     }
   }
 
@@ -933,7 +979,7 @@ onMounted(() => {
 
     .status-node {
       color: #e0e0e0;
-      
+
       &:hover {
         color: #79bbff;
       }
@@ -951,19 +997,19 @@ onMounted(() => {
   justify-content: center;
   width: 60px;
   overflow: hidden;
-  
+
   .arrow-item {
     font-size: 16px;
     color: #474646;
     margin: 0 -2px;
     animation: flowAnimation 8s infinite;
     opacity: 0.3;
-    
+
     &:nth-child(2) {
       animation-delay: 0.2s;
       opacity: 0.6;
     }
-    
+
     &:nth-child(3) {
       animation-delay: 0.4s;
       opacity: 0.9;

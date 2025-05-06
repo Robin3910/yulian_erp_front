@@ -204,7 +204,7 @@
             <div class="product-title mb-2">
               <span class="font-bold">产品标题：</span>{{ row.productTitle }}
             </div>
-            
+
             <!-- 商品属性 -->
             <div class="flex items-start mb-2">
               <div><span class="font-bold">商品属性:</span></div>
@@ -318,9 +318,9 @@
         <template #default="{ row }">
           <div class="action-buttons">
             <!-- 待下单状态 -->
-            <el-button 
-              v-if="row.orderStatus === 0" 
-              size="small" 
+            <el-button
+              v-if="row.orderStatus === 0"
+              size="small"
               type="primary"
               plain
               class="action-button"
@@ -430,6 +430,8 @@
                 </template>
               </el-popconfirm>
             </template>
+            <el-button  size="small" type="text" @click="handlerRemark(row)">备注</el-button>
+
           </div>
         </template>
       </el-table-column>
@@ -485,6 +487,9 @@ const selectedRows = ref<any[]>([])
 const orderStatusPopup = useTemplateRef('orderStatusPopup')
 // 批量下单弹窗引用
 const batchOrderPopupRef = useTemplateRef('batchOrderPopup')
+// 备注引用
+const orderRemarkPopup = useTemplateRef('orderRemarkPopup')
+
 const queryParams = reactive({
   pageNo: 1,
   pageSize: 10,
@@ -665,7 +670,18 @@ const getOrderStatusText = (status: number) => {
       return '未知状态'
   }
 }
-
+const handlerRemark = async (row: OrderVO) => {
+  if (orderRemarkPopup.value) {
+    orderRemarkPopup.value.setVisible(true)
+    orderRemarkPopup.value.formData.orderId = row.id
+    orderRemarkPopup.value.formData.remark = row.remark
+  }
+}
+const handlerRemarkConfirm = async (data: any) => {
+  await OrderApi.updateOrderRemark(data)
+  ElMessage.success('操作成功')
+  getList()
+}
 /** 初始化 **/
 onMounted(() => {
   getList()
@@ -842,7 +858,7 @@ onMounted(() => {
     color: #838282;
     font-weight: 500;
     position: relative;
-    
+
     &:hover {
       color: #409EFF;
     }
@@ -868,7 +884,7 @@ onMounted(() => {
 
     .status-node {
       color: #e0e0e0;
-      
+
       &:hover {
         color: #79bbff;
       }
@@ -886,19 +902,19 @@ onMounted(() => {
   justify-content: center;
   width: 60px;
   overflow: hidden;
-  
+
   .arrow-item {
     font-size: 16px;
     color: #474646;
     margin: 0 -2px;
     animation: flowAnimation 8s infinite;
     opacity: 0.3;
-    
+
     &:nth-child(2) {
       animation-delay: 0.2s;
       opacity: 0.6;
     }
-    
+
     &:nth-child(3) {
       animation-delay: 0.4s;
       opacity: 0.9;

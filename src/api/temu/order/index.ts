@@ -23,7 +23,7 @@ export interface OrderVO {
   originalInfo: string // 接口接收的源信息
   totalPrice: number // 订单总价
   unitPrice: number // 单价
-
+  remark: string // 备注
 }
 
 // 订单 API
@@ -54,18 +54,22 @@ export const OrderApi = {
   },
   //   订单金额统计
   getAdminOrderAmountStatistics: async (params) => {
-    return await request.get({ url: `/temu/order/admin-statistics`, params } )
+    return await request.get({ url: `/temu/order/admin-statistics`, params })
   },
   //   订单金额统计
   getOrderAmountStatistics: async (params) => {
-    return await request.get({ url: `/temu/order/statistics`, params } )
+    return await request.get({ url: `/temu/order/statistics`, params })
   },
   // 更新订单发货状态
   updateOrderShipping: async (data: { orderId: number; orderStatus: number }) => {
     return await request.put({ url: `/temu/order-shipping/update`, data })
   },
   // 批量更新订单发货状态
-  batchUpdateOrderStatus: async (data: { orderIds: number[]; orderStatus: number; trackingNumber: string }) => {
+  batchUpdateOrderStatus: async (data: {
+    orderIds: number[]
+    orderStatus: number
+    trackingNumber: string
+  }) => {
     return await request.put({ url: '/temu/order-shipping/batch-update-status', data })
   },
   // 分页查询用户店铺待发货订单
@@ -76,4 +80,8 @@ export const OrderApi = {
   getOrderExtraInfo: async (orderId: number) => {
     return await request.get({ url: `/temu/order/get-order-extra-info/${orderId}` })
   },
+  //   修改备注
+  updateOrderRemark: async (data: { orderId: number; remark: string }) => {
+    return await request.put({ url: `/temu/order/update-order-remark`, data })
+  }
 }
