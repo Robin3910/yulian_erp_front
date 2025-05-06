@@ -217,12 +217,33 @@
                 </template>
               </el-table-column>
 
-              <el-table-column label="SKU信息" align="center" prop="productTitle" min-width="200">
+              <el-table-column label="SKU信息" align="center" prop="productTitle" min-width="275">
                 <template #default="{ row }">
-                  <div class="text-left">
-                    <div>SKU编号:{{ row.sku }}</div>
-                    <div>SKC编号:{{ row.skc }}</div>
-                    <div>定制SKU:{{ row.customSku }}</div>
+                  <div class="sku-info">
+                    <div class="sku-item">
+                      <span class="label">SKU编号：</span>
+                      <span>{{ row.sku || '-' }}</span>
+                    </div>
+                    <div class="sku-item">
+                      <span class="label">SKC编号：</span>
+                      <span>{{ row.skc || '-' }}</span>
+                    </div>
+                    <div class="sku-item custom-sku-wrapper">
+                      <span class="label" style="font-weight: bold;">定制SKU：</span>
+                      <div class="custom-sku-content">
+                        <span v-if="row.customSku" class="custom-sku">{{ row.customSku }}</span>
+                        <span v-else>-</span>
+                        <el-button
+                          v-if="row.customSku"
+                          class="copy-button"
+                          type="primary"
+                          link
+                          @click.stop="handleCopy(row.customSku)"
+                        >
+                          <el-icon><CopyDocument /></el-icon>
+                        </el-button>
+                      </div>
+                    </div>
                   </div>
                 </template>
               </el-table-column>
@@ -252,10 +273,18 @@
         </template>
       </el-table-column>
 
-      <el-table-column label="批次编号" align="center" prop="batchNo" min-width="140">
+      <el-table-column label="批次编号" align="center" prop="batchNo" min-width="160">
         <template #default="{ row }">
-          <div class="font-bold">
-            <div>{{ row.batchNo }}</div>
+          <div class="font-bold flex items-center justify-center gap-2">
+            <span>{{ row.batchNo }}</span>
+            <el-button
+              v-if="row.batchNo"
+              type="default"
+              link
+              @click.stop="handleCopy(row.batchNo)"
+            >
+              <el-icon><CopyDocument /></el-icon>
+            </el-button>
           </div>
         </template>
       </el-table-column>
@@ -294,7 +323,7 @@
         :formatter="dateFormatter"
         min-width="90"
       />
-      <el-table-column label="定制图片（一键下载）" align="center" min-width="150">
+      <el-table-column label="定制图片（一键下载）" align="center" min-width="140">
         <template #default="{ row }">
           <div class="flex justify-center mt-2">
             <el-button
@@ -355,6 +384,7 @@ import { ElMessageBox,ElMessage } from 'element-plus'
 import JSZip from 'jszip'
 import { OrderApi, OrderVO } from '@/api/temu/order'
 import printJS from 'print-js'
+import { CopyDocument } from '@element-plus/icons-vue'
 
 /** 订单批次 列表 */
 defineOptions({ name: 'BatchOrderPopup' })
@@ -537,6 +567,17 @@ const handleDownloadCustomImages = async (row: any) => {
     message.error('下载定制图片失败，请重试！')
   } finally {
     loading.value = false
+  }
+}
+
+//复制文字内容
+const handleCopy = async (text: string) => {
+  try {
+    await navigator.clipboard.writeText(text)
+    ElMessage.success('复制成功')
+  } catch (error) {
+    console.error('复制失败:', error)
+    ElMessage.error('复制失败')
   }
 }
 
@@ -769,6 +810,58 @@ onMounted(() => {
     padding: 10px 18px;
     font-size: 16px;
     font-weight: 600;
+  }
+}
+.sku-info {
+  text-align: left;
+  padding: 8px;
+
+  .sku-item {
+    margin-bottom: 4px;
+    font-size: 13px;
+    color: var(--el-text-color-regular);
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+
+    .label {
+      color: var(--el-text-color-secondary);
+      margin-right: 4px;
+    }
+  }
+
+  .custom-sku-wrapper {
+    .custom-sku-content {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      flex: 1;
+
+      .custom-sku {
+        font-weight: 700;
+        color: #409EFF;
+        background-color: #ecf5ff;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 14px;
+      }
+
+      .copy-button {
+        padding: 2px;
+        height: 24px;
+        font-size: 16px;
+        color: #909399;
+
+        &:hover {
+          color: #409EFF;
+        }
+
+        .el-icon {
+          margin: 0;
+        }
+      }
+    }
   }
 }
 </style>

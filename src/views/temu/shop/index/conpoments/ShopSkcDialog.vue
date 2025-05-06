@@ -1,17 +1,17 @@
 <template>
-  <Dialog :title="'SKC管理 - ' + oldTypeMap[oldType]" v-model="dialogVisible" width="800px">
+  <Dialog :title="'SKC管理  ---' + oldTypeMap[oldType]" v-model="dialogVisible" width="800px">
     <div class="flex flex-col gap-4">
       <!-- 头部信息卡片 -->
       <div class="info-card">
         <div class="flex items-center gap-4">
           <div class="flex items-center gap-2">
-            <Icon icon="ep:shop" class="text-xl text-primary" />
-            <span class="font-medium">店铺ID: {{ shopId }}</span>
+            <span class="font-medium" style="font-weight: bold">店铺ID:</span>
+            <span class="font-bold bg-gray-200 px-2 py-1 rounded"> {{ shopId }}</span>
           </div>
           <div class="flex items-center gap-2">
-            <Icon icon="ep:document" class="text-xl text-success" />
-            <span class="font-medium">SKC数量: {{ total }}</span>
-          </div>
+      <span class="font-medium">SKC数量: </span>
+      <span class="font-bold bg-gray-200 px-2 py-1 rounded">{{ total }}</span>
+    </div>
         </div>
       </div>
 
@@ -50,7 +50,7 @@
             {{ (currentPage - 1) * pageSize + $index + 1 }}
           </template>
         </el-table-column>
-        <el-table-column prop="skc" label="SKC" min-width="200">
+        <el-table-column prop="skc" label="SKC" min-width="200" align="center">
           <template #default="{ row }">
             <div class="skc-cell">
               <span class="skc-text" :class="getTextColorClass(row.oldType)">
@@ -113,7 +113,7 @@
             show-word-limit
           >
             <template #prefix>
-              <Icon icon="ep:key" class="text-gray-400" />
+              <Icon class="text-gray-400" />
             </template>
           </el-input>
         </el-form-item>
@@ -152,6 +152,7 @@ const dialogVisible = ref(false)
 const loading = ref(false)
 const submitting = ref(false)
 const skcList = ref<ShopOldTypeVO[]>([])
+const allShopSkcs = ref<ShopOldTypeVO[]>([]) // 存储所有合规单类型的SKC
 const selectedSkcs = ref<string[]>([])
 
 // 分页相关
@@ -197,13 +198,23 @@ const addFormRules = {
   ]
 }
 
+// 加载所有合规单类型的SKC列表
+const loadAllShopSkcs = async () => {
+  try {
+    const response = await ShopApi.getShopOldType(props.shopId)
+    allShopSkcs.value = response
+  } catch (error) {
+    console.error('获取所有SKC列表失败:', error)
+  }
+}
+
 // 加载SKC列表
 const loadSkcList = async () => {
   loading.value = true
   try {
-    const response = await ShopApi.getShopOldType(props.shopId)
+    await loadAllShopSkcs() // 先加载所有SKC
     // 过滤出当前oldType的数据
-    skcList.value = response.filter(item => item.oldType === props.oldType)
+    skcList.value = allShopSkcs.value.filter(item => item.oldType === props.oldType)
     // 重置分页
     currentPage.value = 1
   } catch (error) {
@@ -212,6 +223,11 @@ const loadSkcList = async () => {
   } finally {
     loading.value = false
   }
+}
+
+// 检查SKC是否在任何合规单类型中存在
+const checkSkcExists = (skc: string): boolean => {
+  return allShopSkcs.value.some(item => item.skc === skc)
 }
 
 // 打开对话框
@@ -234,9 +250,9 @@ const submitAdd = async () => {
   
   submitting.value = true
   try {
-    // 检查SKC是否重复
-    if (skcList.value.some(item => item.skc === addForm.value.skc)) {
-      message.error('SKC不能重复，请重新输入！')
+    // 检查SKC是否在任何合规单类型中重复
+    if (checkSkcExists(addForm.value.skc)) {
+      message.warning('SKC已存在，请重新输入')
       return
     }
 
@@ -259,7 +275,7 @@ const submitAdd = async () => {
     emit('success')
   } catch (error) {
     console.error('新增SKC失败:', error)
-    message.error('SKC不能重复，新增SKC失败！')
+    message.error('新增SKC失败')
   } finally {
     submitting.value = false
   }
@@ -319,10 +335,11 @@ defineExpose({ open })
 
 <style scoped>
 .info-card {
-  background-color: var(--el-color-primary-light-9);
+  background-color: #f8f9fa;
   border-radius: 8px;
   padding: 16px;
   box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.05);
+  border: 1px solid #e9ecef;
 }
 
 .action-bar {
@@ -333,37 +350,46 @@ defineExpose({ open })
 }
 
 .text-primary {
-  color: var(--el-color-primary);
+  color: #495057;
 }
 
 .text-success {
-  color: var(--el-color-success);
+  color: #495057;
 }
 
 .text-warning {
-  color: var(--el-color-warning);
+  color: #495057;
 }
 
 .text-info {
-  color: var(--el-color-info);
+  color: #495057;
 }
 
 :deep(.el-table) {
   border-radius: 8px;
   overflow: hidden;
-  --el-table-border-color: var(--el-color-primary-light-7);
+  --el-table-border-color: #dee2e6;
+  --el-table-header-bg-color: #9ec5ec;
+  --el-table-header-text-color: #ffffff;
+  --el-table-row-hover-bg-color: #e9ecef;
+}
+
+:deep(.el-table th) {
+  background-color: #e7ebf0 !important;
+  color: #495057 !important;
+  font-weight: 500;
 }
 
 :deep(.even-row) {
-  background-color: var(--el-color-primary-light-9);
+  background-color: #f8f9fa;
 }
 
 :deep(.odd-row) {
-  background-color: white;
+  background-color: #ffffff;
 }
 
 :deep(.el-table__row:hover) {
-  background-color: var(--el-color-primary-light-8) !important;
+  background-color: #e9ecef !important;
 }
 
 :deep(.add-skc-dialog .el-dialog__body) {
@@ -378,7 +404,7 @@ defineExpose({ open })
 
 .skc-text {
   font-size: 18px;
-  font-weight: 600;
+  font-weight: 500;
   letter-spacing: 0.5px;
 }
 </style> 

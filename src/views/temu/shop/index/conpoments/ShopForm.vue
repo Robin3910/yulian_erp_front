@@ -142,6 +142,12 @@ defineOptions({ name: 'ShopForm' })
 const { t } = useI18n() // 国际化
 const message = useMessage() // 消息弹窗
 
+const oldTypeMap = {
+  '0': '0+',
+  '1': '3+',
+  '2': '14+'
+}
+
 const dialogVisible = ref(false) // 弹窗的是否展示
 const dialogTitle = ref('') // 弹窗的标题
 const formLoading = ref(false) // 表单的加载中：1）修改时的数据加载；2）提交的按钮禁用
@@ -311,6 +317,18 @@ const emit = defineEmits(['success']) // 定义 success 事件，用于操作成
 const submitForm = async () => {
   // 校验表单
   await formRef.value.validate()
+  
+  // 检查合规单SKC绑定情况
+  for (const [oldType, url] of Object.entries(formData.value.oldTypeUrl)) {
+    if (url) {  // 如果上传了合规单
+      const hasSkc = formData.value.oldTypes.some(item => item.oldType === oldType)
+      if (!hasSkc) {
+        message.warning(`${oldTypeMap[oldType]}合规单至少绑定一个SKC，再确认！`)
+        return
+      }
+    }
+  }
+
   // 提交请求
   formLoading.value = true
   try {
@@ -441,10 +459,6 @@ const handleSkcSuccess = async () => {
   transition: all 0.3s ease;
   flex: 1;
   max-width: 300px;
-}
-.compliance-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 16px 0 rgba(0, 0, 0, 0.15);
 }
 .compliance-header {
   padding: 12px;
