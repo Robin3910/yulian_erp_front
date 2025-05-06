@@ -239,7 +239,7 @@
                       <div class="custom-sku-content">
                         <span v-if="row.customSku" class="custom-sku">{{ row.customSku }}</span>
                         <span v-else>-</span>
-                        <el-button
+                        <!-- <el-button
                           v-if="row.customSku"
                           class="copy-button"
                           type="primary"
@@ -247,7 +247,7 @@
                           @click.stop="handleCopy(row.customSku)"
                         >
                           <el-icon><CopyDocument /></el-icon>
-                        </el-button>
+                        </el-button> -->
                       </div>
                     </div>
                   </div>
@@ -283,14 +283,14 @@
         <template #default="{ row }">
           <div class="font-bold flex items-center justify-center gap-2">
             <span>{{ row.batchNo }}</span>
-            <el-button
+            <!-- <el-button
               v-if="row.batchNo"
               type="default"
               link
               @click.stop="handleCopy(row.batchNo)"
             >
               <el-icon><CopyDocument /></el-icon>
-            </el-button>
+            </el-button> -->
           </div>
         </template>
       </el-table-column>

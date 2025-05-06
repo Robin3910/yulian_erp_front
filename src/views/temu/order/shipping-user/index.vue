@@ -109,7 +109,7 @@
               <div class="tracking-number-cell">
                 <div class="tracking-number-wrapper">
                   <span class="tracking-number">{{ (row as any).trackingNumber || '-' }}</span>
-                  <el-button
+                  <!-- <el-button
                     v-if="row.trackingNumber"
                     class="copy-button"
                     type="primary"
@@ -117,7 +117,7 @@
                     @click.stop="handleCopy(row.trackingNumber)"
                   >
                     <el-icon><CopyDocument /></el-icon>
-                  </el-button>
+                  </el-button> -->
                 </div>
                 <el-tooltip
                   effect="dark"
@@ -169,7 +169,7 @@
               <div class="order-number">
                 <div class="order-number-wrapper">
                   <span>订单号：{{ row.orderNo }}</span>
-                  <el-button
+                  <!-- <el-button
                     v-if="row.orderNo"
                     class="copy-button"
                     type="primary"
@@ -177,7 +177,7 @@
                     @click.stop="handleCopy(row.orderNo)"
                   >
                     <el-icon><CopyDocument /></el-icon>
-                  </el-button>
+                  </el-button> -->
                 </div>
               </div>
               <div class="shop-info">
@@ -317,7 +317,7 @@
                 <div class="custom-sku-content">
                   <span v-if="row.customSku" class="custom-sku">{{ row.customSku }}</span>
                   <span v-else>-</span>
-                  <el-button
+                  <!-- <el-button
                     v-if="row.customSku"
                     class="copy-button"
                     type="primary"
@@ -325,7 +325,7 @@
                     @click.stop="handleCopy(row.customSku)"
                   >
                     <el-icon><CopyDocument /></el-icon>
-                  </el-button>
+                  </el-button> -->
                 </div>
               </div>
             </div>

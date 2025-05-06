@@ -168,7 +168,7 @@
           <div class="flex flex-col items-center">
             <div class="font-bold mb-2 flex items-center">
               {{ row.orderNo }}
-              <el-button
+              <!-- <el-button
                 v-if="row.orderNo"
                 class="copy-button !ml-1"
                 type="default"
@@ -176,7 +176,7 @@
                 @click.stop="handleCopy(row.orderNo)"
               >
                 <el-icon><CopyDocument /></el-icon>
-              </el-button>
+              </el-button> -->
             </div>
             <el-tag :type="getOrderStatusType(row.orderStatus)" class="status-tag" size="large">
               {{ getOrderStatusText(row.orderStatus) }}
@@ -314,7 +314,7 @@
             <div class="sku-item">
               <span class="label">SKU编号：</span>
               <span>{{ row.sku || '-' }}</span>
-              <el-button
+              <!-- <el-button
                 v-if="row.sku"
                 class="copy-button !ml-1"
                 type="default"
@@ -322,12 +322,12 @@
                 @click.stop="handleCopy(row.sku)"
               >
                 <el-icon><CopyDocument /></el-icon>
-              </el-button>
+              </el-button> -->
             </div>
             <div class="sku-item">
               <span class="label">SKC编号：</span>
               <span>{{ row.skc || '-' }}</span>
-              <el-button
+              <!-- <el-button
                 v-if="row.skc"
                 class="copy-button !ml-1"
                 type="default"
@@ -335,14 +335,14 @@
                 @click.stop="handleCopy(row.skc)"
               >
                 <el-icon><CopyDocument /></el-icon>
-              </el-button>
+              </el-button> -->
             </div>
             <div class="sku-item custom-sku-wrapper">
               <span class="label" style="font-weight: bold;">定制SKU：</span>
               <div class="custom-sku-content">
                 <span v-if="row.customSku" class="custom-sku">{{ row.customSku }}</span>
                 <span v-else>-</span>
-                <el-button
+                <!-- <el-button
                   v-if="row.customSku"
                   class="copy-button !ml-1"
                   type="default"
@@ -350,7 +350,7 @@
                   @click.stop="handleCopy(row.customSku)"
                 >
                   <el-icon><CopyDocument /></el-icon>
-                </el-button>
+                </el-button> -->
               </div>
             </div>
           </div>
