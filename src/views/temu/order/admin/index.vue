@@ -186,10 +186,21 @@
         <!--选择-->
         <el-table-column type="selection" width="55" align="center" reserve-selection fixed="left" />
         <!--订单编号和状态-->
-        <el-table-column label="订单编号/状态" align="center" min-width="155" fixed="left">
+        <el-table-column label="订单编号/状态" align="center" min-width="160" fixed="left">
           <template #default="{ row }">
             <div class="flex flex-col items-center">
-              <div class="font-bold mb-2">{{ row.orderNo }}</div>
+              <div class="font-bold mb-2 flex items-center">
+                {{ row.orderNo }}
+                <el-button
+                  v-if="row.orderNo"
+                  class="copy-button !ml-1"
+                  type="default"
+                  link
+                  @click.stop="handleCopy(row.orderNo)"
+                >
+                  <el-icon><CopyDocument /></el-icon>
+                </el-button>
+              </div>
               <el-tag :type="getOrderStatusType(row.orderStatus)" class="status-tag" size="large">
                 {{ getOrderStatusText(row.orderStatus) }}
               </el-tag>
@@ -201,7 +212,9 @@
           <template #default="{ row }">
             <div class="text-left" >
               <div class="font-bold text-center">{{ row.shopName }}</div>
-              <div>{{ row.shopId }}</div>
+              <div class="flex items-center justify-center">
+                {{ row.shopId }}
+              </div>
             </div>
           </template>
         </el-table-column>
@@ -220,7 +233,7 @@
           </template>
         </el-table-column>
         <!-- 商品信息 -->
-<el-table-column label="商品信息" align="center" prop="productImgUrl" min-width="245">
+<el-table-column label="商品信息" align="center" prop="productImgUrl" min-width="200">
   <template #default="{ row }">
     <div class="text-left">
       <!-- 修改标题容器 -->
@@ -319,12 +332,51 @@
         </el-table-column>
 
         <!-- <el-table-column label="商品属性" align="center" prop="productProperties" min-width="200" /> -->
-        <el-table-column label="SKU信息" align="center" prop="productTitle" min-width="200">
+        <el-table-column label="SKU信息" align="center" prop="productTitle" min-width="275">
           <template #default="{ row }">
-            <div class="text-left">
-              <div>SKU编号:{{ row.sku }}</div>
-              <div>SKC编号:{{ row.skc }}</div>
-              <div>定制SKU:{{ row.customSku }}</div>
+            <div class="sku-info">
+              <div class="sku-item">
+                <span class="label">SKU编号：</span>
+                <span>{{ row.sku || '-' }}</span>
+                <el-button
+                  v-if="row.sku"
+                  class="copy-button !ml-1"
+                  type="default"
+                  link
+                  @click.stop="handleCopy(row.sku)"
+                >
+                  <el-icon><CopyDocument /></el-icon>
+                </el-button>
+              </div>
+              <div class="sku-item">
+                <span class="label">SKC编号：</span>
+                <span>{{ row.skc || '-' }}</span>
+                <el-button
+                  v-if="row.skc"
+                  class="copy-button !ml-1"
+                  type="default"
+                  link
+                  @click.stop="handleCopy(row.skc)"
+                >
+                  <el-icon><CopyDocument /></el-icon>
+                </el-button>
+              </div>
+              <div class="sku-item custom-sku-wrapper">
+                <span class="label" style="font-weight: bold;">定制SKU：</span>
+                <div class="custom-sku-content">
+                  <span v-if="row.customSku" class="custom-sku">{{ row.customSku }}</span>
+                  <span v-else>-</span>
+                  <el-button
+                    v-if="row.customSku"
+                    class="copy-button !ml-1"
+                    type="default"
+                    link
+                    @click.stop="handleCopy(row.customSku)"
+                  >
+                    <el-icon><CopyDocument /></el-icon>
+                  </el-button>
+                </div>
+              </div>
             </div>
           </template>
         </el-table-column>
@@ -493,6 +545,7 @@ import { TemuCommonApi } from '@/api/temu/common'
 import { getStrDictOptions } from '@/utils/dict'
 import {ElMessage, ElMessageBox, ElTable} from 'element-plus'
 import { OrderBatchApi } from '@/api/temu/order-batch'
+import { CopyDocument } from '@element-plus/icons-vue'
 
 /** 订单 列表 */
 defineOptions({ name: 'TemuOrderAdmin' })
@@ -729,6 +782,17 @@ const handleBatchGenerate = async () => {
   })
   ElMessage.success('操作成功')
   await getList()
+}
+
+// 处理复制功能
+const handleCopy = async (text: string) => {
+  try {
+    await navigator.clipboard.writeText(text)
+    ElMessage.success('复制成功')
+  } catch (err) {
+    console.error('复制失败:', err)
+    ElMessage.error('复制失败')
+  }
 }
 
 /** 初始化 **/
@@ -990,6 +1054,63 @@ onMounted(() => {
   .flow-arrow {
     .arrow-item {
       color: #d6d0d0;
+    }
+  }
+}
+
+// SKU信息样式
+.sku-info {
+  padding: 8px;
+  text-align: left;
+
+  .sku-item {
+    font-size: 14px;
+    color: var(--el-text-color-regular);
+    margin-top: 4px;
+    line-height: 1.4;
+
+    &:first-child {
+      margin-top: 0;
+    }
+
+    .label {
+      color: var(--el-text-color-secondary);
+      margin-right: 4px;
+    }
+
+    &.custom-sku-wrapper {
+      display: flex;
+      align-items: center;
+
+      .custom-sku-content {
+        display: flex;
+        align-items: center;
+        flex: 1;
+
+        .custom-sku {
+          font-weight: 700;
+          color: #409EFF;
+          background-color: #ecf5ff;
+          padding: 2px 6px;
+          border-radius: 4px;
+          font-size: 14px;
+        }
+
+        .copy-button {
+          padding: 2px;
+          height: 24px;
+          font-size: 16px;
+          color: #909399;
+
+          &:hover {
+            color: #409EFF;
+          }
+
+          .el-icon {
+            margin: 0;
+          }
+        }
+      }
     }
   }
 }
