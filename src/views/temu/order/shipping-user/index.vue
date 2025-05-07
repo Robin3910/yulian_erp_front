@@ -100,14 +100,25 @@
         <el-table-column 
           label="物流单号" 
           align="center" 
-          min-width="140" 
+          min-width="170" 
           fixed="left"
           class-name="tracking-column"
         >
           <template #default="{ row, $index }">
             <template v-if="spanArr.trackingSpans[$index] !== 0">
               <div class="tracking-number-cell">
-                <span class="tracking-number">{{ (row as any).trackingNumber || '-' }}</span>
+                <div class="tracking-number-wrapper">
+                  <span class="tracking-number">{{ (row as any).trackingNumber || '-' }}</span>
+                  <!-- <el-button
+                    v-if="row.trackingNumber"
+                    class="copy-button"
+                    type="primary"
+                    link
+                    @click.stop="handleCopy(row.trackingNumber)"
+                  >
+                    <el-icon><CopyDocument /></el-icon>
+                  </el-button> -->
+                </div>
                 <el-tooltip
                   effect="dark"
                   content="当前加急面单尚未上传，请联系相关人员及时上传！"
@@ -150,13 +161,24 @@
         <el-table-column 
           label="订单信息" 
           align="center" 
-          min-width="240"
+          min-width="275"
           class-name="order-info-column"
         >
           <template #default="{ row }">
             <div class="order-info">
               <div class="order-number">
-                <div>订单号：{{ row.orderNo }}</div>
+                <div class="order-number-wrapper">
+                  <span>订单号：{{ row.orderNo }}</span>
+                  <!-- <el-button
+                    v-if="row.orderNo"
+                    class="copy-button"
+                    type="primary"
+                    link
+                    @click.stop="handleCopy(row.orderNo)"
+                  >
+                    <el-icon><CopyDocument /></el-icon>
+                  </el-button> -->
+                </div>
               </div>
               <div class="shop-info">
                 <div class="shop-name">
@@ -250,8 +272,9 @@
         <!-- 商品信息 -->
         <el-table-column
           label="商品信息"
-          min-width="180"
+          min-width="175"
           class-name="text-left-column"
+          header-align="center"
         >
           <template #default="{ row }">
             <div class="product-info">
@@ -272,9 +295,10 @@
         </el-table-column>
 
         <!-- SKU信息 -->
-        <el-table-column
-          label="SKU信息"
-          min-width="200"
+        <el-table-column 
+          label="SKU信息" 
+          align="center" 
+          min-width="275"
           class-name="text-left-column"
           header-align="center"
         >
@@ -288,9 +312,21 @@
                 <span class="label">SKC编号：</span>
                 <span>{{ row.skc || '-' }}</span>
               </div>
-              <div class="sku-item">
-                <span class="label">定制SKU：</span>
-                <span>{{ row.customSku || '-' }}</span>
+              <div class="sku-item custom-sku-wrapper">
+                <span class="label" style="font-weight: bold;">定制SKU：</span>
+                <div class="custom-sku-content">
+                  <span v-if="row.customSku" class="custom-sku">{{ row.customSku }}</span>
+                  <span v-else>-</span>
+                  <!-- <el-button
+                    v-if="row.customSku"
+                    class="copy-button"
+                    type="primary"
+                    link
+                    @click.stop="handleCopy(row.customSku)"
+                  >
+                    <el-icon><CopyDocument /></el-icon>
+                  </el-button> -->
+                </div>
               </div>
             </div>
           </template>
@@ -357,7 +393,7 @@
         </el-table-column>
 
         <!-- 操作列 -->
-        <el-table-column label="操作" fixed="right" align="center" min-width="120">
+        <el-table-column label="操作" fixed="right" align="center" min-width="130">
           <template #default="{ row }">
             <div class="action-buttons">
               <el-tooltip
@@ -403,7 +439,7 @@ import { ref, reactive, onMounted, onUnmounted } from 'vue'
 import { OrderApi, OrderVO } from '@/api/temu/order'
 import { TemuCommonApi } from '@/api/temu/common'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Printer, Van } from '@element-plus/icons-vue'
+import { Printer, Van, CopyDocument } from '@element-plus/icons-vue'
 import { formatDate } from '@/utils/formatTime'
 
 declare global {
@@ -928,6 +964,17 @@ const tableRowClassName = ({ row, rowIndex }: { row: any; rowIndex: number }) =>
   return classes.join(' ')
 }
 
+// 复制功能
+const handleCopy = async (text: string) => {
+  try {
+    await navigator.clipboard.writeText(text)
+    ElMessage.success('复制成功')
+  } catch (err) {
+    console.error('复制失败:', err)
+    ElMessage.error('复制失败')
+  }
+}
+
 </script>
 
 <style lang="scss" scoped>
@@ -1054,8 +1101,29 @@ const tableRowClassName = ({ row, rowIndex }: { row: any; rowIndex: number }) =>
   padding: 8px 0;
   background: transparent;
 
+  .tracking-number-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    .copy-button {
+      padding: 2px;
+      height: 24px;
+      font-size: 16px;
+      color: #909399;
+
+      &:hover {
+        color: #409EFF;
+      }
+
+      .el-icon {
+        margin: 0;
+      }
+    }
+  }
+
   .tracking-number {
-    font-size: 14px;
+    font-size: 16px;
     line-height: 1.5;
     font-weight: 500;
     color: var(--el-text-color-primary);
@@ -1136,19 +1204,40 @@ const tableRowClassName = ({ row, rowIndex }: { row: any; rowIndex: number }) =>
   text-align: left;
 
   .order-number {
-    font-size: 14px;
+    font-size: 16px;
     font-weight: 500;
     color: var(--el-text-color-primary);
     margin-bottom: 8px;
     line-height: 1.4;
     word-break: break-all;
     white-space: normal;
+
+    .order-number-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+
+      .copy-button {
+        padding: 2px;
+        height: 24px;
+        font-size: 16px;
+        color: #909399;
+
+        &:hover {
+          color: #409EFF;
+        }
+
+        .el-icon {
+          margin: 0;
+        }
+      }
+    }
   }
 
   .shop-info {
     .shop-name,
     .shop-id {
-      font-size: 13px;
+      font-size: 14px;
       color: var(--el-text-color-regular);
       margin-top: 4px;
       line-height: 1.4;
@@ -1167,8 +1256,8 @@ const tableRowClassName = ({ row, rowIndex }: { row: any; rowIndex: number }) =>
   text-align: left;
 
   .product-title {
-    font-size: 14px;
-    font-weight: 500;
+    font-size: 15px;
+    font-weight: 400;
     color: var(--el-text-color-primary);
     margin-bottom: 8px;
     line-height: 1.4;
@@ -1176,7 +1265,7 @@ const tableRowClassName = ({ row, rowIndex }: { row: any; rowIndex: number }) =>
 
   .product-props,
   .product-quantity {
-    font-size: 13px;
+    font-size: 15px;
     color: var(--el-text-color-regular);
     margin-top: 4px;
     line-height: 1.4;
@@ -1194,7 +1283,7 @@ const tableRowClassName = ({ row, rowIndex }: { row: any; rowIndex: number }) =>
   text-align: left;
 
   .sku-item {
-    font-size: 13px;
+    font-size: 14px;
     color: var(--el-text-color-regular);
     margin-top: 4px;
     line-height: 1.4;
@@ -1206,6 +1295,42 @@ const tableRowClassName = ({ row, rowIndex }: { row: any; rowIndex: number }) =>
     .label {
       color: var(--el-text-color-secondary);
       margin-right: 4px;
+    }
+
+    &.custom-sku-wrapper {
+      display: flex;
+      align-items: center;
+
+      .custom-sku-content {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex: 1;
+
+        .custom-sku {
+          font-weight: 700;
+          color: #409EFF;
+          background-color: #ecf5ff;
+          padding: 2px 6px;
+          border-radius: 4px;
+          font-size: 16px;
+        }
+
+        .copy-button {
+          padding: 2px;
+          height: 24px;
+          font-size: 16px;
+          color: #909399;
+
+          &:hover {
+            color: #409EFF;
+          }
+
+          .el-icon {
+            margin: 0;
+          }
+        }
+      }
     }
   }
 }

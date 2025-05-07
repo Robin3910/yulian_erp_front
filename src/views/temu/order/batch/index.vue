@@ -88,6 +88,36 @@
 
   <!-- 列表 -->
   <ContentWrap>
+    <div class="mb-10px flex justify-between">
+      <div class="flex flex-col">
+        <div class="flex gap-2">
+          <el-button type="primary" @click="handlerPrintBatchGoodsSn" plain :disabled="selectedOrders.length === 0">
+            <Icon icon="ep:printer" class="mr-5px" />
+            批量打印商品条码
+          </el-button>
+          <el-button type="warning" @click="handlerPrintBatchCompliance" plain :disabled="selectedOrders.length === 0">
+            <Icon icon="ep:printer" class="mr-5px" />
+            批量打印合规单
+          </el-button>
+        </div>
+        <div v-if="selectedOrders.length > 0" class="mt-2 flex items-center selection-info">
+          <el-tag type="info" class="mr-2 selection-tag">
+            已选择 <span class="selection-count">{{ batchSelections.size }}</span> 个批次
+          </el-tag>
+          <el-tag type="info" class="mr-4 selection-tag">
+            共 <span class="selection-count">{{ selectedOrders.length }}</span> 个订单
+          </el-tag>
+          <el-button type="default" @click="clearAllSelections" class="clear-selection-btn">
+            <Icon icon="ep:close" class="mr-5px" />
+            取消全部选中
+          </el-button>
+        </div>
+      </div>
+      <el-button type="primary" @click="handlePrintBatch" plain>
+        <Icon icon="ep:printer" class="mr-5px" />
+        打印所有批次箱贴
+      </el-button>
+    </div>
     <el-table
       v-loading="loading"
       :data="list"
@@ -109,31 +139,68 @@
               :data="scope.row.orderList"
               :stripe="true"
               :show-overflow-tooltip="true"
+              @selection-change="(selection) => handleInnerSelectionChange(selection, scope.row)"
+              :ref="(el) => { if (el) registerTableRef(el, scope.row.batchNo) }"
             >
+              <!--添加复选框列-->
+              <el-table-column type="selection" width="55" align="center" :selectable="() => true" />
               <!--订单编号-->
-              <el-table-column label="订单编号" align="center" prop="orderNo" min-width="150">
+              <el-table-column label="订单信息" align="center" prop="orderNo" min-width="250" class-name="order-info-column">
                 <template #default="{ row }">
                   <div class="text-left">
-                    <div>{{ row.orderNo }}</div>
-                    <div>
-                      <el-button type="primary" @click="handlerPrintGoodsSn(row, 1)" size="small">
-                        打印商品条码
-                      </el-button>
+                    <div class="flex flex-col">
+                      <div class="font-bold">订单号：{{ row.orderNo }}</div>
+                      <div class="text-gray-500 mt-1">店铺名称：{{ row.shopName }}</div>
+                      <div class="text-gray-500">店铺ID：{{ row.shopId }}</div>
                     </div>
-                    <div>
-                      <el-button type="success" @click="handlerPrintGoodsSn(row, 2)" size="small">
-                        打印合规单
-                      </el-button>
+                    <div class="mt-2 flex gap-2">
+                      <el-tooltip
+                        effect="dark"
+                        content="当前商品条码尚未上传，请联系相关人员及时上传！"
+                        placement="top"
+                        :disabled="!!row.goodsSn"
+                        popper-class="custom-tooltip"
+                        :show-after="100"
+                        :hide-after="200"
+                        :enterable="false"
+                        :offset="20"
+                      >
+                        <el-button
+                          size="small"
+                          :type="row.goodsSn ? 'info' : 'default'"
+                          plain
+                          class="action-button print-button"
+                          :disabled="!row.goodsSn"
+                          @click="handlerPrintGoodsSn(row, 1)"
+                        >
+                          <el-icon><Printer /></el-icon>
+                          打印商品条码
+                        </el-button>
+                      </el-tooltip>
+                      <el-tooltip
+                        effect="dark"
+                        content="当前合规单尚未上传，请联系相关人员及时上传！"
+                        placement="top"
+                        :disabled="!!row.complianceUrl"
+                        popper-class="custom-tooltip"
+                        :show-after="100"
+                        :hide-after="200"
+                        :enterable="false"
+                        :offset="20"
+                      >
+                        <el-button
+                          size="small"
+                          :type="row.complianceUrl ? 'info' : 'default'"
+                          plain
+                          class="action-button print-button"
+                          :disabled="!row.complianceUrl"
+                          @click="handlerPrintGoodsSn(row, 2)"
+                        >
+                          <el-icon><Printer /></el-icon>
+                          打印合规单
+                        </el-button>
+                      </el-tooltip>
                     </div>
-                  </div>
-                </template>
-              </el-table-column>
-              <!--店铺信息-->
-              <el-table-column label="店铺信息" align="center" prop="shopId" min-width="150">
-                <template #default="{ row }">
-                  <div class="text-left">
-                    <div>{{ row.shopName }}</div>
-                    <div>{{ row.shopId }}</div>
                   </div>
                 </template>
               </el-table-column>
@@ -240,12 +307,33 @@
                 </template>
               </el-table-column>
 
-              <el-table-column label="SKU信息" align="center" prop="productTitle" min-width="200">
+              <el-table-column label="SKU信息" align="center" prop="productTitle" min-width="275">
                 <template #default="{ row }">
-                  <div class="text-left">
-                    <div>SKU编号:{{ row.sku }}</div>
-                    <div>SKC编号:{{ row.skc }}</div>
-                    <div>定制SKU:{{ row.customSku }}</div>
+                  <div class="sku-info">
+                    <div class="sku-item">
+                      <span class="label">SKU编号：</span>
+                      <span>{{ row.sku || '-' }}</span>
+                    </div>
+                    <div class="sku-item">
+                      <span class="label">SKC编号：</span>
+                      <span>{{ row.skc || '-' }}</span>
+                    </div>
+                    <div class="sku-item custom-sku-wrapper">
+                      <span class="label" style="font-weight: bold;">定制SKU：</span>
+                      <div class="custom-sku-content">
+                        <span v-if="row.customSku" class="custom-sku">{{ row.customSku }}</span>
+                        <span v-else>-</span>
+                        <!-- <el-button
+                          v-if="row.customSku"
+                          class="copy-button"
+                          type="primary"
+                          link
+                          @click.stop="handleCopy(row.customSku)"
+                        >
+                          <el-icon><CopyDocument /></el-icon>
+                        </el-button> -->
+                      </div>
+                    </div>
                   </div>
                 </template>
               </el-table-column>
@@ -407,13 +495,22 @@ import { OrderApi, OrderVO } from '@/api/temu/order'
 import printJS from 'print-js'
 import OrderRemarkPopup from '@/views/temu/order/batch/components/OrderRemarkPopup.vue'
 import OrderBatchTaskDispatchPopup from '@/views/temu/order/batch/components/OrderBatchTaskDispatchPopup.vue'
+import { CopyDocument, Printer } from '@element-plus/icons-vue'
+import { PDFDocument } from 'pdf-lib'
 
-/** 订单批次 列表 */
 defineOptions({ name: 'BatchOrderPopup' })
 const message = useMessage() // 消息弹窗
+const { t } = useI18n() // 国际化
+
+// 状态变量
 const loading = ref(true) // 列表的加载中
 const list = ref<OrderBatchVO[]>([]) // 列表的数据
 const total = ref(0) // 列表的总页数
+const selectedOrders = ref<OrderVO[]>([]) // 选中的订单
+const batchSelections = ref<Map<string, OrderVO[]>>(new Map()) // 每个批次的选择状态
+const tableRefs = ref<Map<string, any>>(new Map()) // 存储表格引用
+
+// 查询参数
 const selectedRows = ref([])
 const queryParams = reactive({
   pageNo: 1,
@@ -425,6 +522,7 @@ const queryParams = reactive({
   createTime: []
 })
 const orderBatchTaskDispatchVisible  = ref(false)
+
 const queryFormRef = ref() // 搜索的表单
 // 备注引用
 const orderRemarkPopup = useTemplateRef('orderRemarkPopup')
@@ -434,21 +532,60 @@ const orderBatchTaskDispatchPopup = useTemplateRef('orderBatchTaskDispatchPopup'
 const handlerSelectionChange = (val: any) => {
   selectedRows.value = val
 }
+
+/** 注册表格引用 */
+const registerTableRef = (el: any, batchNo: string) => {
+  if (el) {
+    tableRefs.value.set(batchNo, el)
+  }
+}
+
+/** 判断是否可选择 */
+const isSelectable = () => {
+  return true
+}
+
+/** 处理内部表格的选择变化 */
+const handleInnerSelectionChange = (selection: OrderVO[], batchRow: any) => {
+  // 更新当前批次的选择状态
+  if (selection.length > 0) {
+    batchSelections.value.set(batchRow.batchNo, selection)
+  } else {
+    batchSelections.value.delete(batchRow.batchNo)
+  }
+
+  // 合并所有批次的选择
+  const allSelected: OrderVO[] = []
+  batchSelections.value.forEach((orders) => {
+    allSelected.push(...orders)
+  })
+  selectedOrders.value = allSelected
+}
+
+/** 清除所有选择 */
+const clearAllSelections = () => {
+  // 清除所有表格的选择状态
+  tableRefs.value.forEach((table) => {
+    table?.clearSelection()
+  })
+  // 清除选择记录
+  batchSelections.value.clear()
+  selectedOrders.value = []
+}
+
 /** 查询列表 */
 const getList = async () => {
   loading.value = true
   try {
-    // 修改分页参数，确保按批次号分页
     const params = {
       ...queryParams,
-      groupByBatch: true, // 添加分组标识，告诉后端按批次分组
+      groupByBatch: true,
       pageSize: queryParams.pageSize,
       pageNo: queryParams.pageNo
     }
 
     const data = await OrderBatchApi.getOrderBatchPage(params)
 
-    // 按批次号分组数据
     const batchGroups = new Map()
     data.list.forEach((item) => {
       if (!batchGroups.has(item.batchNo)) {
@@ -456,9 +593,8 @@ const getList = async () => {
       }
     })
 
-    // 将分组后的数据转换为数组
     list.value = Array.from(batchGroups.values())
-    total.value = data.total // 使用服务端返回的批次总数
+    total.value = data.total
   } finally {
     loading.value = false
   }
@@ -477,7 +613,9 @@ const resetQuery = () => {
 }
 
 const handlerPrintGoodsSn = async (row: OrderVO, type: string | number) => {
-  let { goodsSn, oldTypeUrl } = await OrderApi.getOrderExtraInfo(row.id)
+  // let { goodsSn, oldTypeUrl } = await OrderApi.getOrderExtraInfo(row.id)
+  let goodsSn = row.goodsSn;
+  let oldTypeUrl = row.complianceUrl;
   switch (type) {
     case 1:
       if (!goodsSn) {
@@ -491,7 +629,7 @@ const handlerPrintGoodsSn = async (row: OrderVO, type: string | number) => {
         ElMessage.warning('合规单没有设置无法打印!')
         return
       }
-      printJS(oldTypeUrl, 'image')
+      printJS(oldTypeUrl)
   }
 }
 const handleFileSuccess = async (row: any, res: any) => {
@@ -598,6 +736,17 @@ const handleDownloadCustomImages = async (row: any) => {
   }
 }
 
+//复制文字内容
+const handleCopy = async (text: string) => {
+  try {
+    await navigator.clipboard.writeText(text)
+    ElMessage.success('复制成功')
+  } catch (error) {
+    console.error('复制失败:', error)
+    ElMessage.error('复制失败')
+  }
+}
+
 // 获取订单状态类型
 const getOrderStatusType = (
   status: number
@@ -610,7 +759,7 @@ const getOrderStatusType = (
     case 2:
       return 'warning' // 已送产待生产 - 浅紫
     case 3:
-      return 'process' // 已生产待发货 - 浅绿
+      return 'primary' // 已生产待发货 - 浅绿
     case 4:
       return 'success' // 已发货 - 浅青
     default:
@@ -663,6 +812,212 @@ const handlerDispatchTask = () => {
       orderBatchTaskDispatchPopup.value.formData.orderIds = selectedRows.value.map((item) => item.id)
     }
   })
+
+/** 打印批次信息 */
+const handlePrintBatch = () => {
+  // 创建打印内容
+  const printContent = list.value.map(batch => {
+    // 获取该批次下所有不重复的品类信息
+    const allCategories = Array.from(new Set(batch.orderList?.map(order => order.categoryName) || []))
+    const categories = allCategories.slice(0, 5)
+    const hasMore = allCategories.length > 5
+
+    return `
+      <div style="width: 100mm; min-height: 100mm; padding: 8mm; box-sizing: border-box; font-family: Arial, sans-serif; display: flex; flex-direction: column;">
+        <div style="text-align: center; margin-bottom: 6mm;">
+          <div style="font-size: 36pt; font-weight: bold; word-break: break-all;">${batch.batchNo}</div>
+        </div>
+        <div>
+          <div style="font-size: 12pt; margin-bottom: 3mm;">品类信息：</div>
+          <div style="font-size: 10pt; line-height: 1.4; word-break: break-all;">
+            ${categories.join('、')}${hasMore ? '等' : ''}
+          </div>
+        </div>
+      </div>
+    `
+  }).join('<div style="page-break-after: always;"></div>')
+
+  // 使用 print-js 打印
+  printJS({
+    printable: printContent,
+    type: 'raw-html',
+    style: `
+      @page {
+        size: 100mm 100mm;
+        margin: 0;
+      }
+      @media print {
+        body {
+          margin: 0;
+          padding: 0;
+        }
+      }
+    `
+  })
+}
+
+/** 批量打印商品条码 */
+const handlerPrintBatchGoodsSn = async () => {
+  if (!selectedOrders.value || selectedOrders.value.length === 0) {
+    ElMessage.warning('请先选择要打印的订单')
+    return
+  }
+
+  try {
+    // 过滤出有商品条码的订单
+    const ordersWithGoodsSn = selectedOrders.value.filter(order => order.goodsSn)
+
+    if (ordersWithGoodsSn.length === 0) {
+      ElMessage.warning('选中的订单中没有可打印的商品条码')
+      return
+    }
+
+    // 创建一个新的PDF文档
+    const mergedPdf = await PDFDocument.create()
+    let successCount = 0
+    let failCount = 0
+
+    // 加载并合并所有PDF文件
+    for (const order of ordersWithGoodsSn) {
+      const url = order.goodsSn.startsWith('@') ? order.goodsSn.substring(1) : order.goodsSn
+      try {
+        const response = await fetch(url)
+        if (!response.ok) {
+          console.error(`加载PDF失败: ${url}`)
+          failCount++
+          continue
+        }
+        const pdfBytes = await response.arrayBuffer()
+        const pdf = await PDFDocument.load(pdfBytes)
+        const copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices())
+        copiedPages.forEach((page) => {
+          mergedPdf.addPage(page)
+        })
+        successCount++
+      } catch (error) {
+        console.error(`加载PDF失败: ${url}`, error)
+        failCount++
+      }
+    }
+
+    if (mergedPdf.getPageCount() === 0) {
+      ElMessage.error('没有可打印的商品条码PDF文件')
+      return
+    }
+
+    // 保存合并后的PDF
+    const mergedPdfBytes = await mergedPdf.save()
+    const mergedPdfBlob = new Blob([mergedPdfBytes], { type: 'application/pdf' })
+    const mergedPdfUrl = URL.createObjectURL(mergedPdfBlob)
+
+    // 使用print-js打印PDF
+    printJS({
+      printable: mergedPdfUrl,
+      type: 'pdf',
+      showModal: true
+    })
+
+    // 显示处理结果
+    if (failCount > 0) {
+      ElMessage.warning(`成功处理${successCount}个订单，${failCount}个订单处理失败`)
+    } else {
+      ElMessage.success(`成功处理${successCount}个订单`)
+    }
+
+    // 清理资源
+    setTimeout(() => {
+      URL.revokeObjectURL(mergedPdfUrl)
+    }, 10000)
+
+  } catch (error) {
+    console.error('批量打印商品条码失败:', error)
+    ElMessage.error('批量打印商品条码失败：' + (error instanceof Error ? error.message : '未知错误'))
+  }
+}
+
+/** 批量打印合规单 */
+const handlerPrintBatchCompliance = async () => {
+  if (!selectedOrders.value || selectedOrders.value.length === 0) {
+    ElMessage.warning('请先选择要打印的订单')
+    return
+  }
+
+  try {
+    // 过滤出有合规单的订单
+    const ordersWithCompliance = selectedOrders.value.filter(order => order.complianceUrl)
+
+    if (ordersWithCompliance.length === 0) {
+      ElMessage.warning('选中的订单中没有可打印的合规单')
+      return
+    }
+
+    // 创建一个新的PDF文档
+    const mergedPdf = await PDFDocument.create()
+    let successCount = 0
+    let failCount = 0
+
+    // 加载并合并所有PDF文件
+    for (const order of ordersWithCompliance) {
+      const url = order.complianceUrl.startsWith('@') ? order.complianceUrl.substring(1) : order.complianceUrl
+      try {
+        const response = await fetch(url)
+        if (!response.ok) {
+          console.error(`加载PDF失败: ${url}`)
+          failCount++
+          continue
+        }
+        const pdfBytes = await response.arrayBuffer()
+        const pdf = await PDFDocument.load(pdfBytes)
+        const copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices())
+        copiedPages.forEach((page) => {
+          mergedPdf.addPage(page)
+        })
+        successCount++
+      } catch (error) {
+        console.error(`加载PDF失败: ${url}`, error)
+        failCount++
+      }
+    }
+
+    if (mergedPdf.getPageCount() === 0) {
+      ElMessage.error('没有可打印的合规单PDF文件')
+      return
+    }
+
+    // 保存合并后的PDF
+    const mergedPdfBytes = await mergedPdf.save()
+    const mergedPdfBlob = new Blob([mergedPdfBytes], { type: 'application/pdf' })
+    const mergedPdfUrl = URL.createObjectURL(mergedPdfBlob)
+
+    // 使用print-js打印PDF
+    printJS({
+      printable: mergedPdfUrl,
+      type: 'pdf',
+      showModal: true
+    })
+
+    // 显示处理结果
+    if (failCount > 0) {
+      ElMessage.warning(`成功处理${successCount}个订单，${failCount}个订单处理失败`)
+    } else {
+      ElMessage.success(`成功处理${successCount}个订单`)
+    }
+
+    // 清理资源
+    setTimeout(() => {
+      URL.revokeObjectURL(mergedPdfUrl)
+    }, 10000)
+
+  } catch (error) {
+    console.error('批量打印合规单失败:', error)
+    ElMessage.error('批量打印合规单失败：' + (error instanceof Error ? error.message : '未知错误'))
+  }
+}
+
+// 在组件卸载时清除选择状态
+onUnmounted(() => {
+  clearAllSelections()
+})
 
 }
 /** 批量派单确认 **/
@@ -864,6 +1219,218 @@ onMounted(() => {
     padding: 10px 18px;
     font-size: 16px;
     font-weight: 600;
+  }
+}
+.sku-info {
+  text-align: left;
+  padding: 8px;
+
+  .sku-item {
+    margin-bottom: 4px;
+    font-size: 13px;
+    color: var(--el-text-color-regular);
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+
+    .label {
+      color: var(--el-text-color-secondary);
+      margin-right: 4px;
+    }
+  }
+
+  .custom-sku-wrapper {
+    .custom-sku-content {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      flex: 1;
+
+      .custom-sku {
+        font-weight: 700;
+        color: #409EFF;
+        background-color: #ecf5ff;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 14px;
+      }
+
+      .copy-button {
+        padding: 2px;
+        height: 24px;
+        font-size: 16px;
+        color: #909399;
+
+        &:hover {
+          color: #409EFF;
+        }
+
+        .el-icon {
+          margin: 0;
+        }
+      }
+    }
+  }
+}
+
+// 修改打印按钮样式，与加急面单按钮保持一致
+.print-button {
+  width: 120px;
+  margin: 0;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+// 批量打印按钮样式
+.batch-print-button {
+  width: 145px;
+  margin: 0;
+  border-radius: 4px;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  height: 32px;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 500;
+
+  &.el-button--primary {
+    &:hover {
+      background: #409EFF;
+      border-color: #409EFF;
+      color: #fff;
+    }
+  }
+
+  &.el-button--warning {
+    &:hover {
+      background: #E6A23C;
+      border-color: #E6A23C;
+      color: #fff;
+    }
+  }
+
+  &:disabled {
+    background: #F5F7FA;
+    border-color: #DCDFE6;
+    color: #C0C4CC;
+  }
+
+  .el-icon {
+    margin-right: 4px;
+    vertical-align: middle;
+  }
+}
+
+// 自定义tooltip样式
+:deep(.custom-tooltip) {
+  padding: 8px 12px;
+  font-size: 12px;
+  line-height: 1.4;
+  border-radius: 4px;
+  max-width: 300px;
+  word-break: break-word;
+}
+
+.shipping-table {
+  // 移除表格默认边框
+  :deep(.el-table__inner-wrapper) {
+    border: none !important;
+  }
+
+  // 表头边框
+  :deep(.el-table__header-wrapper) {
+    th {
+      border-bottom: 1px solid var(--el-border-color) !important;
+    }
+  }
+
+  // 表格内容边框
+  :deep(.el-table__body-wrapper) {
+    tr {
+      // 统一所有行的边框
+      td {
+        border-bottom: 1px solid var(--el-border-color) !important;
+      }
+    }
+  }
+
+  // 垂直分隔线
+  :deep(.el-table__body) {
+    .order-info-column {
+      position: relative;
+
+      .cell {
+        padding-right: 16px;
+      }
+
+      &::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        right: 0;
+        height: 100%;
+        width: 1px;
+        background-color: var(--el-border-color);
+        z-index: 1;
+      }
+    }
+  }
+
+  // 夜间模式边框颜色适配
+  :deep(.dark) {
+    // 表头边框
+    .el-table__header-wrapper th {
+      border-bottom: 1px solid var(--el-border-color-darker) !important;
+    }
+
+    // 垂直分隔线
+    .order-info-column::after {
+      background-color: var(--el-border-color-darker);
+    }
+  }
+}
+
+// 选择信息样式
+.selection-info {
+  .selection-tag {
+    font-size: 14px;
+    padding: 6px 12px;
+    height: 32px;
+    line-height: 20px;
+
+    .selection-count {
+      font-size: 15px;
+      font-weight: bold;
+      color: var(--el-color-primary);
+      margin: 0 2px;
+    }
+  }
+
+  .clear-selection-btn {
+    padding: 6px 12px;
+    height: 32px;
+    font-size: 14px;
+    border-radius: 4px;
+
+    &:hover {
+      color: var(--el-color-primary);
+      border-color: var(--el-color-primary);
+    }
+  }
+}
+
+// 修改打印按钮禁用状态样式
+.print-button {
+  &.el-button--default {
+    &.is-disabled {
+      background-color: var(--el-button-disabled-bg);
+      border-color: var(--el-button-disabled-border-color);
+      color: var(--el-button-disabled-text-color);
+    }
   }
 }
 </style>

@@ -6,7 +6,23 @@ export interface ShopVO {
   shopId: number // 店铺ID
   shopName: string // 店铺名称
   webhook: string // 信息通知机器人webhook地址
-  oldTypeUrl?: Record<string, string> // 合规单图片URL对象
+  accessToken: string // 授权token
+  oldTypes?: ShopOldTypeVO[] // 合规单信息
+}
+
+// 店铺合规单信息
+export interface ShopOldTypeVO {
+  shopId: number
+  skc: string
+  oldTypeUrl: string | null
+  oldType: string
+}
+
+// 店铺合规单批量删除参数
+export interface ShopOldTypeDeleteDTO {
+  shopId: number
+  oldType: string
+  skcList: string[]
 }
 
 // 店铺 API
@@ -40,4 +56,24 @@ export const ShopApi = {
   exportShop: async (params) => {
     return await request.download({ url: `/temu/shop/export-excel`, params })
   },
+
+  // 查询店铺合规单信息
+  getShopOldType: async (shopId: number) => {
+    return await request.get({ url: `/temu/shop-oldType/query?shopId=${shopId}` })
+  },
+
+  // 新增店铺合规单SKC
+  createShopOldType: async (data: ShopOldTypeVO[]) => {
+    return await request.post({ url: `/temu/shop-oldType/save`, data })
+  },
+
+  // 删除店铺合规单SKC（批量）
+  deleteShopOldType: async (data: ShopOldTypeDeleteDTO) => {
+    return await request.post({ url: `/temu/shop-oldType/delete`, data })
+  },
+
+  // 更新店铺合规单SKC
+  updateShopOldType: async (data: ShopOldTypeVO[]) => {
+    return await request.post({ url: `/temu/shop-oldType/update`, data })
+  }
 }

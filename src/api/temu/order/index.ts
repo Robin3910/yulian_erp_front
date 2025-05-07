@@ -24,6 +24,8 @@ export interface OrderVO {
   totalPrice: number // 订单总价
   unitPrice: number // 单价
   remark: string // 备注
+  goodsSn: string // 商品条码url
+  complianceUrl: string // 合规单url
 }
 
 // 订单 API
