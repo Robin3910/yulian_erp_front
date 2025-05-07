@@ -18,16 +18,30 @@ export const OrderBatchApi = {
   getOrderBatchPage: async (params: any) => {
     return await request.get({ url: `/temu/order-batch/page`, params })
   },
+  // 查询任务批次分页
+  getOrderBatchTaskPage: async (params: any) => {
+    return await request.get({ url: `/temu/order-batch/task-page`, params })
+  },
   //更新批次文件信息
   updateOrderBatchFile: async (data: any) => {
     return await request.put({ url: `/temu/order-batch/update-file`, data })
+  },
+  updateOrderBatchFileByTask: async (data: any) => {
+    return await request.put({ url: `/temu/order-batch/update-file-by-task`, data })
   },
   //更新批次状态
   updateOrderBatchStatus: async (data: any) => {
     return await request.put({ url: `/temu/order-batch/update-status`, data })
   },
+  updateOrderBatchStatusByTask: async (data: any) => {
+    return await request.put({ url: `/temu/order-batch/update-status-by-task`, data })
+  },
   //   修改备注
   updateOrderBatchRemark: async (data: { orderId: number; remark: string }) => {
     return await request.put({ url: `/temu/order-batch/update-order-remark`, data })
+  },
+  //派发任务
+  dispatchTask: async (data: any) => {
+    return await request.post({ url: `/temu/order-batch/dispatch-task`, data })
   }
 }

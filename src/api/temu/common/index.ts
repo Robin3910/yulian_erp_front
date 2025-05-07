@@ -8,5 +8,12 @@ export const TemuCommonApi = {
   // 获取无分页店铺列表
   getShopList: async () => {
     return await request.get({ url: `/temu/common/shop/list` })
+  },
+  //获取角色标识符关联的用户
+  getUserListByRoleKey: async (roleCode: string) => {
+    return await request.get({
+      url: `/temu/common/role/get-user-by-role-code`,
+      params: { roleCode }
+    })
   }
 }

@@ -43,15 +43,15 @@
           />
         </el-select>
       </el-form-item>
-      <el-form-item label="分配状态" prop="orderStatus">
+      <el-form-item label="任务状态" prop="orderStatus">
         <el-select
-          v-model="queryParams.isDispatchTask"
-          placeholder="请选择分配状态"
+          v-model="queryParams.taskStatus"
+          placeholder="请选择任务状态"
           clearable
           class="!w-220px"
         >
           <el-option
-            v-for="dict in getStrDictOptions(DICT_TYPE.TEMU_ORDER_BATCH_DISPATCH_STATUS)"
+            v-for="dict in getStrDictOptions(DICT_TYPE.TEMU_ORDER_BATCH_TASK_STATUS)"
             :key="dict.value"
             :label="dict.label"
             :value="dict.value"
@@ -78,10 +78,6 @@
           <Icon icon="ep:refresh" class="mr-5px" />
           重置
         </el-button>
-        <el-button type="primary" @click="handlerDispatchTask">
-          <Icon icon="ep:plus" class="mr-5px" />
-          分配任务
-        </el-button>
       </el-form-item>
     </el-form>
   </ContentWrap>
@@ -96,7 +92,7 @@
       :default-expand-all="true"
       height="calc(100vh - 280px)"
       :header-cell-style="{ background: 'var(--el-bg-color)' }"
-      row-key="id"
+      row-key="taskId"
       @selection-change="handlerSelectionChange"
     >
       <!--选择-->
@@ -292,7 +288,7 @@
               </el-button>
             </a>
             <el-button
-              v-if="row.status === 0"
+              v-if="row.status === 0 && row.taskType === 1"
               type="primary"
               plain
               @click="handlerHandleUpload(row)"
@@ -303,7 +299,13 @@
             </el-button>
           </div>
           <div class="font-bold" v-else>
-            <el-button type="primary" plain @click="handlerHandleUpload(row)" class="action-button">
+            <el-button
+              v-if="row.status === 0 && row.taskType === 1"
+              type="primary"
+              plain
+              @click="handlerHandleUpload(row)"
+              class="action-button"
+            >
               <Icon icon="ep:upload" class="mr-5px" />
               上传作图文件
             </el-button>
@@ -342,11 +344,20 @@
           />
         </template>
       </el-table-column>
-      <el-table-column label="任务分配状态" align="center"  min-width="100">
+      <el-table-column label="任务状态" align="center" min-width="100">
         <template #default="{ row }">
           <dict-tag
-            :type="DICT_TYPE.TEMU_ORDER_BATCH_DISPATCH_STATUS"
-            :value="row.isDispatchTask"
+            :type="DICT_TYPE.TEMU_ORDER_BATCH_TASK_STATUS"
+            :value="row.taskStatus"
+            class="batch-status-tag"
+          />
+        </template>
+      </el-table-column>
+      <el-table-column label="任务类型" align="center" min-width="100">
+        <template #default="{ row }">
+          <dict-tag
+            :type="DICT_TYPE.TEMU_ORDER_BATCH_TASK_TYPE"
+            :value="row.taskType"
             class="batch-status-tag"
           />
         </template>
@@ -360,7 +371,10 @@
       />
       <el-table-column label="操作" align="center" width="120px" fixed="right">
         <template #default="scope">
-          <div class="flex justify-center" v-if="scope.row.status === 0">
+          <div
+            class="flex justify-center"
+            v-if="scope.row.status === 0 && scope.row.taskType === 2"
+          >
             <el-popconfirm
               title="是否确认完成订单?"
               placement="top-start"
@@ -388,13 +402,6 @@
   </ContentWrap>
   <!--修改备注-->
   <OrderRemarkPopup @confirm="handlerRemarkConfirm" ref="orderRemarkPopup" />
-  <!--分配任务 -->
-  <OrderBatchTaskDispatchPopup
-    v-if="orderBatchTaskDispatchVisible"
-    ref="orderBatchTaskDispatchPopup"
-    @confirm="handlerDispatchTaskConfirm"
-    @close="orderBatchTaskDispatchVisible = false"
-  />
 </template>
 
 <script setup lang="ts">
@@ -406,10 +413,9 @@ import JSZip from 'jszip'
 import { OrderApi, OrderVO } from '@/api/temu/order'
 import printJS from 'print-js'
 import OrderRemarkPopup from '@/views/temu/order/batch/components/OrderRemarkPopup.vue'
-import OrderBatchTaskDispatchPopup from '@/views/temu/order/batch/components/OrderBatchTaskDispatchPopup.vue'
 
 /** 订单批次 列表 */
-defineOptions({ name: 'BatchOrderPopup' })
+defineOptions({ name: 'BatchOrderTask' })
 const message = useMessage() // 消息弹窗
 const loading = ref(true) // 列表的加载中
 const list = ref<OrderBatchVO[]>([]) // 列表的数据
@@ -421,15 +427,14 @@ const queryParams = reactive({
   batchNo: undefined,
   customSku: undefined,
   status: undefined,
-  isDispatchTask:undefined,
+  isDispatchTask: undefined,
+  taskStatus: '1',
   createTime: []
 })
-const orderBatchTaskDispatchVisible  = ref(false)
 const queryFormRef = ref() // 搜索的表单
 // 备注引用
 const orderRemarkPopup = useTemplateRef('orderRemarkPopup')
-// 分配任务引用
-const orderBatchTaskDispatchPopup = useTemplateRef('orderBatchTaskDispatchPopup')
+
 /** 选中行 */
 const handlerSelectionChange = (val: any) => {
   selectedRows.value = val
@@ -446,18 +451,19 @@ const getList = async () => {
       pageNo: queryParams.pageNo
     }
 
-    const data = await OrderBatchApi.getOrderBatchPage(params)
+    const data = await OrderBatchApi.getOrderBatchTaskPage(params)
 
-    // 按批次号分组数据
-    const batchGroups = new Map()
-    data.list.forEach((item) => {
-      if (!batchGroups.has(item.batchNo)) {
-        batchGroups.set(item.batchNo, item)
-      }
-    })
-
-    // 将分组后的数据转换为数组
-    list.value = Array.from(batchGroups.values())
+    // // 按批次号分组数据
+    // const batchGroups = new Map()
+    // data.list.forEach((item) => {
+    //   if (!batchGroups.has(item.batchNo)) {
+    //     batchGroups.set(item.batchNo, item)
+    //   }
+    // })
+    //
+    // // 将分组后的数据转换为数组
+    // list.value = Array.from(batchGroups.values())
+    list.value = data.list
     total.value = data.total // 使用服务端返回的批次总数
   } finally {
     loading.value = false
@@ -498,13 +504,13 @@ const handleFileSuccess = async (row: any, res: any) => {
   if (!res) {
     return
   }
-  await OrderBatchApi.updateOrderBatchFile({ id: row.id, fileUrl: res })
+  await OrderBatchApi.updateOrderBatchFileByTask({ taskId: row.taskId, id: row.id, fileUrl: res })
   row.fileUrl = res
   message.success('操作成功')
   await getList()
 }
 const handlerHandleUpload = async (row: any) => {
-  ElMessageBox.prompt('请输入要上传的文件地址例如：https://osss.aliyun.com/xxx.zip', '提示', {
+  ElMessageBox.prompt('请输入要上传的文件地址例如：https://xxx.com/xxx.zip', '提示', {
     confirmButtonText: '确认',
     cancelButtonText: '取消',
     inputPattern: /^(http|https):\/\/.+\.(zip|rar|7z|docx|doc|xls|xlsx)$/,
@@ -523,7 +529,7 @@ const handleUpdateBathchStatus = async (row: any) => {
       message.warning('该订单已完成生产!')
       return
     }
-    await OrderBatchApi.updateOrderBatchStatus({ id: row.id })
+    await OrderBatchApi.updateOrderBatchStatusByTask({ taskId: row.taskId, id: row.id })
     row.status = true
     message.success('操作成功')
     // 刷新列表
@@ -649,30 +655,7 @@ const handlerRemarkConfirm = async (data: any) => {
   ElMessage.success('操作成功')
   await getList()
 }
-/** 批量派单 **/
-const handlerDispatchTask = () => {
-  // 检查是否存在选中的订单
-  if (selectedRows.value.length === 0) {
-    ElMessage.warning('请选择要操作的订单')
-    return
-  }
-  orderBatchTaskDispatchVisible.value = true
-  nextTick(() => {
-    if (orderBatchTaskDispatchPopup.value) {
-      orderBatchTaskDispatchPopup.value.setVisible(true)
-      orderBatchTaskDispatchPopup.value.formData.orderIds = selectedRows.value.map((item) => item.id)
-    }
-  })
 
-}
-/** 批量派单确认 **/
-const handlerDispatchTaskConfirm = async (data: any) => {
-  await OrderBatchApi.dispatchTask(data)
-  ElMessage.success('操作成功')
-  selectedRows.value = []
-  await getList()
-
-}
 /** 初始化 **/
 onMounted(() => {
   getList()

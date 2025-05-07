@@ -108,6 +108,9 @@ export const getDictLabel = (dictType: string, value: any): string => {
 }
 
 export enum DICT_TYPE {
+  TEMU_ORDER_BATCH_TASK_TYPE='temu_order_batch_task_type',
+  TEMU_ORDER_BATCH_TASK_STATUS='temu_order_batch_task_status',
+  TEMU_ORDER_BATCH_DISPATCH_STATUS='temu_order_batch_dispatch_status',
   TEMU_ORDER_BATCH_STATUS= 'temu_order_batch_status',
   TEMU_ORDER_STATUS = 'temu_order_status',
   USER_TYPE = 'user_type',
