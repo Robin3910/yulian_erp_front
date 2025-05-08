@@ -52,6 +52,12 @@
                   {{ item.customTextList }}
                 </div>
               </el-form-item>
+              <!-- 官网原始数量 -->
+              <el-form-item label="官网数量：" class="mb-2 cursor-pointer">
+                <div class="text-left">
+                  {{ item.originalQuantity }}
+                </div>
+              </el-form-item>
               <!--  分类名称-->
               <el-form-item label="类目名称：" class="mb-2 cursor-pointer">
                 <div class="text-left" :title="item.categoryName" v-if="item.categoryName">
@@ -192,7 +198,7 @@
               </template>
               <!--  数量-->
               <el-form-item
-                label="数量："
+                label="制作数量："
                 class="mb-2 cursor-pointer"
                 :prop="`orderList.${index}.quantity`"
                 :rules="[{ required: true, message: '请输入数量', trigger: 'blur' }]"

@@ -26,6 +26,7 @@ export interface OrderVO {
   remark: string // 备注
   goodsSn: string // 商品条码url
   complianceUrl: string // 合规单url
+  originalQuantity: number // temu官网原始数量
 }
 
 // 订单 API
