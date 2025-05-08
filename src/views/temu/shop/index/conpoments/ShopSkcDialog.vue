@@ -9,25 +9,40 @@
             <span class="font-bold bg-gray-200 px-2 py-1 rounded"> {{ shopId }}</span>
           </div>
           <div class="flex items-center gap-2">
-      <span class="font-medium">SKC数量: </span>
-      <span class="font-bold bg-gray-200 px-2 py-1 rounded">{{ total }}</span>
-    </div>
+            <span class="font-medium">SKC数量: </span>
+            <span class="font-bold bg-gray-200 px-2 py-1 rounded">{{ total }}</span>
+          </div>
         </div>
       </div>
 
-      <!-- 操作栏 -->
+      <!-- 搜索框和操作栏 -->
       <div class="action-bar">
-        <el-button 
-          type="danger" 
-          :icon="Delete"
-          :disabled="!selectedSkcs.length"
-          @click="handleBatchDelete"
-        >
-          批量删除 ({{ selectedSkcs.length }})
-        </el-button>
-        <el-button type="primary" :icon="Plus" @click="handleAdd">
-          新增SKC
-        </el-button>
+        <div class="flex items-center gap-4">
+          <div class="search-box">
+            <el-input
+              v-model="searchKeyword"
+              placeholder="请输入SKC关键字"
+              clearable
+              @input="handleSearch"
+              @clear="handleSearch"
+            >
+              <template #prefix>
+                <el-icon><Search /></el-icon>
+              </template>
+            </el-input>
+          </div>
+          <el-button 
+            type="danger" 
+            :icon="Delete"
+            :disabled="!selectedSkcs.length"
+            @click="handleBatchDelete"
+          >
+            批量删除 ({{ selectedSkcs.length }})
+          </el-button>
+          <el-button type="primary" :icon="Plus" @click="handleAdd">
+            新增SKC
+          </el-button>
+        </div>
       </div>
 
       <!-- SKC列表 -->
@@ -93,7 +108,7 @@
       v-model="addDialogVisible"
       title="新增SKC"
       append-to-body
-      width="400px"
+      width="500px"
       destroy-on-close
       class="add-skc-dialog"
     >
@@ -107,15 +122,17 @@
         <el-form-item label="SKC" prop="skc">
           <el-input 
             v-model="addForm.skc" 
-            placeholder="请输入SKC" 
-            clearable 
-            :maxlength="50"
-            show-word-limit
-          >
-            <template #prefix>
-              <Icon class="text-gray-400" />
-            </template>
-          </el-input>
+            type="textarea"
+            :rows="10"
+            placeholder="请输入SKC，支持以下格式：
+1. 单个SKC直接输入
+2. 多个SKC请换行输入，例如：
+4394941741
+2177902582
+2520686281
+也支持空格分隔的格式" 
+            clearable
+          />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -131,7 +148,7 @@ import { Dialog } from '@/components/Dialog'
 import { Icon } from '@/components/Icon'
 import { ShopApi, ShopOldTypeVO, ShopOldTypeDeleteDTO } from '@/api/temu/shop'
 import { ElMessageBox } from 'element-plus'
-import { Delete, Plus } from '@element-plus/icons-vue'
+import { Delete, Plus, Search } from '@element-plus/icons-vue'
 
 const message = useMessage() // 消息弹窗
 
@@ -158,12 +175,8 @@ const selectedSkcs = ref<string[]>([])
 // 分页相关
 const currentPage = ref(1)
 const pageSize = ref(10)
-const total = computed(() => skcList.value.length)
-const pageList = computed(() => {
-  const start = (currentPage.value - 1) * pageSize.value
-  const end = start + pageSize.value
-  return skcList.value.slice(start, end)
-})
+const searchKeyword = ref('')
+const filteredSkcList = ref<ShopOldTypeVO[]>([])
 
 // 分页事件处理
 const handleSizeChange = (val: number) => {
@@ -194,7 +207,28 @@ const addForm = ref({
 const addFormRules = {
   skc: [
     { required: true, message: '请输入SKC', trigger: 'blur' },
-    { pattern: /^[A-Za-z0-9-_]+$/, message: 'SKC只能包含字母、数字、横线和下划线', trigger: 'blur' }
+    { 
+      validator: (rule: any, value: string, callback: any) => {
+        if (!value) {
+          callback()
+          return
+        }
+        
+        // 分割输入的SKC（支持换行和空格分隔）
+        const skcs = value.split(/[\n\s]+/).filter(item => item.trim())
+        
+        // 验证每个SKC的格式
+        const invalidSkcs = skcs.filter(skc => !/^[A-Za-z0-9-_]+$/.test(skc))
+        
+        if (invalidSkcs.length > 0) {
+          callback(new Error(`以下SKC格式不正确（只能包含字母、数字、横线和下划线）：\n${invalidSkcs.join('\n')}`))
+          return
+        }
+        
+        callback()
+      },
+      trigger: 'blur'
+    }
   ]
 }
 
@@ -215,8 +249,12 @@ const loadSkcList = async () => {
     await loadAllShopSkcs() // 先加载所有SKC
     // 过滤出当前oldType的数据
     skcList.value = allShopSkcs.value.filter(item => item.oldType === props.oldType)
+    // 初始化过滤后的列表
+    filteredSkcList.value = skcList.value
     // 重置分页
     currentPage.value = 1
+    // 重置搜索关键字
+    searchKeyword.value = ''
   } catch (error) {
     console.error('获取SKC列表失败:', error)
     message.error('获取SKC列表失败')
@@ -250,10 +288,13 @@ const submitAdd = async () => {
   
   submitting.value = true
   try {
-    // 检查SKC是否在任何合规单类型中重复
-    if (checkSkcExists(addForm.value.skc)) {
-      message.warning('SKC已存在，请重新输入')
-      return
+    // 分割并过滤输入的SKC
+    const skcs = addForm.value.skc.split(/[\n\s]+/).filter(item => item.trim())
+    
+    // 检查是否有重复的SKC
+    const uniqueSkcs = Array.from(new Set(skcs))
+    if (uniqueSkcs.length !== skcs.length) {
+      message.warning('输入的SKC中存在重复项，已自动去重')
     }
 
     // 获取当前oldType的oldTypeUrl
@@ -261,12 +302,13 @@ const submitAdd = async () => {
       ? skcList.value[0].oldTypeUrl
       : ''
 
-    const data: ShopOldTypeVO[] = [{
+    // 构建批量创建数据
+    const data: ShopOldTypeVO[] = skcs.map(skc => ({
       shopId: props.shopId,
       oldType: props.oldType,
-      skc: addForm.value.skc,
+      skc: skc,
       oldTypeUrl: currentOldTypeUrl
-    }]
+    }))
     
     await ShopApi.createShopOldType(data)
     message.success('新增成功')
@@ -330,6 +372,30 @@ const tableRowClassName = ({ rowIndex }: { rowIndex: number }) => {
   return rowIndex % 2 === 0 ? 'even-row' : 'odd-row'
 }
 
+// 处理搜索
+const handleSearch = () => {
+  const keyword = searchKeyword.value.trim().toLowerCase()
+  if (!keyword) {
+    filteredSkcList.value = skcList.value
+  } else {
+    filteredSkcList.value = skcList.value.filter(item => 
+      item.skc.toLowerCase().includes(keyword)
+    )
+  }
+  // 重置分页到第一页
+  currentPage.value = 1
+}
+
+// 修改pageList计算属性
+const pageList = computed(() => {
+  const start = (currentPage.value - 1) * pageSize.value
+  const end = start + pageSize.value
+  return filteredSkcList.value.slice(start, end)
+})
+
+// 修改total计算属性
+const total = computed(() => filteredSkcList.value.length)
+
 defineExpose({ open })
 </script>
 
@@ -342,11 +408,16 @@ defineExpose({ open })
   border: 1px solid #e9ecef;
 }
 
+.search-box {
+  width: 300px;
+}
+
 .action-bar {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 8px 0;
+  gap: 16px;
 }
 
 .text-primary {
@@ -406,5 +477,9 @@ defineExpose({ open })
   font-size: 18px;
   font-weight: 500;
   letter-spacing: 0.5px;
+}
+
+:deep(.el-input__prefix) {
+  color: var(--el-text-color-secondary);
 }
 </style> 
