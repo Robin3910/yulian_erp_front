@@ -102,7 +102,7 @@
         </div>
         <div v-if="selectedOrders.length > 0" class="mt-2 flex items-center selection-info">
           <el-tag type="info" class="mr-2 selection-tag">
-            已选择 <span class="selection-count">{{ batchSelections.size }}</span> 个批次
+            已选择 <span class="selection-count">{{ selectedRows.length }}</span> 个批次
           </el-tag>
           <el-tag type="info" class="mr-4 selection-tag">
             共 <span class="selection-count">{{ selectedOrders.length }}</span> 个订单
@@ -139,11 +139,8 @@
               :data="scope.row.orderList"
               :stripe="true"
               :show-overflow-tooltip="true"
-              @selection-change="(selection) => handleInnerSelectionChange(selection, scope.row)"
               :ref="(el) => { if (el) registerTableRef(el, scope.row.batchNo) }"
             >
-              <!--添加复选框列-->
-              <el-table-column type="selection" width="55" align="center" :selectable="() => true" />
               <!--订单编号-->
               <el-table-column label="订单信息" align="center" prop="orderNo" min-width="250" class-name="order-info-column">
                 <template #default="{ row }">
@@ -367,6 +364,7 @@
         <template #default="{ row }">
           <div class="font-bold">
             <div>{{ row.batchNo }}</div>
+            <div class="text-gray-500 text-sm mt-1">{{ dayjs(row.createTime).format('YYYY-MM-DD HH:mm:ss') }}</div>
           </div>
         </template>
       </el-table-column>
@@ -398,14 +396,6 @@
           </div>
         </template>
       </el-table-column>
-      <el-table-column
-        label="创建时间"
-        align="center"
-        prop="createTime"
-        :formatter="dateFormatter"
-        :show-overflow-tooltip="false"
-        width="100"
-      />
       <el-table-column label="定制图片（一键下载）" align="center" min-width="130">
         <template #default="{ row }">
           <div class="flex justify-center mt-2">
@@ -497,6 +487,7 @@ import OrderRemarkPopup from '@/views/temu/order/batch/components/OrderRemarkPop
 import OrderBatchTaskDispatchPopup from '@/views/temu/order/batch/components/OrderBatchTaskDispatchPopup.vue'
 import { CopyDocument, Printer } from '@element-plus/icons-vue'
 import { PDFDocument } from 'pdf-lib'
+import dayjs from 'dayjs'
 
 defineOptions({ name: 'BatchOrderPopup' })
 const message = useMessage() // 消息弹窗
@@ -531,6 +522,13 @@ const orderBatchTaskDispatchPopup = useTemplateRef('orderBatchTaskDispatchPopup'
 /** 选中行 */
 const handlerSelectionChange = (val: any) => {
   selectedRows.value = val
+  // 更新选中的订单列表
+  selectedOrders.value = []
+  val.forEach((batch: any) => {
+    if (batch.orderList && batch.orderList.length > 0) {
+      selectedOrders.value.push(...batch.orderList)
+    }
+  })
 }
 
 /** 注册表格引用 */
@@ -564,13 +562,9 @@ const handleInnerSelectionChange = (selection: OrderVO[], batchRow: any) => {
 
 /** 清除所有选择 */
 const clearAllSelections = () => {
-  // 清除所有表格的选择状态
-  tableRefs.value.forEach((table) => {
-    table?.clearSelection()
-  })
   // 清除选择记录
-  batchSelections.value.clear()
   selectedOrders.value = []
+  selectedRows.value = []
 }
 
 /** 查询列表 */
@@ -812,7 +806,7 @@ const handlerDispatchTask = () => {
       orderBatchTaskDispatchPopup.value.formData.orderIds = selectedRows.value.map((item) => item.id)
     }
   })
-
+}
 /** 打印批次信息 */
 const handlePrintBatch = () => {
   // 创建打印内容
@@ -864,8 +858,16 @@ const handlerPrintBatchGoodsSn = async () => {
   }
 
   try {
-    // 过滤出有商品条码的订单
-    const ordersWithGoodsSn = selectedOrders.value.filter(order => order.goodsSn)
+    // 使用Map对相同订单编号的订单进行去重
+    const uniqueOrders = new Map()
+    selectedOrders.value.forEach(order => {
+      if (order.goodsSn && !uniqueOrders.has(order.orderNo)) {
+        uniqueOrders.set(order.orderNo, order)
+      }
+    })
+
+    // 将Map转换为数组
+    const ordersWithGoodsSn = Array.from(uniqueOrders.values())
 
     if (ordersWithGoodsSn.length === 0) {
       ElMessage.warning('选中的订单中没有可打印的商品条码')
@@ -1019,15 +1021,14 @@ onUnmounted(() => {
   clearAllSelections()
 })
 
-}
 /** 批量派单确认 **/
 const handlerDispatchTaskConfirm = async (data: any) => {
   await OrderBatchApi.dispatchTask(data)
   ElMessage.success('操作成功')
   selectedRows.value = []
   await getList()
-
 }
+
 /** 初始化 **/
 onMounted(() => {
   getList()
