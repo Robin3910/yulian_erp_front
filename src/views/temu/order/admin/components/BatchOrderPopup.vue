@@ -276,6 +276,7 @@ const filterOrderQuantity = (list: any[]) => {
   list.forEach((item) => {
   
     const properties = item.productProperties.toLowerCase()
+    const shopName = item.shopName.toLowerCase()
     const productTitle = item.productTitle.toLowerCase()
     const productCategoryName = item.productCategoryName.toLowerCase()
     const originalQuantity = item.quantity || 1 // 保存原始订单数量
@@ -302,6 +303,11 @@ const filterOrderQuantity = (list: any[]) => {
           return
         }
       }
+    }
+
+    if (productTitle.includes("5件") && shopName.includes("QTLK")) {
+      item.quantity = 5 * originalQuantity
+      return
     }
 
     // 特殊情况处理：包含"熊"或"baer"字样，或包含尺寸单位"in"/"cm"
