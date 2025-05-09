@@ -107,10 +107,7 @@
           <el-tag type="info" class="mr-4 selection-tag">
             共 <span class="selection-count">{{ selectedOrders.length }}</span> 个订单
           </el-tag>
-          <el-button type="default" @click="clearAllSelections" class="clear-selection-btn">
-            <Icon icon="ep:close" class="mr-5px" />
-            取消全部选中
-          </el-button>
+      
         </div>
       </div>
       <el-button type="primary" @click="handlePrintBatch" plain>

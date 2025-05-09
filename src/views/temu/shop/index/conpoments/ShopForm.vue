@@ -165,6 +165,7 @@
     ref="skcDialogRef"
     :shopId="Number(formData.shopId)"
     :oldType="currentOldType"
+    :showUploadTip="showUploadTip"
     @success="handleSkcSuccess"
   />
 
@@ -208,8 +209,8 @@ defineOptions({ name: 'ShopForm' })
 const { t } = useI18n() // 国际化
 const message = useMessage() // 消息弹窗
 
-// 修改 oldTypeMap 为 ref，使其可响应
-const oldTypeMap = ref({
+// 修改 oldTypeMap 的类型定义
+const oldTypeMap = ref<Record<string, string>>({
   '0': '0+',
   '1': '3+',
   '2': '14+'
@@ -219,6 +220,12 @@ const dialogVisible = ref(false) // 弹窗的是否展示
 const dialogTitle = ref('') // 弹窗的标题
 const formLoading = ref(false) // 表单的加载中：1）修改时的数据加载；2）提交的按钮禁用
 const formType = ref('') // 表单的类型：create - 新增；update - 修改
+
+// 类型定义
+interface OldTypeUrl {
+  [key: string]: string | undefined;
+}
+
 const formData = ref({
   id: undefined,
   shopId: undefined,
@@ -226,11 +233,7 @@ const formData = ref({
   webhook: undefined,
   accessToken: undefined,
   oldTypes: [] as ShopOldTypeVO[],
-  oldTypeUrl: {
-    '0': undefined as string | undefined,
-    '1': undefined as string | undefined,
-    '2': undefined as string | undefined
-  }
+  oldTypeUrl: {} as OldTypeUrl
 })
 const formRules = reactive({
   shopId: [{ required: true, message: '店铺ID不能为空', trigger: 'blur' }],
@@ -269,56 +272,35 @@ const handlePreview = (url: string) => {
   }
 }
 
-// 监听shopId变化
-watch(() => formData.value.shopId, async (newShopId) => {
-  if (newShopId) {
-    try {
-      // 打印请求参数和响应数据，用于调试
-      console.log('请求参数 shopId:', newShopId)
-      const response = await ShopApi.getShopOldType(newShopId)
-      console.log('获取到的合规单数据:', response)
-
-      // response直接就是数组数据
-      if (response && response.length > 0) {
-        // 保存原始数据
-        formData.value.oldTypes = response
-
-        // 按oldType分组并更新显示
-        const groupedData = response.reduce((acc: { [key: string]: ShopOldTypeVO[] }, item: ShopOldTypeVO) => {
-          if (!acc[item.oldType]) {
-            acc[item.oldType] = []
-          }
-          acc[item.oldType].push(item)
-          return acc
-        }, {})
-
-        console.log('分组后的数据:', groupedData)
-
-        // 更新oldTypeUrl，每组取第一个URL
-        const newOldTypeUrl = {
-          '0': groupedData['0']?.[0]?.oldTypeUrl,
-          '1': groupedData['1']?.[0]?.oldTypeUrl,
-          '2': groupedData['2']?.[0]?.oldTypeUrl
-        }
-        console.log('设置的oldTypeUrl:', newOldTypeUrl)
-        formData.value.oldTypeUrl = newOldTypeUrl
-      } else {
-        // 如果没有数据，重置为空
-        formData.value.oldTypes = []
-        formData.value.oldTypeUrl = {
-          '0': undefined,
-          '1': undefined,
-          '2': undefined
-        }
-      }
-    } catch (error) {
-      console.error('获取合规单数据失败:', error)
-      message.error('获取合规单数据失败')
+// 添加一个函数来初始化店铺的合规单类型映射
+const initShopOldTypeMap = async (shopId: number | string) => {
+  try {
+    // 先重置为基础类型
+    oldTypeMap.value = {
+      '0': '0+',
+      '1': '3+',
+      '2': '14+'
     }
+    
+    // 获取该店铺的所有合规单类型
+    const response = await ShopApi.getShopOldType(shopId)
+    if (response && response.length > 0) {
+      // 遍历所有合规单类型，找出非基础类型的
+      response.forEach(item => {
+        const type = item.oldType
+        // 如果是新增的类型（大于2的类型）
+        if (Number(type) > 2 && !oldTypeMap.value[type]) {
+          // 使用一个默认的标签格式
+          oldTypeMap.value[type] = `类型${type}`
+        }
+      })
+    }
+  } catch (error) {
+    console.error('初始化店铺合规单类型映射失败:', error)
   }
-})
+}
 
-/** 打开弹窗 */
+// 修改 open 函数
 const open = async (type: string, id?: number) => {
   dialogVisible.value = true
   dialogTitle.value = t('action.' + type)
@@ -327,31 +309,21 @@ const open = async (type: string, id?: number) => {
   
   formLoading.value = true
   try {
-    // 修改时，设置数据
     if (id) {
       const data = await ShopApi.getShop(id)
       formData.value = {
         ...data,
         oldTypes: [],
-        oldTypeUrl: {
-          '0': undefined,
-          '1': undefined,
-          '2': undefined
-        }
+        oldTypeUrl: {}
       }
 
-      // 如果有shopId，获取合规单数据
       if (formData.value.shopId) {
-        console.log('open方法中获取合规单，shopId:', formData.value.shopId)
+        // 初始化该店铺的合规单类型映射
+        await initShopOldTypeMap(formData.value.shopId)
+        
         const response = await ShopApi.getShopOldType(formData.value.shopId)
-        console.log('open方法中获取到的合规单数据:', response)
-
-        // response直接就是数组数据
         if (response && response.length > 0) {
-          // 保存原始数据
           formData.value.oldTypes = response
-
-          // 按oldType分组并更新显示
           const groupedData = response.reduce((acc: { [key: string]: ShopOldTypeVO[] }, item: ShopOldTypeVO) => {
             if (!acc[item.oldType]) {
               acc[item.oldType] = []
@@ -360,15 +332,14 @@ const open = async (type: string, id?: number) => {
             return acc
           }, {})
 
-          console.log('open方法中分组后的数据:', groupedData)
-
-          // 更新oldTypeUrl，每组取第一个URL
-          const newOldTypeUrl = {
-            '0': groupedData['0']?.[0]?.oldTypeUrl,
-            '1': groupedData['1']?.[0]?.oldTypeUrl,
-            '2': groupedData['2']?.[0]?.oldTypeUrl
-          }
-          console.log('open方法中设置的oldTypeUrl:', newOldTypeUrl)
+          const newOldTypeUrl = {}
+          Object.entries(groupedData).forEach(([oldType, items]) => {
+            const itemWithUrl = (items as ShopOldTypeVO[]).find(item => item.oldTypeUrl)
+            if (itemWithUrl) {
+              newOldTypeUrl[oldType] = itemWithUrl.oldTypeUrl
+            }
+          })
+          
           formData.value.oldTypeUrl = newOldTypeUrl
         }
       }
@@ -390,7 +361,7 @@ const submitForm = async () => {
     if (url) {  // 如果上传了合规单
       const hasSkc = formData.value.oldTypes.some(item => item.oldType === oldType)
       if (!hasSkc) {
-        message.warning(`${oldTypeMap[oldType]}合规单至少绑定一个SKC，再确认！`)
+        message.warning(`${oldTypeMap.value[oldType]}合规单至少绑定一个SKC，再确认！`)
         return
       }
     }
@@ -400,15 +371,13 @@ const submitForm = async () => {
   formLoading.value = true
   try {
     const data = { ...formData.value }
-    // 更新oldTypes数据
-    const oldTypes = Object.entries(data.oldTypeUrl)
-      .filter(([_, url]) => url !== undefined)
-      .map(([oldType, oldTypeUrl]) => ({
-        shopId: String(data.shopId || ''),
-        skc: '', // 这里可能需要根据业务需求设置skc
-        oldTypeUrl: oldTypeUrl as string,
-        oldType
-      }))
+    // 更新oldTypes数据，确保包含所有类型的数据
+    const oldTypes = Object.keys(oldTypeMap.value).map(oldType => ({
+      shopId: String(data.shopId || ''),
+      skc: '',
+      oldTypeUrl: data.oldTypeUrl[oldType] || '',  // 如果URL不存在则使用空字符串
+      oldType
+    }))
 
     const submitData = {
       ...data,
@@ -431,7 +400,7 @@ const submitForm = async () => {
     const skcData = formData.value.oldTypes.map(item => ({
       shopId: Number(data.shopId),
       skc: item.skc,
-      oldTypeUrl: formData.value.oldTypeUrl[item.oldType], // 使用对应oldType的URL
+      oldTypeUrl: formData.value.oldTypeUrl[item.oldType] || '',  // 使用对应oldType的URL，如果没有则使用空字符串
       oldType: item.oldType
     }))
 
@@ -490,43 +459,57 @@ const handleOpenSkcDialog = (oldType: string) => {
   skcDialogRef.value.open()
 }
 
+// 添加一个状态来控制是否显示上传提示
+const showUploadTip = ref(false)
+
 // SKC管理成功回调
 const handleSkcSuccess = async () => {
-  // 重新加载合规单数据
-  if (formData.value.shopId) {
-    const response = await ShopApi.getShopOldType(formData.value.shopId)
-    if (response && response.length > 0) {
-      formData.value.oldTypes = response
-      const groupedData = response.reduce((acc: { [key: string]: ShopOldTypeVO[] }, item: ShopOldTypeVO) => {
-        if (!acc[item.oldType]) {
-          acc[item.oldType] = []
-        }
-        acc[item.oldType].push(item)
-        return acc
-      }, {})
-
-      formData.value.oldTypeUrl = {
-        '0': groupedData['0']?.[0]?.oldTypeUrl,
-        '1': groupedData['1']?.[0]?.oldTypeUrl,
-        '2': groupedData['2']?.[0]?.oldTypeUrl
+  showUploadTip.value = false  // 成功后隐藏提示
+  
+  try {
+    if (formData.value.shopId) {
+      // 只更新 SKC 列表数据
+      const response = await ShopApi.getShopOldType(formData.value.shopId)
+      if (response && response.length > 0) {
+        // 更新 oldTypes，但保留现有的 URL
+        formData.value.oldTypes = response.map(newItem => {
+          // 查找对应的旧数据
+          const oldItem = formData.value.oldTypes.find(
+            old => old.oldType === newItem.oldType && old.skc === newItem.skc
+          )
+          // 如果找到旧数据，保留其 URL
+          if (oldItem) {
+            return {
+              ...newItem,
+              oldTypeUrl: oldItem.oldTypeUrl,
+              oldTypeImageUrl: oldItem.oldTypeImageUrl
+            }
+          }
+          return newItem
+        })
+      } else {
+        formData.value.oldTypes = []
       }
     }
+  } catch (error) {
+    console.error('更新SKC列表失败:', error)
+    message.error('更新SKC列表失败')
   }
 }
 
 // 获取指定类型的SKC图片URL
-const getOldTypeImageUrl = (oldType: string) => {
+const getOldTypeImageUrl = (oldType: string): string => {
   const skcs = formData.value.oldTypes.filter(item => item.oldType === oldType)
   if (skcs.length > 0 && skcs[0].oldTypeImageUrl) {
     return skcs[0].oldTypeImageUrl
   }
-  return formData.value.oldTypeUrl[oldType]
+  return formData.value.oldTypeUrl[oldType] || ''
 }
 
 // 检查是否为PDF文件
-const isPdfFile = (url: string) => {
-  if (!url) return false;
-  return url.toLowerCase().endsWith('.pdf');
+const isPdfFile = (url: string): boolean => {
+  if (!url) return false
+  return url.toLowerCase().endsWith('.pdf')
 }
 
 // 新增类型相关
@@ -544,7 +527,21 @@ const addTypeRules = {
 }
 
 // 打开新增类型对话框
-const handleAddType = () => {
+const handleAddType = async () => {
+  // 先触发店铺ID的表单验证
+  try {
+    await formRef.value.validateField('shopId')
+  } catch (error) {
+    shopIdInputRef.value?.focus()
+    return
+  }
+
+  if (!formData.value.shopId) {
+    shopIdInputRef.value?.focus()
+    message.warning('请先填写店铺ID')
+    return
+  }
+
   addTypeForm.value = {
     label: ''
   }
@@ -607,7 +604,10 @@ const handleDeleteType = async (type: string) => {
     }
 
     // 删除本地数据
-    delete oldTypeMap.value[type]
+    const newOldTypeMap = { ...oldTypeMap.value }
+    delete newOldTypeMap[type]
+    oldTypeMap.value = newOldTypeMap
+    
     delete formData.value.oldTypeUrl[type]
     formData.value.oldTypes = formData.value.oldTypes.filter(item => item.oldType !== type)
     
@@ -653,19 +653,16 @@ const handleUploadClick = async (type: string) => {
 
   if (!formData.value.shopId) {
     shopIdInputRef.value?.focus()
-    message.warning('请先填写店铺ID')
     return
   }
   
   if (!hasSkcsForType(type)) {
-    message.warning('请先补充至少一条SKC！')
-    const skcButton = skcButtonRefs.value[Number(type)]
-    if (skcButton) {
-      skcButton.$el.scrollIntoView({ behavior: 'smooth', block: 'center' })
-      skcButton.$el.click()
-    }
+    showUploadTip.value = true
+    currentOldType.value = type
+    skcDialogRef.value.open()
     return
   }
+  showUploadTip.value = false
 }
 
 // 删除图片

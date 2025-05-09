@@ -101,6 +101,11 @@
           @current-change="handleCurrentChange"
         />
       </div>
+
+      <!-- 底部关闭按钮 -->
+      <div class="flex justify-center mt-4">
+        <el-button @click="dialogVisible = false">关 闭</el-button>
+      </div>
     </div>
 
     <!-- 新增SKC表单 -->
@@ -112,6 +117,15 @@
       destroy-on-close
       class="add-skc-dialog"
     >
+      <!-- 修改提示消息的显示条件 -->
+      <div v-if="props.showUploadTip" class="tip-message">
+        <el-alert
+          title="没有SKC信息，请先填写SKC，再上传合规图！"
+          type="warning"
+          :closable="false"
+          show-icon
+        />
+      </div>
       <el-form
         ref="addFormRef"
         :model="addForm"
@@ -121,6 +135,7 @@
       >
         <el-form-item label="SKC" prop="skc">
           <el-input 
+            ref="skcInputRef"
             v-model="addForm.skc" 
             type="textarea"
             :rows="10"
@@ -132,6 +147,7 @@
 2520686281
 也支持空格分隔的格式" 
             clearable
+            @input="handleSkcInput"
           />
         </el-form-item>
       </el-form>
@@ -147,8 +163,9 @@
 import { Dialog } from '@/components/Dialog'
 import { Icon } from '@/components/Icon'
 import { ShopApi, ShopOldTypeVO, ShopOldTypeDeleteDTO } from '@/api/temu/shop'
-import { ElMessageBox } from 'element-plus'
+import { ElMessageBox, ElNotification } from 'element-plus'
 import { Delete, Plus, Search } from '@element-plus/icons-vue'
+import { h } from 'vue'
 
 const message = useMessage() // 消息弹窗
 
@@ -161,6 +178,7 @@ const oldTypeMap = {
 const props = defineProps<{
   shopId: number
   oldType: string
+  showUploadTip?: boolean // 新增属性，用于控制是否显示上传提示
 }>()
 
 const emit = defineEmits(['success'])
@@ -232,6 +250,17 @@ const addFormRules = {
   ]
 }
 
+// 新增 skcInputRef
+const skcInputRef = ref()
+
+// 添加输入处理函数
+const handleSkcInput = (value: string) => {
+  // 当有输入内容时，立即验证
+  if (value) {
+    addFormRef.value?.validateField('skc')
+  }
+}
+
 // 加载所有合规单类型的SKC列表
 const loadAllShopSkcs = async () => {
   try {
@@ -272,6 +301,10 @@ const checkSkcExists = (skc: string): boolean => {
 const open = async () => {
   dialogVisible.value = true
   await loadSkcList()
+  // 如果没有SKC数据，打开新增对话框
+  if (total.value === 0) {
+    handleAdd()
+  }
 }
 
 // 新增SKC
@@ -280,6 +313,10 @@ const handleAdd = () => {
     skc: ''
   }
   addDialogVisible.value = true
+  // 在下一个事件循环中聚焦输入框
+  nextTick(() => {
+    skcInputRef.value?.focus()
+  })
 }
 
 // 提交新增
@@ -291,10 +328,33 @@ const submitAdd = async () => {
     // 分割并过滤输入的SKC
     const skcs = addForm.value.skc.split(/[\n\s]+/).filter(item => item.trim())
     
-    // 检查是否有重复的SKC
-    const uniqueSkcs = Array.from(new Set(skcs))
-    if (uniqueSkcs.length !== skcs.length) {
-      message.warning('输入的SKC中存在重复项，已自动去重')
+    // 检查重复的SKC
+    const skcMap = new Map()
+    const duplicates = []
+    skcs.forEach(skc => {
+      if (skcMap.has(skc)) {
+        if (!duplicates.includes(skc)) {
+          duplicates.push(skc)
+        }
+      } else {
+        skcMap.set(skc, true)
+      }
+    })
+    
+    // 使用 Map 的 keys 获取唯一的 SKC 列表
+    const uniqueSkcs = Array.from(skcMap.keys())
+    
+    if (duplicates.length > 0) {
+      ElNotification({
+        title: '输入的SKC中存在重复项，已自动去重',
+        message: h('div', {}, [
+          h('div', '以下SKC出现重复：'),
+          h('div', { style: 'margin-top: 8px; color: var(--el-color-warning)' }, duplicates.join(', '))
+        ]),
+        type: 'warning',
+        duration: 5000,
+        position: 'top-right'
+      })
     }
 
     // 获取当前oldType的oldTypeUrl
@@ -303,7 +363,7 @@ const submitAdd = async () => {
       : ''
 
     // 构建批量创建数据
-    const data: ShopOldTypeVO[] = skcs.map(skc => ({
+    const data: ShopOldTypeVO[] = uniqueSkcs.map(skc => ({
       shopId: props.shopId,
       oldType: props.oldType,
       skc: skc,
@@ -481,5 +541,9 @@ defineExpose({ open })
 
 :deep(.el-input__prefix) {
   color: var(--el-text-color-secondary);
+}
+
+.tip-message {
+  margin-bottom: 16px;
 }
 </style> 
