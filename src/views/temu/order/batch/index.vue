@@ -290,6 +290,22 @@
                   </div>
                 </template>
               </el-table-column>
+              <!--合规单图片-->
+              <el-table-column label="合规单图片" align="center" prop="complianceImageUrl" min-width="120">
+                <template #default="{ row }">
+                  <div class="text-left">
+                    <el-image
+                      class="w-60px h-60px"
+                      v-if="row.complianceImageUrl"
+                      :hide-on-click-modal="true"
+                      :preview-teleported="true"
+                      :preview-src-list="[row.complianceImageUrl]"
+                      :src="row.complianceImageUrl"
+                    />
+                    <div v-else class="text-gray-400 text-sm">暂无图片</div>
+                  </div>
+                </template>
+              </el-table-column>
               <el-table-column label="价格信息" min-width="120">
                 <template #default="{ row }">
                   <div>
