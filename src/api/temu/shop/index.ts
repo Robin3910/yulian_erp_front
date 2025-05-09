@@ -15,6 +15,7 @@ export interface ShopOldTypeVO {
   shopId: number
   skc: string
   oldTypeUrl: string | null
+  oldTypeImageUrl?: string | null
   oldType: string
 }
 
