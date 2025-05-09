@@ -142,7 +142,7 @@
               :ref="(el) => { if (el) registerTableRef(el, scope.row.batchNo) }"
             >
               <!--订单编号-->
-              <el-table-column label="订单信息" align="center" prop="orderNo" min-width="250" class-name="order-info-column">
+              <el-table-column label="订单信息" align="center" prop="orderNo" min-width="280" class-name="order-info-column">
                 <template #default="{ row }">
                   <div class="text-left">
                     <div class="flex flex-col">
@@ -164,13 +164,15 @@
                       >
                         <el-button
                           size="small"
-                          :type="row.goodsSn ? 'info' : 'default'"
+                          :type="row.goodsSn ? 'primary' : 'default'"
                           plain
-                          class="action-button print-button"
+                          class="print-action-button"
                           :disabled="!row.goodsSn"
                           @click="handlerPrintGoodsSn(row, 1)"
                         >
-                          <el-icon><Printer /></el-icon>
+                          <template #icon>
+                            <el-icon class="print-icon"><Printer /></el-icon>
+                          </template>
                           打印商品条码
                         </el-button>
                       </el-tooltip>
@@ -187,13 +189,15 @@
                       >
                         <el-button
                           size="small"
-                          :type="row.complianceUrl ? 'info' : 'default'"
+                          :type="row.complianceUrl ? 'success' : 'default'"
                           plain
-                          class="action-button print-button"
+                          class="print-action-button"
                           :disabled="!row.complianceUrl"
                           @click="handlerPrintGoodsSn(row, 2)"
                         >
-                          <el-icon><Printer /></el-icon>
+                          <template #icon>
+                            <el-icon class="print-icon"><Printer /></el-icon>
+                          </template>
                           打印合规单
                         </el-button>
                       </el-tooltip>
@@ -1290,65 +1294,96 @@ onMounted(() => {
   }
 }
 
-// 修改打印按钮样式，与加急面单按钮保持一致
-.print-button {
-  width: 120px;
-  margin: 0;
+// 新增打印按钮样式
+.print-action-button {
+  min-width: 120px;
+  height: 30px;
+  font-size: 15px;
+  font-weight: 500;
   border-radius: 4px;
-  font-size: 12px;
-}
-
-// 批量打印按钮样式
-.batch-print-button {
-  width: 145px;
-  margin: 0;
-  border-radius: 4px;
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   overflow: hidden;
-  height: 32px;
-  font-size: 13px;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-weight: 500;
+  padding: 8px 16px;
+  
+  .print-icon {
+    font-size: 16px;
+    transition: transform 0.3s ease;
+  }
 
+  &:not(:disabled) {
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+
+      .print-icon {
+        transform: scale(1.2);
+      }
+    }
+
+    &:active {
+      transform: translateY(0);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    }
+  }
+
+  // 主要按钮样式（商品条码）
   &.el-button--primary {
-    &:hover {
-      background: #409EFF;
-      border-color: #409EFF;
-      color: #fff;
+    &.is-plain {
+      background-color: var(--el-color-primary-light-9);
+      border-color: var(--el-color-primary);
+      color: var(--el-color-primary);
+
+      &:hover {
+        background-color: var(--el-color-primary);
+        border-color: var(--el-color-primary);
+        color: white;
+      }
     }
   }
 
-  &.el-button--warning {
-    &:hover {
-      background: #E6A23C;
-      border-color: #E6A23C;
-      color: #fff;
+  // 成功按钮样式（合规单）
+  &.el-button--success {
+    &.is-plain {
+      background-color: var(--el-color-success-light-9);
+      border-color: var(--el-color-success);
+      color: var(--el-color-success);
+
+      &:hover {
+        background-color: var(--el-color-success);
+        border-color: var(--el-color-success);
+        color: white;
+      }
     }
   }
 
-  &:disabled {
-    background: #F5F7FA;
-    border-color: #DCDFE6;
-    color: #C0C4CC;
-  }
+  // 禁用状态样式
+  &.is-disabled {
+    background-color: var(--el-fill-color-lighter) !important;
+    border-color: var(--el-border-color-lighter) !important;
+    color: var(--el-text-color-placeholder) !important;
+    cursor: not-allowed;
 
-  .el-icon {
-    margin-right: 4px;
-    vertical-align: middle;
+    &:hover {
+      transform: none;
+      box-shadow: none;
+    }
   }
 }
 
-// 自定义tooltip样式
+// 自定义tooltip样式优化
 :deep(.custom-tooltip) {
-  padding: 8px 12px;
-  font-size: 12px;
-  line-height: 1.4;
-  border-radius: 4px;
+  padding: 10px 14px;
+  font-size: 13px;
+  line-height: 1.5;
+  border-radius: 6px;
   max-width: 300px;
   word-break: break-word;
+  background-color: rgba(0, 0, 0, 0.85);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .shipping-table {
