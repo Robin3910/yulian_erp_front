@@ -274,9 +274,8 @@ const sortRulePrice = (arr: rulePrice[]) => {
 // 按照的规则过滤订单的数量
 const filterOrderQuantity = (list: any[]) => {
   list.forEach((item) => {
-  
     const properties = item.productProperties.toLowerCase()
-    const shopName = item.shopName.toLowerCase()
+    const shopName = item.shopName;
     const productTitle = item.productTitle.toLowerCase()
     const productCategoryName = item.productCategoryName.toLowerCase()
     const originalQuantity = item.quantity || 1 // 保存原始订单数量
