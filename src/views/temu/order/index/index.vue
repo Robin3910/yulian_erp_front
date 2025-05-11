@@ -300,10 +300,11 @@
         <template #default="{ row }">
           <div>
             <div>
-              <div>数量：{{ row.quantity || '--' }}</div>
-              <div>单价：{{ row.unitPrice ? '￥' + row.unitPrice.toFixed(6) : '--' }}</div>
-              <div>总价：{{ row.totalPrice ? '￥' + row.totalPrice.toFixed(2) : '--' }}</div>
-            </div>
+                <div>官网数量：{{ row.originalQuantity || '--' }}</div>
+                <div>制作数量：{{ row.quantity || '--' }}</div>
+                <div>单价：{{ row.unitPrice ? '￥' + row.unitPrice.toFixed(6) : '--' }}</div>
+                <div>总价：{{ row.totalPrice ? '￥' + row.totalPrice.toFixed(2) : '--' }}</div>
+              </div>
           </div>
         </template>
       </el-table-column>
@@ -520,7 +521,7 @@ import { OrderApi, OrderVO } from '@/api/temu/order'
 import { TemuCommonApi } from '@/api/temu/common'
 import { getStrDictOptions } from '@/utils/dict'
 import { ElMessage,ElTable } from 'element-plus'
-import BatchOrderPopup from "@/views/temu/order/index/components/BatchOrderPopup.vue";
+import BatchOrderPopup from "@/views/temu/order/admin/components/BatchOrderPopup.vue";
 import { CopyDocument } from '@element-plus/icons-vue'
 
 /** 订单 列表 */
