@@ -266,6 +266,14 @@
                 :show-overflow-tooltip="false"
                 width="150px"
               />
+              <!--  备注-->
+              <el-table-column
+                label="备注"
+                align="center"
+                prop="remark"
+                min-width="150"
+                show-overflow-tooltip
+              />
             </el-table>
           </div>
         </template>
