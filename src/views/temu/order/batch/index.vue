@@ -129,7 +129,7 @@
       :data="list"
       :stripe="true"
       :show-overflow-tooltip="true"
-      :default-expand-all="true"
+      :expand-row-keys="expandedRows"
       height="calc(100vh - 280px)"
       :header-cell-style="{ background: 'var(--el-bg-color)' }"
       row-key="id"
@@ -517,6 +517,8 @@
       :total="total"
       v-model:page="queryParams.pageNo"
       v-model:limit="queryParams.pageSize"
+      :page-sizes="[10, 20, 50]"
+      :default-page-size="50"
       @pagination="getList"
     />
   </ContentWrap>
@@ -556,6 +558,7 @@ const total = ref(0) // 列表的总页数
 const selectedOrders = ref<OrderVO[]>([]) // 选中的订单
 const batchSelections = ref<Map<string, OrderVO[]>>(new Map()) // 每个批次的选择状态
 const tableRefs = ref<Map<string, any>>(new Map()) // 存储表格引用
+const expandedRows = ref<string[]>([]) // 存储展开的行
 
 // 查询参数
 const selectedRows = ref([])
@@ -645,6 +648,12 @@ const getList = async () => {
 
     list.value = Array.from(batchGroups.values())
     total.value = data.total
+    // 只展开第一个批次
+    if (list.value.length > 0) {
+      expandedRows.value = [list.value[0].id]
+    } else {
+      expandedRows.value = []
+    }
   } finally {
     loading.value = false
   }
@@ -1270,7 +1279,7 @@ onMounted(() => {
   &.el-button--success {
     &.is-plain {
       &:hover {
-        background: var(--el-color-success);
+        background-color: var(--el-color-success);
         border-color: var(--el-color-success);
         color: white;
       }
