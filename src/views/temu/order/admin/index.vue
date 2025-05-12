@@ -92,8 +92,9 @@
               <el-form-item label="创建时间" prop="bookingTime" class="w-full">
                 <el-date-picker
                   v-model="queryParams.bookingTime"
-                  value-format="YYYY-MM-DD HH:mm:ss"
-                  type="daterange"
+                  format="YYYY-MM-DD HH:mm"
+                  value-format="YYYY-MM-DD HH:mm:00"
+                  type="datetimerange"
                   start-placeholder="开始日期"
                   end-placeholder="结束日期"
                   :default-time="[new Date('1 00:00:00'), new Date('1 23:59:59')]"

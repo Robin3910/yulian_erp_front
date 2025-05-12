@@ -32,7 +32,9 @@ export const ShopApi = {
   getShopPage: async (params: any) => {
     return await request.get({ url: `/temu/shop/page`, params })
   },
-
+  getShopPageForUser: async (params: any) => {
+    return await request.get({ url: `/temu/shop/user-page`, params })
+  },
   // 查询店铺详情
   getShop: async (id: number) => {
     return await request.get({ url: `/temu/shop/get?id=` + id })

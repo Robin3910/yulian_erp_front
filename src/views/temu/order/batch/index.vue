@@ -91,11 +91,21 @@
     <div class="mb-10px flex justify-between">
       <div class="flex flex-col">
         <div class="flex gap-2">
-          <el-button type="primary" @click="handlerPrintBatchGoodsSn" plain :disabled="selectedOrders.length === 0">
+          <el-button
+            type="primary"
+            @click="handlerPrintBatchGoodsSn"
+            plain
+            :disabled="selectedOrders.length === 0"
+          >
             <Icon icon="ep:printer" class="mr-5px" />
             批量打印商品条码
           </el-button>
-          <el-button type="warning" @click="handlerPrintBatchCompliance" plain :disabled="selectedOrders.length === 0">
+          <el-button
+            type="warning"
+            @click="handlerPrintBatchCompliance"
+            plain
+            :disabled="selectedOrders.length === 0"
+          >
             <Icon icon="ep:printer" class="mr-5px" />
             批量打印合规单
           </el-button>
@@ -107,7 +117,6 @@
           <el-tag type="info" class="mr-4 selection-tag">
             共 <span class="selection-count">{{ selectedOrders.length }}</span> 个订单
           </el-tag>
-      
         </div>
       </div>
       <el-button type="primary" @click="handlePrintBatch" plain>
@@ -120,15 +129,28 @@
       :data="list"
       :stripe="true"
       :show-overflow-tooltip="true"
-      :default-expand-all="true"
+      :expand-row-keys="expandedRows"
       height="calc(100vh - 280px)"
       :header-cell-style="{ background: 'var(--el-bg-color)' }"
       row-key="id"
       @selection-change="handlerSelectionChange"
     >
       <!--选择-->
-      <el-table-column reserve-selection type="selection" width="55" align="center" />
-      <el-table-column type="expand">
+      <el-table-column reserve-selection type="selection" width="30" align="center" />
+      <el-table-column type="expand" width="90">
+        <template #header>
+          <el-button
+            :type="isAllExpanded ? 'primary' : 'info'"
+            link
+            @click="toggleAllExpand"
+            class="expand-all-button"
+          >
+            <el-icon class="expand-icon" :class="{ 'is-expanded': isAllExpanded }">
+              <ArrowDown />
+            </el-icon>
+            <span class="expand-text">{{ isAllExpanded ? '收起全部' : '展开全部' }}</span>
+          </el-button>
+        </template>
         <template #default="scope">
           <div>
             <el-table
@@ -136,10 +158,20 @@
               :data="scope.row.orderList"
               :stripe="true"
               :show-overflow-tooltip="true"
-              :ref="(el) => { if (el) registerTableRef(el, scope.row.batchNo) }"
+              :ref="
+                (el) => {
+                  if (el) registerTableRef(el, scope.row.batchNo)
+                }
+              "
             >
               <!--订单编号-->
-              <el-table-column label="订单信息" align="center" prop="orderNo" min-width="280" class-name="order-info-column">
+              <el-table-column
+                label="订单信息"
+                align="center"
+                prop="orderNo"
+                min-width="280"
+                class-name="order-info-column"
+              >
                 <template #default="{ row }">
                   <div class="text-left">
                     <div class="flex flex-col">
@@ -168,7 +200,9 @@
                           @click="handlerPrintGoodsSn(row, 1)"
                         >
                           <template #icon>
-                            <el-icon class="print-icon"><Printer /></el-icon>
+                            <el-icon class="print-icon">
+                              <Printer />
+                            </el-icon>
                           </template>
                           打印商品条码
                         </el-button>
@@ -193,7 +227,9 @@
                           @click="handlerPrintGoodsSn(row, 2)"
                         >
                           <template #icon>
-                            <el-icon class="print-icon"><Printer /></el-icon>
+                            <el-icon class="print-icon">
+                              <Printer />
+                            </el-icon>
                           </template>
                           打印合规单
                         </el-button>
@@ -292,7 +328,12 @@
                 </template>
               </el-table-column>
               <!--合规单图片-->
-              <el-table-column label="合规单图片" align="center" prop="complianceImageUrl" min-width="120">
+              <el-table-column
+                label="合规单图片"
+                align="center"
+                prop="complianceImageUrl"
+                min-width="120"
+              >
                 <template #default="{ row }">
                   <div class="text-left">
                     <el-image
@@ -314,7 +355,9 @@
                       <div>官网数量：{{ row.originalQuantity || '--' }}</div>
                       <div>制作数量：{{ row.quantity || '--' }}</div>
                       <div>单价：{{ row.unitPrice ? '￥' + row.unitPrice.toFixed(6) : '--' }}</div>
-                      <div>总价：{{ row.totalPrice ? '￥' + row.totalPrice.toFixed(2) : '--' }}</div>
+                      <div
+                        >总价：{{ row.totalPrice ? '￥' + row.totalPrice.toFixed(2) : '--' }}</div
+                      >
                     </div>
                   </div>
                 </template>
@@ -332,7 +375,7 @@
                       <span>{{ row.skc || '-' }}</span>
                     </div>
                     <div class="sku-item custom-sku-wrapper">
-                      <span class="label" style="font-weight: bold;">定制SKU：</span>
+                      <span class="label" style="font-weight: bold">定制SKU：</span>
                       <div class="custom-sku-content">
                         <span v-if="row.customSku" class="custom-sku">{{ row.customSku }}</span>
                         <span v-else>-</span>
@@ -371,6 +414,14 @@
                 :show-overflow-tooltip="false"
                 width="150px"
               />
+              <!--  备注-->
+              <el-table-column
+                label="备注"
+                align="center"
+                prop="remark"
+                min-width="150"
+                show-overflow-tooltip
+              />
             </el-table>
           </div>
         </template>
@@ -378,9 +429,29 @@
 
       <el-table-column label="批次编号" align="center" prop="batchNo" min-width="180">
         <template #default="{ row }">
-          <div class="font-bold">
-            <div>{{ row.batchNo }}</div>
-            <div class="text-gray-500 text-sm mt-1">{{ dayjs(row.createTime).format('YYYY-MM-DD HH:mm:ss') }}</div>
+          <div class="batch-info">
+            <div class="batch-no">{{ row.batchNo }}</div>
+            <div class="create-time">{{
+              dayjs(row.createTime).format('YYYY-MM-DD HH:mm:ss')
+            }}</div>
+          </div>
+        </template>
+      </el-table-column>
+      <el-table-column label="品类信息" align="center" min-width="180">
+        <template #default="{ row }">
+          <div class="category-info">
+            <template v-if="row.orderList && row.orderList.length > 0">
+              <el-tag
+                v-for="category in [...new Set(row.orderList.map(order => order.categoryName))]"
+                :key="category"
+                class="category-tag"
+                type="info"
+                effect="plain"
+              >
+                {{ category }}
+              </el-tag>
+            </template>
+            <span v-else class="no-data">暂无品类信息</span>
           </div>
         </template>
       </el-table-column>
@@ -436,7 +507,7 @@
           />
         </template>
       </el-table-column>
-      <el-table-column label="任务分配状态" align="center"  min-width="100">
+      <el-table-column label="任务分配状态" align="center" min-width="100">
         <template #default="{ row }">
           <dict-tag
             :type="DICT_TYPE.TEMU_ORDER_BATCH_DISPATCH_STATUS"
@@ -477,6 +548,8 @@
       :total="total"
       v-model:page="queryParams.pageNo"
       v-model:limit="queryParams.pageSize"
+      :page-sizes="[10, 20, 50]"
+      :default-page-size="50"
       @pagination="getList"
     />
   </ContentWrap>
@@ -501,7 +574,7 @@ import { OrderApi, OrderVO } from '@/api/temu/order'
 import printJS from 'print-js'
 import OrderRemarkPopup from '@/views/temu/order/batch/components/OrderRemarkPopup.vue'
 import OrderBatchTaskDispatchPopup from '@/views/temu/order/batch/components/OrderBatchTaskDispatchPopup.vue'
-import { CopyDocument, Printer } from '@element-plus/icons-vue'
+import { CopyDocument, Printer, ArrowDown } from '@element-plus/icons-vue'
 import { PDFDocument } from 'pdf-lib'
 import dayjs from 'dayjs'
 
@@ -516,6 +589,8 @@ const total = ref(0) // 列表的总页数
 const selectedOrders = ref<OrderVO[]>([]) // 选中的订单
 const batchSelections = ref<Map<string, OrderVO[]>>(new Map()) // 每个批次的选择状态
 const tableRefs = ref<Map<string, any>>(new Map()) // 存储表格引用
+const expandedRows = ref<string[]>([]) // 存储展开的行
+const isAllExpanded = ref(false) // 是否全部展开
 
 // 查询参数
 const selectedRows = ref([])
@@ -525,10 +600,10 @@ const queryParams = reactive({
   batchNo: undefined,
   customSku: undefined,
   status: undefined,
-  isDispatchTask:undefined,
+  isDispatchTask: undefined,
   createTime: []
 })
-const orderBatchTaskDispatchVisible  = ref(false)
+const orderBatchTaskDispatchVisible = ref(false)
 
 const queryFormRef = ref() // 搜索的表单
 // 备注引用
@@ -605,6 +680,14 @@ const getList = async () => {
 
     list.value = Array.from(batchGroups.values())
     total.value = data.total
+    // 默认展开第一条批次
+    if (list.value.length > 0) {
+      expandedRows.value = [String(list.value[0].id)]
+      isAllExpanded.value = false
+    } else {
+      expandedRows.value = []
+      isAllExpanded.value = false
+    }
   } finally {
     loading.value = false
   }
@@ -624,8 +707,8 @@ const resetQuery = () => {
 
 const handlerPrintGoodsSn = async (row: OrderVO, type: string | number) => {
   // let { goodsSn, oldTypeUrl } = await OrderApi.getOrderExtraInfo(row.id)
-  let goodsSn = row.goodsSn;
-  let oldTypeUrl = row.complianceUrl;
+  let goodsSn = row.goodsSn
+  let oldTypeUrl = row.complianceUrl
   switch (type) {
     case 1:
       if (!goodsSn) {
@@ -798,7 +881,7 @@ const getOrderStatusText = (status: number) => {
 const handlerRemark = async (row: OrderBatchVO) => {
   if (orderRemarkPopup.value) {
     orderRemarkPopup.value.setVisible(true)
-    orderRemarkPopup.value.formData.orderId = row.id
+    orderRemarkPopup.value.formData.orderId = String(row.id)
     orderRemarkPopup.value.formData.remark = row.remark
   }
 }
@@ -819,20 +902,25 @@ const handlerDispatchTask = () => {
   nextTick(() => {
     if (orderBatchTaskDispatchPopup.value) {
       orderBatchTaskDispatchPopup.value.setVisible(true)
-      orderBatchTaskDispatchPopup.value.formData.orderIds = selectedRows.value.map((item) => item.id)
+      orderBatchTaskDispatchPopup.value.formData.orderIds = selectedRows.value.map(
+        (item: any) => String(item.id)
+      )
     }
   })
 }
 /** 打印批次信息 */
 const handlePrintBatch = () => {
   // 创建打印内容
-  const printContent = list.value.map(batch => {
-    // 获取该批次下所有不重复的品类信息
-    const allCategories = Array.from(new Set(batch.orderList?.map(order => order.categoryName) || []))
-    const categories = allCategories.slice(0, 5)
-    const hasMore = allCategories.length > 5
+  const printContent = list.value
+    .map((batch) => {
+      // 获取该批次下所有不重复的品类信息
+      const allCategories = Array.from(
+        new Set(batch.orderList?.map((order) => order.categoryName) || [])
+      )
+      const categories = allCategories.slice(0, 5)
+      const hasMore = allCategories.length > 5
 
-    return `
+      return `
       <div style="width: 100mm; min-height: 100mm; padding: 8mm; box-sizing: border-box; font-family: Arial, sans-serif; display: flex; flex-direction: column;">
         <div style="text-align: center; margin-bottom: 6mm;">
           <div style="font-size: 36pt; font-weight: bold; word-break: break-all;">${batch.batchNo}</div>
@@ -845,7 +933,8 @@ const handlePrintBatch = () => {
         </div>
       </div>
     `
-  }).join('<div style="page-break-after: always;"></div>')
+    })
+    .join('<div style="page-break-after: always;"></div>')
 
   // 使用 print-js 打印
   printJS({
@@ -876,7 +965,7 @@ const handlerPrintBatchGoodsSn = async () => {
   try {
     // 使用Map对相同订单编号的订单进行去重
     const uniqueOrders = new Map()
-    selectedOrders.value.forEach(order => {
+    selectedOrders.value.forEach((order) => {
       if (order.goodsSn && !uniqueOrders.has(order.orderNo)) {
         uniqueOrders.set(order.orderNo, order)
       }
@@ -946,10 +1035,11 @@ const handlerPrintBatchGoodsSn = async () => {
     setTimeout(() => {
       URL.revokeObjectURL(mergedPdfUrl)
     }, 10000)
-
   } catch (error) {
     console.error('批量打印商品条码失败:', error)
-    ElMessage.error('批量打印商品条码失败：' + (error instanceof Error ? error.message : '未知错误'))
+    ElMessage.error(
+      '批量打印商品条码失败：' + (error instanceof Error ? error.message : '未知错误')
+    )
   }
 }
 
@@ -962,7 +1052,7 @@ const handlerPrintBatchCompliance = async () => {
 
   try {
     // 过滤出有合规单的订单
-    const ordersWithCompliance = selectedOrders.value.filter(order => order.complianceUrl)
+    const ordersWithCompliance = selectedOrders.value.filter((order) => order.complianceUrl)
 
     if (ordersWithCompliance.length === 0) {
       ElMessage.warning('选中的订单中没有可打印的合规单')
@@ -976,7 +1066,9 @@ const handlerPrintBatchCompliance = async () => {
 
     // 加载并合并所有PDF文件
     for (const order of ordersWithCompliance) {
-      const url = order.complianceUrl.startsWith('@') ? order.complianceUrl.substring(1) : order.complianceUrl
+      const url = order.complianceUrl.startsWith('@')
+        ? order.complianceUrl.substring(1)
+        : order.complianceUrl
       try {
         const response = await fetch(url)
         if (!response.ok) {
@@ -1025,7 +1117,6 @@ const handlerPrintBatchCompliance = async () => {
     setTimeout(() => {
       URL.revokeObjectURL(mergedPdfUrl)
     }, 10000)
-
   } catch (error) {
     console.error('批量打印合规单失败:', error)
     ElMessage.error('批量打印合规单失败：' + (error instanceof Error ? error.message : '未知错误'))
@@ -1049,6 +1140,16 @@ const handlerDispatchTaskConfirm = async (data: any) => {
 onMounted(() => {
   getList()
 })
+
+/** 切换全部展开/收起状态 */
+const toggleAllExpand = () => {
+  if (isAllExpanded.value) {
+    expandedRows.value = []
+  } else {
+    expandedRows.value = list.value.map(item => String(item.id))
+  }
+  isAllExpanded.value = !isAllExpanded.value
+}
 </script>
 
 <style lang="scss" scoped>
@@ -1222,7 +1323,7 @@ onMounted(() => {
   &.el-button--success {
     &.is-plain {
       &:hover {
-        background: var(--el-color-success);
+        background-color: var(--el-color-success);
         border-color: var(--el-color-success);
         color: white;
       }
@@ -1238,6 +1339,7 @@ onMounted(() => {
     font-weight: 600;
   }
 }
+
 .sku-info {
   text-align: left;
   padding: 8px;
@@ -1266,7 +1368,7 @@ onMounted(() => {
 
       .custom-sku {
         font-weight: 700;
-        color: #409EFF;
+        color: #409eff;
         background-color: #ecf5ff;
         padding: 2px 6px;
         border-radius: 4px;
@@ -1280,7 +1382,7 @@ onMounted(() => {
         color: #909399;
 
         &:hover {
-          color: #409EFF;
+          color: #409eff;
         }
 
         .el-icon {
@@ -1305,7 +1407,7 @@ onMounted(() => {
   align-items: center;
   justify-content: center;
   padding: 8px 16px;
-  
+
   .print-icon {
     font-size: 16px;
     transition: transform 0.3s ease;
@@ -1480,5 +1582,99 @@ onMounted(() => {
       color: var(--el-button-disabled-text-color);
     }
   }
+}
+
+// 批次信息样式
+.batch-info {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 2px;
+
+  .batch-no {
+    font-size: 17px;
+    font-weight: 600;
+    color: rgb(61, 58, 58);
+    transition: all 0.3s ease;
+
+    &:hover {
+      opacity: 0.8;
+    }
+  }
+
+  .create-time {
+    font-size: 15px;
+    color: var(--el-text-color-secondary);
+  }
+}
+
+// 品类信息样式
+.category-info {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  padding: 4px;
+
+  .category-tag {
+    font-size: 15px;
+    border-radius: 4px;
+    padding: 4px 8px;
+    margin: 2px;
+    
+    &.el-tag--info {
+      background-color: var(--el-fill-color-light);
+      border-color: var(--el-border-color-lighter);
+      color: var(--el-text-color-regular);
+    }
+  }
+
+  .no-data {
+    color: var(--el-text-color-secondary);
+    font-size: 14px;
+  }
+}
+
+// 展开全部按钮样式
+.expand-all-button {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px;
+  transition: all 0.3s ease;
+  height: 32px;
+  width: 30%;
+  font-size: 14px;
+  justify-content: flex-start;
+  padding-left: 1px;
+
+  .expand-icon {
+    transition: transform 0.3s ease;
+    font-size: 16px;
+    margin-right: 1px;
+    
+    &.is-expanded {
+      transform: rotate(180deg);
+    }
+  }
+
+  .expand-text {
+    font-size: 13px;
+    white-space: nowrap;
+  }
+
+  &:hover {
+    opacity: 0.9;
+  }
+}
+
+// 修改 Element Plus 默认的展开按钮样式
+:deep(.el-table__expand-icon) {
+  float: left;
+  margin-left: 16px;
+}
+
+:deep(.el-table__expand-column .cell) {
+  display: flex;
+  justify-content: flex-start;
 }
 </style>
