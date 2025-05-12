@@ -287,8 +287,12 @@
                 <span>{{ row.productProperties }}</span>
               </div>
               <div class="product-quantity">
-                <span class="label">数量：</span>
-                <span>{{ row.quantity }}</span>
+                <span class="label">官网数量：</span>
+                <span>{{ row.originalQuantity || "--" }}</span>
+              </div>
+              <div class="product-quantity">
+                <span class="label">制作数量：</span>
+                <span>{{ row.quantity|| "--" }}</span>
               </div>
             </div>
           </template>
