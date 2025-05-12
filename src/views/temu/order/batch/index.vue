@@ -136,8 +136,21 @@
       @selection-change="handlerSelectionChange"
     >
       <!--选择-->
-      <el-table-column reserve-selection type="selection" width="55" align="center" />
-      <el-table-column type="expand">
+      <el-table-column reserve-selection type="selection" width="30" align="center" />
+      <el-table-column type="expand" width="90">
+        <template #header>
+          <el-button
+            :type="isAllExpanded ? 'primary' : 'info'"
+            link
+            @click="toggleAllExpand"
+            class="expand-all-button"
+          >
+            <el-icon class="expand-icon" :class="{ 'is-expanded': isAllExpanded }">
+              <ArrowDown />
+            </el-icon>
+            <span class="expand-text">{{ isAllExpanded ? '收起全部' : '展开全部' }}</span>
+          </el-button>
+        </template>
         <template #default="scope">
           <div>
             <el-table
@@ -416,11 +429,29 @@
 
       <el-table-column label="批次编号" align="center" prop="batchNo" min-width="180">
         <template #default="{ row }">
-          <div class="font-bold">
-            <div>{{ row.batchNo }}</div>
-            <div class="text-gray-500 text-sm mt-1">{{
+          <div class="batch-info">
+            <div class="batch-no">{{ row.batchNo }}</div>
+            <div class="create-time">{{
               dayjs(row.createTime).format('YYYY-MM-DD HH:mm:ss')
             }}</div>
+          </div>
+        </template>
+      </el-table-column>
+      <el-table-column label="品类信息" align="center" min-width="180">
+        <template #default="{ row }">
+          <div class="category-info">
+            <template v-if="row.orderList && row.orderList.length > 0">
+              <el-tag
+                v-for="category in [...new Set(row.orderList.map(order => order.categoryName))]"
+                :key="category"
+                class="category-tag"
+                type="info"
+                effect="plain"
+              >
+                {{ category }}
+              </el-tag>
+            </template>
+            <span v-else class="no-data">暂无品类信息</span>
           </div>
         </template>
       </el-table-column>
@@ -543,7 +574,7 @@ import { OrderApi, OrderVO } from '@/api/temu/order'
 import printJS from 'print-js'
 import OrderRemarkPopup from '@/views/temu/order/batch/components/OrderRemarkPopup.vue'
 import OrderBatchTaskDispatchPopup from '@/views/temu/order/batch/components/OrderBatchTaskDispatchPopup.vue'
-import { CopyDocument, Printer } from '@element-plus/icons-vue'
+import { CopyDocument, Printer, ArrowDown } from '@element-plus/icons-vue'
 import { PDFDocument } from 'pdf-lib'
 import dayjs from 'dayjs'
 
@@ -559,6 +590,7 @@ const selectedOrders = ref<OrderVO[]>([]) // 选中的订单
 const batchSelections = ref<Map<string, OrderVO[]>>(new Map()) // 每个批次的选择状态
 const tableRefs = ref<Map<string, any>>(new Map()) // 存储表格引用
 const expandedRows = ref<string[]>([]) // 存储展开的行
+const isAllExpanded = ref(false) // 是否全部展开
 
 // 查询参数
 const selectedRows = ref([])
@@ -648,11 +680,13 @@ const getList = async () => {
 
     list.value = Array.from(batchGroups.values())
     total.value = data.total
-    // 只展开第一个批次
+    // 默认展开第一条批次
     if (list.value.length > 0) {
-      expandedRows.value = [list.value[0].id]
+      expandedRows.value = [String(list.value[0].id)]
+      isAllExpanded.value = false
     } else {
       expandedRows.value = []
+      isAllExpanded.value = false
     }
   } finally {
     loading.value = false
@@ -847,7 +881,7 @@ const getOrderStatusText = (status: number) => {
 const handlerRemark = async (row: OrderBatchVO) => {
   if (orderRemarkPopup.value) {
     orderRemarkPopup.value.setVisible(true)
-    orderRemarkPopup.value.formData.orderId = row.id
+    orderRemarkPopup.value.formData.orderId = String(row.id)
     orderRemarkPopup.value.formData.remark = row.remark
   }
 }
@@ -869,7 +903,7 @@ const handlerDispatchTask = () => {
     if (orderBatchTaskDispatchPopup.value) {
       orderBatchTaskDispatchPopup.value.setVisible(true)
       orderBatchTaskDispatchPopup.value.formData.orderIds = selectedRows.value.map(
-        (item) => item.id
+        (item: any) => String(item.id)
       )
     }
   })
@@ -1106,6 +1140,16 @@ const handlerDispatchTaskConfirm = async (data: any) => {
 onMounted(() => {
   getList()
 })
+
+/** 切换全部展开/收起状态 */
+const toggleAllExpand = () => {
+  if (isAllExpanded.value) {
+    expandedRows.value = []
+  } else {
+    expandedRows.value = list.value.map(item => String(item.id))
+  }
+  isAllExpanded.value = !isAllExpanded.value
+}
 </script>
 
 <style lang="scss" scoped>
@@ -1538,5 +1582,99 @@ onMounted(() => {
       color: var(--el-button-disabled-text-color);
     }
   }
+}
+
+// 批次信息样式
+.batch-info {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 2px;
+
+  .batch-no {
+    font-size: 17px;
+    font-weight: 600;
+    color: rgb(61, 58, 58);
+    transition: all 0.3s ease;
+
+    &:hover {
+      opacity: 0.8;
+    }
+  }
+
+  .create-time {
+    font-size: 15px;
+    color: var(--el-text-color-secondary);
+  }
+}
+
+// 品类信息样式
+.category-info {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  padding: 4px;
+
+  .category-tag {
+    font-size: 15px;
+    border-radius: 4px;
+    padding: 4px 8px;
+    margin: 2px;
+    
+    &.el-tag--info {
+      background-color: var(--el-fill-color-light);
+      border-color: var(--el-border-color-lighter);
+      color: var(--el-text-color-regular);
+    }
+  }
+
+  .no-data {
+    color: var(--el-text-color-secondary);
+    font-size: 14px;
+  }
+}
+
+// 展开全部按钮样式
+.expand-all-button {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px;
+  transition: all 0.3s ease;
+  height: 32px;
+  width: 30%;
+  font-size: 14px;
+  justify-content: flex-start;
+  padding-left: 1px;
+
+  .expand-icon {
+    transition: transform 0.3s ease;
+    font-size: 16px;
+    margin-right: 1px;
+    
+    &.is-expanded {
+      transform: rotate(180deg);
+    }
+  }
+
+  .expand-text {
+    font-size: 13px;
+    white-space: nowrap;
+  }
+
+  &:hover {
+    opacity: 0.9;
+  }
+}
+
+// 修改 Element Plus 默认的展开按钮样式
+:deep(.el-table__expand-icon) {
+  float: left;
+  margin-left: 16px;
+}
+
+:deep(.el-table__expand-column .cell) {
+  display: flex;
+  justify-content: flex-start;
 }
 </style>
