@@ -109,6 +109,15 @@
             <Icon icon="ep:printer" class="mr-5px" />
             批量打印合规单
           </el-button>
+          <el-button
+            type="success"
+            @click="handlerPrintBatchMerged"
+            plain
+            :disabled="selectedOrders.length === 0"
+          >
+            <Icon icon="ep:printer" class="mr-5px" />
+            批量打印条码+合规单
+          </el-button>
         </div>
         <div v-if="selectedOrders.length > 0" class="mt-2 flex items-center selection-info">
           <el-tag type="info" class="mr-2 selection-tag">
@@ -232,6 +241,35 @@
                             </el-icon>
                           </template>
                           打印合规单
+                        </el-button>
+                      </el-tooltip>
+                    </div>
+                    <div class="mt-2 flex justify-center">
+                      <el-tooltip
+                        effect="dark"
+                        content="当前合并文件尚未上传，请联系相关人员及时上传！"
+                        placement="top"
+                        :disabled="!!row.complianceGoodsMergedUrl"
+                        popper-class="custom-tooltip"
+                        :show-after="100"
+                        :hide-after="200"
+                        :enterable="false"
+                        :offset="20"
+                      >
+                        <el-button
+                          size="small"
+                          :type="row.complianceGoodsMergedUrl ? 'warning' : 'default'"
+                          plain
+                          class="print-action-button"
+                          :disabled="!row.complianceGoodsMergedUrl"
+                          @click="handlerPrintGoodsSn(row, 3)"
+                        >
+                          <template #icon>
+                            <el-icon class="print-icon">
+                              <Printer />
+                            </el-icon>
+                          </template>
+                          打印条码+合规单
                         </el-button>
                       </el-tooltip>
                     </div>
@@ -709,6 +747,7 @@ const handlerPrintGoodsSn = async (row: OrderVO, type: string | number) => {
   // let { goodsSn, oldTypeUrl } = await OrderApi.getOrderExtraInfo(row.id)
   let goodsSn = row.goodsSn
   let oldTypeUrl = row.complianceUrl
+  let mergedUrl = row.complianceGoodsMergedUrl
   switch (type) {
     case 1:
       if (!goodsSn) {
@@ -723,6 +762,14 @@ const handlerPrintGoodsSn = async (row: OrderVO, type: string | number) => {
         return
       }
       printJS(oldTypeUrl)
+      break
+    case 3:
+      if (!mergedUrl) {
+        ElMessage.warning('合并文件没有设置无法打印!')
+        return
+      }
+      printJS(mergedUrl)
+      break
   }
 }
 const handleFileSuccess = async (row: any, res: any) => {
@@ -1120,6 +1167,94 @@ const handlerPrintBatchCompliance = async () => {
   } catch (error) {
     console.error('批量打印合规单失败:', error)
     ElMessage.error('批量打印合规单失败：' + (error instanceof Error ? error.message : '未知错误'))
+  }
+}
+
+/** 批量打印条码+合规单 */
+const handlerPrintBatchMerged = async () => {
+  if (!selectedOrders.value || selectedOrders.value.length === 0) {
+    ElMessage.warning('请先选择要打印的订单')
+    return
+  }
+
+  try {
+    // 使用Map对相同订单编号的订单进行去重
+    const uniqueOrders = new Map()
+    selectedOrders.value.forEach((order) => {
+      if (order.complianceGoodsMergedUrl && !uniqueOrders.has(order.orderNo)) {
+        uniqueOrders.set(order.orderNo, order)
+      }
+    })
+
+    // 将Map转换为数组
+    const ordersWithMergedFile = Array.from(uniqueOrders.values())
+
+    if (ordersWithMergedFile.length === 0) {
+      ElMessage.warning('选中的订单中没有可打印的合并文件')
+      return
+    }
+
+    // 创建一个新的PDF文档
+    const mergedPdf = await PDFDocument.create()
+    let successCount = 0
+    let failCount = 0
+
+    // 加载并合并所有PDF文件
+    for (const order of ordersWithMergedFile) {
+      const url = order.complianceGoodsMergedUrl.startsWith('@') 
+        ? order.complianceGoodsMergedUrl.substring(1) 
+        : order.complianceGoodsMergedUrl
+      try {
+        const response = await fetch(url)
+        if (!response.ok) {
+          console.error(`加载PDF失败: ${url}`)
+          failCount++
+          continue
+        }
+        const pdfBytes = await response.arrayBuffer()
+        const pdf = await PDFDocument.load(pdfBytes)
+        const copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices())
+        copiedPages.forEach((page) => {
+          mergedPdf.addPage(page)
+        })
+        successCount++
+      } catch (error) {
+        console.error(`加载PDF失败: ${url}`, error)
+        failCount++
+      }
+    }
+
+    if (mergedPdf.getPageCount() === 0) {
+      ElMessage.error('没有可打印的合并文件PDF')
+      return
+    }
+
+    // 保存合并后的PDF
+    const mergedPdfBytes = await mergedPdf.save()
+    const mergedPdfBlob = new Blob([mergedPdfBytes], { type: 'application/pdf' })
+    const mergedPdfUrl = URL.createObjectURL(mergedPdfBlob)
+
+    // 使用print-js打印PDF
+    printJS({
+      printable: mergedPdfUrl,
+      type: 'pdf',
+      showModal: true
+    })
+
+    // 显示处理结果
+    if (failCount > 0) {
+      ElMessage.warning(`成功处理${successCount}个订单，${failCount}个订单处理失败`)
+    } else {
+      ElMessage.success(`成功处理${successCount}个订单`)
+    }
+
+    // 清理资源
+    setTimeout(() => {
+      URL.revokeObjectURL(mergedPdfUrl)
+    }, 10000)
+  } catch (error) {
+    console.error('批量打印合并文件失败:', error)
+    ElMessage.error('批量打印合并文件失败：' + (error instanceof Error ? error.message : '未知错误'))
   }
 }
 
