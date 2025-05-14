@@ -10,6 +10,7 @@ import { LocaleDropdown } from '@/layout/components/LocaleDropdown'
 import RouterSearch from '@/components/RouterSearch/index.vue'
 import { useAppStore } from '@/store/modules/app'
 import { useDesign } from '@/hooks/web/useDesign'
+import UserWalletRecharge from '@/components/UserWalletRecharge/index.vue'
 
 const { getPrefixCls, variables } = useDesign()
 
@@ -53,6 +54,7 @@ export default defineComponent({
           'dark:bg-[var(--el-bg-color)]'
         ]}
       >
+
         {layout.value !== 'top' ? (
           <div class="h-full flex items-center">
             {hamburger.value && layout.value !== 'cutMenu' ? (
@@ -62,6 +64,7 @@ export default defineComponent({
           </div>
         ) : undefined}
         <div class="h-full flex items-center">
+          <UserWalletRecharge></UserWalletRecharge>
           {screenfull.value ? (
             <Screenfull class="custom-hover" color="var(--top-header-text-color)"></Screenfull>
           ) : undefined}
@@ -78,6 +81,7 @@ export default defineComponent({
           {message.value ? (
             <Message class="custom-hover" color="var(--top-header-text-color)"></Message>
           ) : undefined}
+
           <UserInfo></UserInfo>
         </div>
       </div>
