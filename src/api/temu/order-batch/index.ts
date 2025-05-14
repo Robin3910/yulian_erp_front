@@ -5,6 +5,10 @@ export interface OrderBatchVO {
   batchNo: string // 批次编号
   fileUrl: string // 文件地址
   status: boolean // 0 已创建
+  orderList?: OrderVO[] // 订单列表
+  remark?: string // 备注
+  isDispatchTask?: boolean // 是否已分配任务
+  createTime?: Date // 创建时间
   [key: string]: any
 }
 

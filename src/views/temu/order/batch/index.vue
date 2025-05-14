@@ -118,6 +118,15 @@
             <Icon icon="ep:printer" class="mr-5px" />
             批量打印条码+合规单
           </el-button>
+          <el-button
+            type="info"
+            @click="handlerPrintBatchPickList"
+            plain
+            :disabled="selectedOrders.length === 0"
+          >
+            <Icon icon="ep:document" class="mr-5px" />
+            打印批次拣货单
+          </el-button>
         </div>
         <div v-if="selectedOrders.length > 0" class="mt-2 flex items-center selection-info">
           <el-tag type="info" class="mr-2 selection-tag">
@@ -132,10 +141,6 @@
         <el-button type="primary" @click="handlePrintBatch" plain>
           <Icon icon="ep:printer" class="mr-5px" />
           打印所有批次箱贴
-        </el-button>
-        <el-button type="success" @click="handlePrintPickingList" plain>
-          <Icon icon="ep:document" class="mr-5px" />
-          打印拣货单
         </el-button>
       </div>
     </div>
@@ -642,21 +647,21 @@ const loading = ref(true) // 列表的加载中
 const list = ref<OrderBatchVO[]>([]) // 列表的数据
 const total = ref(0) // 列表的总页数
 const selectedOrders = ref<OrderVO[]>([]) // 选中的订单
+const selectedRows = ref<OrderBatchVO[]>([]) // 选中的批次
 const batchSelections = ref<Map<string, OrderVO[]>>(new Map()) // 每个批次的选择状态
 const tableRefs = ref<Map<string, any>>(new Map()) // 存储表格引用
 const expandedRows = ref<string[]>([]) // 存储展开的行
 const isAllExpanded = ref(false) // 是否全部展开
 
 // 查询参数
-const selectedRows = ref([])
 const queryParams = reactive({
   pageNo: 1,
   pageSize: 10,
-  batchNo: undefined,
-  customSku: undefined,
-  status: undefined,
-  isDispatchTask: undefined,
-  createTime: []
+  batchNo: undefined as string | undefined,
+  customSku: undefined as string | undefined,
+  status: undefined as boolean | undefined,
+  isDispatchTask: undefined as boolean | undefined,
+  createTime: [] as string[]
 })
 const orderBatchTaskDispatchVisible = ref(false)
 
@@ -907,7 +912,7 @@ const handleCopy = async (text: string) => {
 // 获取订单状态类型
 const getOrderStatusType = (
   status: number
-): 'success' | 'warning' | 'info' | 'primary' | 'danger' | 'process' => {
+): 'success' | 'warning' | 'info' | 'primary' | 'danger' => {
   switch (status) {
     case 0:
       return 'info' // 待下单 - 浅灰
@@ -916,7 +921,7 @@ const getOrderStatusType = (
     case 2:
       return 'warning' // 已送产待生产 - 浅紫
     case 3:
-      return 'process' // 已生产待发货 - 浅绿
+      return 'primary' // 已生产待发货 - 浅绿
     case 4:
       return 'success' // 已发货 - 浅青
     default:
@@ -1064,23 +1069,10 @@ const handlerPrintBatchGoodsSn = async () => {
         type: 'warning',
         duration: 0,
         dangerouslyUseHTMLString: true,
-        style: {
-          width: '380px'
-        }
+        customClass: 'custom-notification'
       })
       return
     }
-
-    // 使用Map对相同订单编号的订单进行去重
-    const uniqueOrders = new Map()
-    selectedOrders.value.forEach((order) => {
-      if (!uniqueOrders.has(order.orderNo)) {
-        uniqueOrders.set(order.orderNo, order)
-      }
-    })
-
-    // 将Map转换为数组
-    const ordersWithGoodsSn = Array.from(uniqueOrders.values())
 
     // 创建一个新的PDF文档
     const mergedPdf = await PDFDocument.create()
@@ -1088,7 +1080,8 @@ const handlerPrintBatchGoodsSn = async () => {
     let failCount = 0
 
     // 加载并合并所有PDF文件
-    for (const order of ordersWithGoodsSn) {
+    for (const order of selectedOrders.value) {
+      if (!order.goodsSn) continue
       const url = order.goodsSn.startsWith('@') ? order.goodsSn.substring(1) : order.goodsSn
       try {
         const response = await fetch(url)
@@ -1194,27 +1187,15 @@ const handlerPrintBatchCompliance = async () => {
       return
     }
 
-    // 使用Map对相同订单编号的订单进行去重
-    const uniqueOrders = new Map()
-    selectedOrders.value.forEach((order) => {
-      if (!uniqueOrders.has(order.orderNo)) {
-        uniqueOrders.set(order.orderNo, order)
-      }
-    })
-
-    // 将Map转换为数组
-    const ordersWithCompliance = Array.from(uniqueOrders.values())
-
     // 创建一个新的PDF文档
     const mergedPdf = await PDFDocument.create()
     let successCount = 0
     let failCount = 0
 
     // 加载并合并所有PDF文件
-    for (const order of ordersWithCompliance) {
-      const url = order.complianceUrl.startsWith('@')
-        ? order.complianceUrl.substring(1)
-        : order.complianceUrl
+    for (const order of selectedOrders.value) {
+      if (!order.complianceUrl) continue
+      const url = order.complianceUrl.startsWith('@') ? order.complianceUrl.substring(1) : order.complianceUrl
       try {
         const response = await fetch(url)
         if (!response.ok) {
@@ -1319,24 +1300,14 @@ const handlerPrintBatchMerged = async () => {
       return
     }
 
-    // 使用Map对相同订单编号的订单进行去重
-    const uniqueOrders = new Map()
-    selectedOrders.value.forEach((order) => {
-      if (!uniqueOrders.has(order.orderNo)) {
-        uniqueOrders.set(order.orderNo, order)
-      }
-    })
-
-    // 将Map转换为数组
-    const ordersWithMergedFile = Array.from(uniqueOrders.values())
-
     // 创建一个新的PDF文档
     const mergedPdf = await PDFDocument.create()
     let successCount = 0
     let failCount = 0
 
     // 加载并合并所有PDF文件
-    for (const order of ordersWithMergedFile) {
+    for (const order of selectedOrders.value) {
+      if (!order.complianceGoodsMergedUrl) continue
       const url = order.complianceGoodsMergedUrl.startsWith('@')
         ? order.complianceGoodsMergedUrl.substring(1)
         : order.complianceGoodsMergedUrl
@@ -1407,6 +1378,219 @@ const handlerDispatchTaskConfirm = async (data: any) => {
   await getList()
 }
 
+/** 打印批次拣货单 **/
+const handlerPrintBatchPickList = () => {
+  if (!selectedOrders.value || selectedOrders.value.length === 0) {
+    ElMessage.warning('请先选择要打印的订单')
+    return
+  }
+
+  // 每页显示的订单数量
+  const ORDERS_PER_PAGE = 7
+
+  // 按照页面显示顺序获取选中的批次
+  const selectedBatchesInOrder = list.value.filter(batch => 
+    selectedRows.value.some(selected => selected.id === batch.id)
+  )
+
+  // 生成打印内容
+  const printContent = selectedBatchesInOrder
+    .map(batch => {
+      // 获取当前批次的订单
+      const orders = batch.orderList?.filter(order => 
+        selectedOrders.value.some(selected => selected.id === order.id)
+      ) || []
+
+      if (orders.length === 0) return ''
+
+      const totalQuantity = orders.reduce((sum, order) => sum + (order.originalQuantity || 0), 0)
+      const totalPages = Math.ceil(orders.length / ORDERS_PER_PAGE)
+      
+      // 将订单分页
+      const pages = []
+      for (let i = 0; i < orders.length; i += ORDERS_PER_PAGE) {
+        const pageOrders = orders.slice(i, i + ORDERS_PER_PAGE)
+        const currentPage = Math.floor(i / ORDERS_PER_PAGE) + 1
+        const isLastPage = currentPage === totalPages
+        
+        // 生成当前页的订单列表HTML
+        const ordersHtml = pageOrders
+          .map((order, index) => `
+            <tr>
+              <td style="text-align: center; vertical-align: middle;">${i + index + 1}</td>
+              <td style="vertical-align: top;">
+                <div style="margin-bottom: 4px;"><strong>订单编号：</strong>${order.orderNo || '--'}</div>
+                <div style="margin-bottom: 4px;"><strong>店铺名称：</strong>${order.shopName || '--'}</div>
+                <div style="margin-bottom: 4px;"><strong>SKC：</strong>${order.skc || '--'}</div>
+                <div style="margin-bottom: 4px;"><strong>SKU：</strong>${order.sku || '--'}</div>
+                <div><strong>创建时间：</strong>${dayjs(order.bookingTime).format('YYYY-MM-DD HH:mm:ss')}</div>
+              </td>
+              <td style="vertical-align: top; text-align: left;">
+                <div style="margin-bottom: 8px; font-weight: bold; font-size: 14px;">${order.customSku || '--'}</div>
+                <div style="white-space: pre-wrap; font-size: 12px;">${order.productProperties || '--'}</div>
+              </td>
+              <td style="vertical-align: top;">
+                <div style="margin-bottom: 4px;">
+                  <strong>定制文字：</strong>
+                  <div style="white-space: pre-wrap; font-size: 12px;">${order.customTextList || '--'}</div>
+                </div>
+                <div style="display: flex; gap: 10px; align-items: flex-start;">
+                  ${order.customImageUrls ? `
+                  <div>
+                    <strong>定制图片：</strong>
+                    <div style="display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px;">
+                      ${order.customImageUrls.split(',').map(url => `
+                        <img src="${url}" style="width: 40px; height: 40px; object-fit: contain; border: 1px solid #ddd;">
+                      `).join('')}
+                    </div>
+                  </div>
+                  ` : ''}
+                  ${order.effectiveImgUrl ? `
+                  <div>
+                    <strong>合成预览：</strong>
+                    <div style="margin-top: 4px;">
+                      <img src="${order.effectiveImgUrl}" style="width: 50px; height: 50px; object-fit: contain; border: 1px solid #ddd;">
+                    </div>
+                  </div>
+                  ` : ''}
+                </div>
+              </td>
+              <td style="text-align: center; vertical-align: middle;">${order.originalQuantity || 0}</td>
+            </tr>
+          `)
+          .join('')
+
+        pages.push(`
+          <div class="pick-list-page">
+            <div class="pick-list-header">
+              <h1 style="margin: 0; padding: 10px 0; font-size: 20px; text-align: center;">批次拣货单</h1>
+              <div style="margin: 10px 0; font-size: 14px; display: flex; justify-content: space-between; align-items: center;">
+                <div style="display: flex; align-items: center;">
+                  <strong style="font-size: 16px;">批次编号：${batch.batchNo}</strong>
+                  <span style="margin-left: 15px;">第 ${currentPage} 页 / 共 ${totalPages} 页</span>
+                </div>
+                <div>打印时间：${dayjs().format('YYYY-MM-DD HH:mm:ss')}</div>
+              </div>
+            </div>
+            
+            <div class="pick-list-content">
+              <table class="pick-list-table">
+                <thead>
+                  <tr>
+                    <th style="width: 40px; text-align: center;">序号</th>
+                    <th style="width: 200px;">商品信息</th>
+                    <th style="width: 150px; text-align: left;">定制SKU/属性</th>
+                    <th style="width: 300px;">定制内容</th>
+                    <th style="width: 60px; text-align: center;">官方数量</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${ordersHtml}
+                </tbody>
+                ${isLastPage ? `
+                <tfoot>
+                  <tr>
+                    <td colspan="4" style="text-align: right;"><strong>总数量：</strong></td>
+                    <td style="text-align: center;"><strong>${totalQuantity}</strong></td>
+                  </tr>
+                </tfoot>
+                ` : ''}
+              </table>
+            </div>
+            
+            ${isLastPage ? `
+            <div class="pick-list-footer">
+              <div style="display: flex; justify-content: space-between; padding: 0 40px;">
+                <div>拣货人：____________</div>
+                <div>复核人：____________</div>
+                <div>日期：____________</div>
+              </div>
+            </div>
+            ` : ''}
+          </div>
+        `)
+      }
+      
+      return pages.join('')
+    })
+    .join('')
+
+  // 使用print-js打印
+  printJS({
+    printable: printContent,
+    type: 'raw-html',
+    style: `
+      @page {
+        size: A4;
+        margin: 1.5cm 1cm;
+      }
+      @media print {
+        body {
+          margin: 0;
+          padding: 0;
+        }
+        .pick-list-page {
+          page-break-after: always;
+          min-height: auto;
+          box-sizing: border-box;
+          position: relative;
+          padding: 0;
+          margin: 0;
+          display: flex;
+          flex-direction: column;
+        }
+        .pick-list-page:last-child {
+          page-break-after: avoid;
+        }
+        .pick-list-header {
+          margin-bottom: 15px;
+          padding: 10px 0;
+        }
+        .pick-list-content {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+        }
+        .pick-list-table {
+          width: 100%;
+          border-collapse: collapse;
+          margin-bottom: 15px;
+        }
+        table {
+          width: 100%;
+          border-collapse: collapse;
+          font-size: 12px;
+          table-layout: fixed;
+        }
+        th {
+          background-color: #f8f8f8 !important;
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
+        }
+        th, td {
+          border: 1px solid #000;
+          padding: 6px;
+          text-align: left;
+          word-wrap: break-word;
+          overflow-wrap: break-word;
+        }
+        tbody tr:nth-child(even) {
+          background-color: #fafafa;
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
+        }
+        .pick-list-footer {
+          margin-top: auto;
+          padding: 20px 0;
+        }
+        tr {
+          page-break-inside: avoid;
+        }
+      }
+    `
+  })
+}
+
 /** 初始化 **/
 onMounted(() => {
   getList()
@@ -1420,170 +1604,6 @@ const toggleAllExpand = () => {
     expandedRows.value = list.value.map(item => String(item.id))
   }
   isAllExpanded.value = !isAllExpanded.value
-}
-
-/** 打印拣货单 */
-const handlePrintPickingList = () => {
-  // 创建打印内容
-  const printContent = list.value
-    .map((batch) => {
-      if (!batch.orderList || batch.orderList.length === 0) return ''
-
-      // 计算每页显示的订单数量
-      const ordersPerPage = 10
-      const totalOrders = batch.orderList.length
-      const totalPages = Math.ceil(totalOrders / ordersPerPage)
-
-      // 生成分页内容
-      const pageContent = Array.from({ length: totalPages }, (_, pageIndex) => {
-        const startIndex = pageIndex * ordersPerPage
-        const endIndex = Math.min(startIndex + ordersPerPage, totalOrders)
-        const pageOrders = batch.orderList.slice(startIndex, endIndex)
-
-        const orderListContent = pageOrders
-          .map((order, index) => {
-            // 处理定制图片，限制最多显示2张
-            const customImages = order.customImageUrls
-              ? order.customImageUrls
-                  .split(',')
-                  .slice(0, 2)
-                  .map(
-                    (url) =>
-                      `<img src="${url}" style="width: 60px; height: 60px; margin: 2px; object-fit: contain;" loading="lazy">`
-                  )
-                  .join('')
-              : '--'
-
-            return `
-              <tr class="order-row">
-                <td style="text-align: center; padding: 8px; border: 1px solid #ddd; width: 40px;">
-                  ${startIndex + index + 1}
-                </td>
-                <td style="text-align: left; padding: 8px; border: 1px solid #ddd;">
-                  <div style="margin-bottom: 5px;"><strong>订单号：</strong>${order.orderNo}</div>
-                  <div style="margin-bottom: 5px;"><strong>SKC编号：</strong>${order.skc || '--'}</div>
-                  <div><strong>商品属性：</strong>${order.productProperties || '--'}</div>
-                </td>
-                <td style="text-align: center; padding: 8px; border: 1px solid #ddd; width: 120px;">
-                  <div style="color: #409EFF; font-weight: bold;">${order.customSku || '--'}</div>
-                </td>
-                <td style="text-align: left; padding: 8px; border: 1px solid #ddd;">
-                  <div style="margin-bottom: 5px;"><strong>定制文字：</strong>${
-                    order.customTextList || '--'
-                  }</div>
-                  <div style="display: flex; align-items: center; gap: 10px;">
-                    <div>
-                      <div style="margin-bottom: 2px;"><strong>原图：</strong></div>
-                      <div>${customImages}</div>
-                    </div>
-                    <div>
-                      <div style="margin-bottom: 2px;"><strong>预览：</strong></div>
-                      <div>
-                        <img 
-                          src="${order.effectiveImgUrl || ''}" 
-                          style="width: 60px; height: 60px; object-fit: contain;"
-                          loading="lazy"
-                          onerror="this.style.display='none'"
-                        >
-                      </div>
-                    </div>
-                  </div>
-                </td>
-                <td style="text-align: center; padding: 8px; border: 1px solid #ddd; width: 80px;">
-                  ${order.originalQuantity || '--'}
-                </td>
-                <td style="text-align: center; padding: 8px; border: 1px solid #ddd; width: 80px;">
-                  <!-- 预留拣货数量列 -->
-                </td>
-              </tr>
-            `
-          })
-          .join('')
-
-        return `
-          <div style="page-break-after: always;">
-            <div style="margin-bottom: 20px;">
-              <h2 style="text-align: center; margin-bottom: 10px;">拣货单</h2>
-              <div style="margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center;">
-                <div>
-                  <strong>批次编号：</strong>${batch.batchNo}
-                  <span style="margin-left: 20px;">第 ${pageIndex + 1}/${totalPages} 页</span>
-                </div>
-                <div>
-                  <strong>打印时间：</strong>${dayjs().format('YYYY-MM-DD HH:mm:ss')}
-                </div>
-              </div>
-            </div>
-            <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 14px;">
-              <thead>
-                <tr style="background-color: #f5f7fa;">
-                  <th style="padding: 12px; border: 1px solid #ddd; width: 40px;">序号</th>
-                  <th style="padding: 12px; border: 1px solid #ddd;">商品信息</th>
-                  <th style="padding: 12px; border: 1px solid #ddd; width: 120px;">定制SKU</th>
-                  <th style="padding: 12px; border: 1px solid #ddd;">定制内容</th>
-                  <th style="padding: 12px; border: 1px solid #ddd; width: 80px;">官网数量</th>
-                  <th style="padding: 12px; border: 1px solid #ddd; width: 80px;">拣货数量</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${orderListContent}
-              </tbody>
-            </table>
-            ${
-              pageIndex === totalPages - 1
-                ? `
-            <div style="margin-top: 30px; display: flex; justify-content: space-between;">
-              <div>
-                <strong>制单人：</strong>_____________
-              </div>
-              <div>
-                <strong>拣货人：</strong>_____________
-              </div>
-              <div>
-                <strong>复核人：</strong>_____________
-              </div>
-            </div>
-            `
-                : ''
-            }
-          </div>
-        `
-      })
-
-      return pageContent.join('')
-    })
-    .join('')
-
-  // 使用 print-js 打印
-  printJS({
-    printable: printContent,
-    type: 'raw-html',
-    style: `
-      @page {
-        size: A4 landscape;
-        margin: 10mm;
-      }
-      @media print {
-        body {
-          margin: 0;
-          padding: 0;
-        }
-        img {
-          max-width: 100%;
-          height: auto;
-        }
-        .order-row td {
-          vertical-align: top;
-        }
-        thead {
-          display: table-header-group;
-        }
-        tfoot {
-          display: table-footer-group;
-        }
-      }
-    `
-  })
 }
 </script>
 

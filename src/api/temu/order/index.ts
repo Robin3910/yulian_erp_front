@@ -14,6 +14,7 @@ export interface OrderVO {
   productProperties: string // 商品属性
   bookingTime: Date // 预定单创建时间
   shopId: number // 店铺ID
+  shopName: string // 店铺名称
   customImageUrls: string // 定制图片列表URL
   customTextList: string // 定制文字列表
   productImgUrl: string // 商品图片URL
@@ -26,6 +27,8 @@ export interface OrderVO {
   remark: string // 备注
   goodsSn: string // 商品条码url
   complianceUrl: string // 合规单url
+  complianceGoodsMergedUrl: string // 合并文件url
+  effectiveImgUrl: string // 合成预览图url
   originalQuantity: number // temu官网原始数量
 }
 
