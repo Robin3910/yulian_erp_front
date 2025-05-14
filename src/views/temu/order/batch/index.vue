@@ -128,10 +128,16 @@
           </el-tag>
         </div>
       </div>
-      <el-button type="primary" @click="handlePrintBatch" plain>
-        <Icon icon="ep:printer" class="mr-5px" />
-        打印所有批次箱贴
-      </el-button>
+      <div class="flex gap-2">
+        <el-button type="primary" @click="handlePrintBatch" plain>
+          <Icon icon="ep:printer" class="mr-5px" />
+          打印所有批次箱贴
+        </el-button>
+        <el-button type="success" @click="handlePrintPickingList" plain>
+          <Icon icon="ep:document" class="mr-5px" />
+          打印拣货单
+        </el-button>
+      </div>
     </div>
     <el-table
       v-loading="loading"
@@ -617,7 +623,7 @@
 import { dateFormatter } from '@/utils/formatTime'
 import { OrderBatchApi, OrderBatchVO } from '@/api/temu/order-batch'
 import { DICT_TYPE, getStrDictOptions } from '@/utils/dict'
-import { ElMessageBox, ElMessage } from 'element-plus'
+import { ElMessageBox, ElMessage, ElNotification } from 'element-plus'
 import JSZip from 'jszip'
 import { OrderApi, OrderVO } from '@/api/temu/order'
 import printJS from 'print-js'
@@ -901,7 +907,7 @@ const handleCopy = async (text: string) => {
 // 获取订单状态类型
 const getOrderStatusType = (
   status: number
-): 'success' | 'warning' | 'info' | 'primary' | 'danger' => {
+): 'success' | 'warning' | 'info' | 'primary' | 'danger' | 'process' => {
   switch (status) {
     case 0:
       return 'info' // 待下单 - 浅灰
@@ -910,7 +916,7 @@ const getOrderStatusType = (
     case 2:
       return 'warning' // 已送产待生产 - 浅紫
     case 3:
-      return 'primary' // 已生产待发货 - 浅绿
+      return 'process' // 已生产待发货 - 浅绿
     case 4:
       return 'success' // 已发货 - 浅青
     default:
@@ -1021,21 +1027,60 @@ const handlerPrintBatchGoodsSn = async () => {
   }
 
   try {
+    // 检查是否有订单的商品条码为空
+    const ordersWithoutGoodsSn = selectedOrders.value.filter(order => !order.goodsSn)
+    if (ordersWithoutGoodsSn.length > 0) {
+      // 按店铺分组
+      const groupedByShop = ordersWithoutGoodsSn.reduce((acc, order) => {
+        const shopName = order.shopName || '未知店铺'
+        if (!acc[shopName]) {
+          acc[shopName] = []
+        }
+        acc[shopName].push(order.customSku || '未知SKU')
+        return acc
+      }, {})
+
+      const missingInfo = Object.entries(groupedByShop)
+        .map(([shopName, skus]) => `
+          <div style="margin-bottom: 16px;">
+            <div style="color: #606266; font-weight: bold; margin-bottom: 8px;">${shopName}</div>
+            <div style="padding-left: 16px;">
+              ${skus.map(sku => `
+                <div style="color: #409EFF; margin-bottom: 4px;">
+                  ${sku}
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `)
+        .join('')
+
+      ElNotification({
+        title: '无法批量打印',
+        message: `
+          <div style="margin-bottom: 10px; color: #303133;">以下定制SKU缺少商品条码，请联系相关人员及时补充：</div>
+          <div style="max-height: 300px; overflow-y: auto; padding-right: 10px;">${missingInfo}</div>
+        `,
+        type: 'warning',
+        duration: 0,
+        dangerouslyUseHTMLString: true,
+        style: {
+          width: '380px'
+        }
+      })
+      return
+    }
+
     // 使用Map对相同订单编号的订单进行去重
     const uniqueOrders = new Map()
     selectedOrders.value.forEach((order) => {
-      if (order.goodsSn && !uniqueOrders.has(order.orderNo)) {
+      if (!uniqueOrders.has(order.orderNo)) {
         uniqueOrders.set(order.orderNo, order)
       }
     })
 
     // 将Map转换为数组
     const ordersWithGoodsSn = Array.from(uniqueOrders.values())
-
-    if (ordersWithGoodsSn.length === 0) {
-      ElMessage.warning('选中的订单中没有可打印的商品条码')
-      return
-    }
 
     // 创建一个新的PDF文档
     const mergedPdf = await PDFDocument.create()
@@ -1095,9 +1140,7 @@ const handlerPrintBatchGoodsSn = async () => {
     }, 10000)
   } catch (error) {
     console.error('批量打印商品条码失败:', error)
-    ElMessage.error(
-      '批量打印商品条码失败：' + (error instanceof Error ? error.message : '未知错误')
-    )
+    ElMessage.error('批量打印商品条码失败：' + (error instanceof Error ? error.message : '未知错误'))
   }
 }
 
@@ -1109,13 +1152,58 @@ const handlerPrintBatchCompliance = async () => {
   }
 
   try {
-    // 过滤出有合规单的订单
-    const ordersWithCompliance = selectedOrders.value.filter((order) => order.complianceUrl)
+    // 检查是否有订单的合规单为空
+    const ordersWithoutCompliance = selectedOrders.value.filter(order => !order.complianceUrl)
+    if (ordersWithoutCompliance.length > 0) {
+      // 按店铺分组
+      const groupedByShop = ordersWithoutCompliance.reduce((acc, order) => {
+        const shopName = order.shopName || '未知店铺'
+        if (!acc[shopName]) {
+          acc[shopName] = []
+        }
+        acc[shopName].push(order.customSku || '未知SKU')
+        return acc
+      }, {})
 
-    if (ordersWithCompliance.length === 0) {
-      ElMessage.warning('选中的订单中没有可打印的合规单')
+      const missingInfo = Object.entries(groupedByShop)
+        .map(([shopName, skus]) => `
+          <div style="margin-bottom: 16px;">
+            <div style="color: #606266; font-weight: bold; margin-bottom: 8px;">${shopName}</div>
+            <div style="padding-left: 16px;">
+              ${skus.map(sku => `
+                <div style="color: #409EFF; margin-bottom: 4px;">
+                  ${sku}
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `)
+        .join('')
+
+      ElNotification({
+        title: '无法批量打印',
+        message: `
+          <div style="margin-bottom: 10px; color: #303133;">以下定制SKU缺少合规单，请联系相关人员及时补充：</div>
+          <div style="max-height: 300px; overflow-y: auto; padding-right: 10px;">${missingInfo}</div>
+        `,
+        type: 'warning',
+        duration: 0,
+        dangerouslyUseHTMLString: true,
+        offset: 60
+      })
       return
     }
+
+    // 使用Map对相同订单编号的订单进行去重
+    const uniqueOrders = new Map()
+    selectedOrders.value.forEach((order) => {
+      if (!uniqueOrders.has(order.orderNo)) {
+        uniqueOrders.set(order.orderNo, order)
+      }
+    })
+
+    // 将Map转换为数组
+    const ordersWithCompliance = Array.from(uniqueOrders.values())
 
     // 创建一个新的PDF文档
     const mergedPdf = await PDFDocument.create()
@@ -1189,21 +1277,58 @@ const handlerPrintBatchMerged = async () => {
   }
 
   try {
+    // 检查是否有订单的合并文件为空
+    const ordersWithoutMerged = selectedOrders.value.filter(order => !order.complianceGoodsMergedUrl)
+    if (ordersWithoutMerged.length > 0) {
+      // 按店铺分组
+      const groupedByShop = ordersWithoutMerged.reduce((acc, order) => {
+        const shopName = order.shopName || '未知店铺'
+        if (!acc[shopName]) {
+          acc[shopName] = []
+        }
+        acc[shopName].push(order.customSku || '未知SKU')
+        return acc
+      }, {})
+
+      const missingInfo = Object.entries(groupedByShop)
+        .map(([shopName, skus]) => `
+          <div style="margin-bottom: 16px;">
+            <div style="color: #606266; font-weight: bold; margin-bottom: 8px;">${shopName}</div>
+            <div style="padding-left: 16px;">
+              ${skus.map(sku => `
+                <div style="color: #409EFF; margin-bottom: 4px;">
+                  ${sku}
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `)
+        .join('')
+
+      ElNotification({
+        title: '无法批量打印',
+        message: `
+          <div style="margin-bottom: 10px; color: #303133;">以下定制SKU缺少合并文件，请联系相关人员及时补充：</div>
+          <div style="max-height: 300px; overflow-y: auto; padding-right: 10px;">${missingInfo}</div>
+        `,
+        type: 'warning',
+        duration: 0,
+        dangerouslyUseHTMLString: true,
+        offset: 60
+      })
+      return
+    }
+
     // 使用Map对相同订单编号的订单进行去重
     const uniqueOrders = new Map()
     selectedOrders.value.forEach((order) => {
-      if (order.complianceGoodsMergedUrl && !uniqueOrders.has(order.orderNo)) {
+      if (!uniqueOrders.has(order.orderNo)) {
         uniqueOrders.set(order.orderNo, order)
       }
     })
 
     // 将Map转换为数组
     const ordersWithMergedFile = Array.from(uniqueOrders.values())
-
-    if (ordersWithMergedFile.length === 0) {
-      ElMessage.warning('选中的订单中没有可打印的合并文件')
-      return
-    }
 
     // 创建一个新的PDF文档
     const mergedPdf = await PDFDocument.create()
@@ -1295,6 +1420,170 @@ const toggleAllExpand = () => {
     expandedRows.value = list.value.map(item => String(item.id))
   }
   isAllExpanded.value = !isAllExpanded.value
+}
+
+/** 打印拣货单 */
+const handlePrintPickingList = () => {
+  // 创建打印内容
+  const printContent = list.value
+    .map((batch) => {
+      if (!batch.orderList || batch.orderList.length === 0) return ''
+
+      // 计算每页显示的订单数量
+      const ordersPerPage = 10
+      const totalOrders = batch.orderList.length
+      const totalPages = Math.ceil(totalOrders / ordersPerPage)
+
+      // 生成分页内容
+      const pageContent = Array.from({ length: totalPages }, (_, pageIndex) => {
+        const startIndex = pageIndex * ordersPerPage
+        const endIndex = Math.min(startIndex + ordersPerPage, totalOrders)
+        const pageOrders = batch.orderList.slice(startIndex, endIndex)
+
+        const orderListContent = pageOrders
+          .map((order, index) => {
+            // 处理定制图片，限制最多显示2张
+            const customImages = order.customImageUrls
+              ? order.customImageUrls
+                  .split(',')
+                  .slice(0, 2)
+                  .map(
+                    (url) =>
+                      `<img src="${url}" style="width: 60px; height: 60px; margin: 2px; object-fit: contain;" loading="lazy">`
+                  )
+                  .join('')
+              : '--'
+
+            return `
+              <tr class="order-row">
+                <td style="text-align: center; padding: 8px; border: 1px solid #ddd; width: 40px;">
+                  ${startIndex + index + 1}
+                </td>
+                <td style="text-align: left; padding: 8px; border: 1px solid #ddd;">
+                  <div style="margin-bottom: 5px;"><strong>订单号：</strong>${order.orderNo}</div>
+                  <div style="margin-bottom: 5px;"><strong>SKC编号：</strong>${order.skc || '--'}</div>
+                  <div><strong>商品属性：</strong>${order.productProperties || '--'}</div>
+                </td>
+                <td style="text-align: center; padding: 8px; border: 1px solid #ddd; width: 120px;">
+                  <div style="color: #409EFF; font-weight: bold;">${order.customSku || '--'}</div>
+                </td>
+                <td style="text-align: left; padding: 8px; border: 1px solid #ddd;">
+                  <div style="margin-bottom: 5px;"><strong>定制文字：</strong>${
+                    order.customTextList || '--'
+                  }</div>
+                  <div style="display: flex; align-items: center; gap: 10px;">
+                    <div>
+                      <div style="margin-bottom: 2px;"><strong>原图：</strong></div>
+                      <div>${customImages}</div>
+                    </div>
+                    <div>
+                      <div style="margin-bottom: 2px;"><strong>预览：</strong></div>
+                      <div>
+                        <img 
+                          src="${order.effectiveImgUrl || ''}" 
+                          style="width: 60px; height: 60px; object-fit: contain;"
+                          loading="lazy"
+                          onerror="this.style.display='none'"
+                        >
+                      </div>
+                    </div>
+                  </div>
+                </td>
+                <td style="text-align: center; padding: 8px; border: 1px solid #ddd; width: 80px;">
+                  ${order.originalQuantity || '--'}
+                </td>
+                <td style="text-align: center; padding: 8px; border: 1px solid #ddd; width: 80px;">
+                  <!-- 预留拣货数量列 -->
+                </td>
+              </tr>
+            `
+          })
+          .join('')
+
+        return `
+          <div style="page-break-after: always;">
+            <div style="margin-bottom: 20px;">
+              <h2 style="text-align: center; margin-bottom: 10px;">拣货单</h2>
+              <div style="margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                  <strong>批次编号：</strong>${batch.batchNo}
+                  <span style="margin-left: 20px;">第 ${pageIndex + 1}/${totalPages} 页</span>
+                </div>
+                <div>
+                  <strong>打印时间：</strong>${dayjs().format('YYYY-MM-DD HH:mm:ss')}
+                </div>
+              </div>
+            </div>
+            <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 14px;">
+              <thead>
+                <tr style="background-color: #f5f7fa;">
+                  <th style="padding: 12px; border: 1px solid #ddd; width: 40px;">序号</th>
+                  <th style="padding: 12px; border: 1px solid #ddd;">商品信息</th>
+                  <th style="padding: 12px; border: 1px solid #ddd; width: 120px;">定制SKU</th>
+                  <th style="padding: 12px; border: 1px solid #ddd;">定制内容</th>
+                  <th style="padding: 12px; border: 1px solid #ddd; width: 80px;">官网数量</th>
+                  <th style="padding: 12px; border: 1px solid #ddd; width: 80px;">拣货数量</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${orderListContent}
+              </tbody>
+            </table>
+            ${
+              pageIndex === totalPages - 1
+                ? `
+            <div style="margin-top: 30px; display: flex; justify-content: space-between;">
+              <div>
+                <strong>制单人：</strong>_____________
+              </div>
+              <div>
+                <strong>拣货人：</strong>_____________
+              </div>
+              <div>
+                <strong>复核人：</strong>_____________
+              </div>
+            </div>
+            `
+                : ''
+            }
+          </div>
+        `
+      })
+
+      return pageContent.join('')
+    })
+    .join('')
+
+  // 使用 print-js 打印
+  printJS({
+    printable: printContent,
+    type: 'raw-html',
+    style: `
+      @page {
+        size: A4 landscape;
+        margin: 10mm;
+      }
+      @media print {
+        body {
+          margin: 0;
+          padding: 0;
+        }
+        img {
+          max-width: 100%;
+          height: auto;
+        }
+        .order-row td {
+          vertical-align: top;
+        }
+        thead {
+          display: table-header-group;
+        }
+        tfoot {
+          display: table-footer-group;
+        }
+      }
+    `
+  })
 }
 </script>
 
@@ -1824,3 +2113,4 @@ const toggleAllExpand = () => {
   justify-content: flex-start;
 }
 </style>
+
