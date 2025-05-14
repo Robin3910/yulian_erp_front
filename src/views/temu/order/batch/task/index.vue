@@ -370,6 +370,16 @@
           />
         </template>
       </el-table-column>
+      <el-table-column label="任务负责人" align="left" min-width="100">
+        <template #default="{ row }">
+          <div v-if="row.isDispatchTask === 1">
+            <div v-for="(item,index) in row.userList" :key="index">
+              <span>{{item.type==1?'作图':'生产'}}:</span>
+              <span>{{item.nickName}}</span>
+            </div>
+          </div>
+        </template>
+      </el-table-column>
       <el-table-column
         label="备注"
         align="center"

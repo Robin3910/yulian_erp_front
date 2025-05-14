@@ -480,8 +480,8 @@
           <div class="category-info">
             <template v-if="row.orderList && row.orderList.length > 0">
               <el-tag
-                v-for="category in [...new Set(row.orderList.map(order => order.categoryName))]"
-                :key="category"
+                v-for="(category,index) in [...new Set(row.orderList.map(order => order.categoryName))]"
+                :key="index"
                 class="category-tag"
                 type="info"
                 effect="plain"
@@ -552,7 +552,18 @@
             :value="row.isDispatchTask"
             class="batch-status-tag"
           />
+
         </template>
+      </el-table-column>
+      <el-table-column label="任务负责人" align="left" min-width="100">
+       <template #default="{ row }">
+         <div v-if="row.isDispatchTask === 1">
+           <div v-for="(item,index) in row.userList" :key="index">
+             <span>{{item.type==1?'作图':'生产'}}:</span>
+             <span>{{item.nickName}}</span>
+           </div>
+         </div>
+       </template>
       </el-table-column>
       <el-table-column
         label="备注"
@@ -1201,8 +1212,8 @@ const handlerPrintBatchMerged = async () => {
 
     // 加载并合并所有PDF文件
     for (const order of ordersWithMergedFile) {
-      const url = order.complianceGoodsMergedUrl.startsWith('@') 
-        ? order.complianceGoodsMergedUrl.substring(1) 
+      const url = order.complianceGoodsMergedUrl.startsWith('@')
+        ? order.complianceGoodsMergedUrl.substring(1)
         : order.complianceGoodsMergedUrl
       try {
         const response = await fetch(url)
@@ -1756,7 +1767,7 @@ const toggleAllExpand = () => {
     border-radius: 4px;
     padding: 4px 8px;
     margin: 2px;
-    
+
     &.el-tag--info {
       background-color: var(--el-fill-color-light);
       border-color: var(--el-border-color-lighter);
@@ -1786,7 +1797,7 @@ const toggleAllExpand = () => {
     transition: transform 0.3s ease;
     font-size: 16px;
     margin-right: 1px;
-    
+
     &.is-expanded {
       transform: rotate(180deg);
     }
