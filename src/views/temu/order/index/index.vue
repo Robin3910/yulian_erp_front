@@ -64,6 +64,23 @@
           </el-form-item>
         </el-col>
         <el-col :span="24" :lg="6">
+          <el-form-item label="有/无类目" prop="hasCategory" class="w-full">
+            <el-select
+              filterable
+              v-model="queryParams.hasCategory"
+              placeholder="请选择"
+              clearable
+            >
+              <el-option
+                v-for="(item, index) in [ { label: '有', value: 1 }, { label: '无', value: 0 } ]"
+                :key="index"
+                :label="item.label"
+                :value="item.value"
+              />
+            </el-select>
+          </el-form-item>
+        </el-col>
+        <el-col :span="24" :lg="6">
           <el-form-item label="类目" prop="categoryId" class="w-full">
             <el-select
               filterable
@@ -523,7 +540,7 @@ import { TemuCommonApi } from '@/api/temu/common'
 import { getStrDictOptions } from '@/utils/dict'
 import { ElMessage,ElTable } from 'element-plus'
 import BatchOrderPopup from "@/views/temu/order/admin/components/BatchOrderPopup.vue";
-import { CopyDocument } from '@element-plus/icons-vue'
+
 
 /** 订单 列表 */
 defineOptions({ name: 'TemuOrderIndex' })
@@ -566,7 +583,8 @@ const queryParams = reactive({
   categoryId: [],
   categoryName: undefined,
   shippingInfo: undefined,
-  originalInfo: undefined
+  originalInfo: undefined,
+  hasCategory: undefined
 })
 const queryFormRef = ref() // 搜索的表单
 // 订单总金额

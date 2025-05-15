@@ -8,7 +8,7 @@
           :model="queryParams"
           ref="queryFormRef"
           :inline="true"
-          label-width="68px"
+          label-width="80px"
         >
           <el-row :gutter="20">
             <el-col :span="24" :lg="6">
@@ -66,6 +66,23 @@
                     :key="dict.value"
                     :label="dict.label"
                     :value="dict.value"
+                  />
+                </el-select>
+              </el-form-item>
+            </el-col>
+            <el-col :span="24" :lg="6">
+              <el-form-item label="有/无类目" prop="hasCategory" class="w-full">
+                <el-select
+                  filterable
+                  v-model="queryParams.hasCategory"
+                  placeholder="请选择"
+                  clearable
+                >
+                  <el-option
+                    v-for="(item, index) in [ { label: '有', value: 1 }, { label: '无', value: 0 } ]"
+                    :key="index"
+                    :label="item.label"
+                    :value="item.value"
                   />
                 </el-select>
               </el-form-item>
@@ -659,7 +676,8 @@ const queryParams = reactive({
   categoryId: [],
   categoryName: undefined,
   shippingInfo: undefined,
-  originalInfo: undefined
+  originalInfo: undefined,
+  hasCategory: undefined
 })
 const queryFormRef = ref() // 搜索的表单
 // 订单总金额

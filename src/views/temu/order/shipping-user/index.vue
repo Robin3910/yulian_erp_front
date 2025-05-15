@@ -42,7 +42,17 @@
               />
             </el-form-item>
           </el-col>
-          <el-col :span="24" :lg="8">
+          <el-col :span="24" :lg="6">
+            <el-form-item label="定制SKU" prop="customSku" class="w-full">
+              <el-input
+                v-model="queryParams.customSku"
+                placeholder="请输入物流单号"
+                clearable
+                @keyup.enter="handleQuery"
+              />
+            </el-form-item>
+          </el-col>
+          <el-col :span="24" :lg="6">
             <el-form-item label="订单创建时间" prop="createTime">
               <el-date-picker
                 v-model="queryParams.createTime"
@@ -97,10 +107,10 @@
         :row-class-name="tableRowClassName"
       >
         <!-- 物流单号列 -->
-        <el-table-column 
-          label="物流单号" 
-          align="center" 
-          min-width="170" 
+        <el-table-column
+          label="物流单号"
+          align="center"
+          min-width="170"
           fixed="left"
           class-name="tracking-column"
         >
@@ -158,9 +168,9 @@
         </el-table-column>
 
         <!-- 订单信息 -->
-        <el-table-column 
-          label="订单信息" 
-          align="center" 
+        <el-table-column
+          label="订单信息"
+          align="center"
           min-width="275"
           class-name="order-info-column"
         >
@@ -243,10 +253,10 @@
         </el-table-column>
 
         <!-- 订单状态 -->
-        <el-table-column 
-          label="订单状态" 
-          prop="orderStatus" 
-          align="center" 
+        <el-table-column
+          label="订单状态"
+          prop="orderStatus"
+          align="center"
           min-width="135"
         >
           <template #default="{ row }">
@@ -299,9 +309,9 @@
         </el-table-column>
 
         <!-- SKU信息 -->
-        <el-table-column 
-          label="SKU信息" 
-          align="center" 
+        <el-table-column
+          label="SKU信息"
+          align="center"
           min-width="275"
           class-name="text-left-column"
           header-align="center"
@@ -337,11 +347,11 @@
         </el-table-column>
 
         <!-- 定制文字列表 -->
-        <el-table-column 
-          label="定制文字列表" 
-          prop="customTextList" 
-          align="center" 
-          min-width="110" 
+        <el-table-column
+          label="定制文字列表"
+          prop="customTextList"
+          align="center"
+          min-width="110"
           show-overflow-tooltip
         >
           <template #default="{ row }">
@@ -515,7 +525,8 @@ const queryParams = reactive({
   trackingNumber: undefined,
   shopId: undefined,
   createTime: [],
-  orderStatus: undefined
+  orderStatus: undefined,
+  customSku:undefined
 })
 const queryFormRef = ref() // 搜索的表单
 
@@ -552,7 +563,7 @@ const getList = async () => {
       if (shippingOrder.orderNoList && shippingOrder.orderNoList.length > 0) {
         let totalItemsInTracking = 0
         let hasValidOrders = false
-        
+
         // 计算该物流单号下的所有有效订单项总数
         shippingOrder.orderNoList.forEach(orderNoGroup => {
           if (orderNoGroup.orderList && orderNoGroup.orderList.length > 0) {
@@ -566,7 +577,7 @@ const getList = async () => {
           totalItemsInTracking = 1
           spanInfo.trackingSpans.push(1)
           spanInfo.orderSpans.push(1)
-          
+
           // 创建一个空的订单项用于显示
           extendedList.push({
             ...shippingOrder,
@@ -948,10 +959,10 @@ const handlePrint = async (url: string) => {
 // 添加行类名处理函数
 const tableRowClassName = ({ row, rowIndex }: { row: any; rowIndex: number }) => {
   if (rowIndex === 0) return ''
-  
+
   const prevRow = list.value[rowIndex - 1]
   const classes = []
-  
+
   // 检查物流单号变化
   if (row.trackingNumber !== prevRow.trackingNumber) {
     classes.push('tracking-divider')
@@ -964,7 +975,7 @@ const tableRowClassName = ({ row, rowIndex }: { row: any; rowIndex: number }) =>
   else {
     classes.push('same-order-divider')
   }
-  
+
   return classes.join(' ')
 }
 
@@ -1046,7 +1057,7 @@ const handleCopy = async (text: string) => {
     .tracking-column,
     .order-info-column {
       position: relative;
-      
+
       &::after {
         content: '';
         position: absolute;
@@ -1583,7 +1594,7 @@ const handleCopy = async (text: string) => {
     .tracking-column,
     .order-info-column {
       position: relative;
-      
+
       &::after {
         content: '';
         position: absolute;
@@ -1636,7 +1647,7 @@ const handleCopy = async (text: string) => {
 :deep(.el-table__body) {
   .order-info-column {
     position: relative;
-    
+
     &::after {
       content: '';
       position: absolute;
