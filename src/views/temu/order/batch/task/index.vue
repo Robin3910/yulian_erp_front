@@ -286,6 +286,30 @@
           </div>
         </template>
       </el-table-column>
+      <el-table-column label="品类信息" align="center" min-width="260">
+        <template #default="{ row }">
+          <div class="category-info">
+            <template v-if="row.orderList && row.orderList.length > 0">
+              <div class="flex  flex-col" style="align-items:flex-start">
+                <el-tag
+                  v-for="(category, index) in [
+                  ...new Set(row.orderList.map((order) => order.categoryName))
+                ]"  :key="index"
+                  class="category-tag"
+                  type="info"
+                  effect="plain"
+                >
+                  <span>{{ category }}</span>
+                  <span class="ml-2 ">制作数量：<span class="color-rose-500">{{ row.orderList.filter((order) => order.categoryName === category).reduce((acc, order) => acc + order.quantity, 0) }}</span></span>
+
+                </el-tag>
+              </div>
+
+            </template>
+            <span v-else class="no-data">暂无品类信息</span>
+          </div>
+        </template>
+      </el-table-column>
       <el-table-column label="打印文件地址" align="center" prop="fileUrl" min-width="200">
         <template #default="{ row }">
           <div class="font-bold flex item-center justify-center" v-if="row.fileUrl">
@@ -330,7 +354,7 @@
       />
       <el-table-column label="定制图片（一键下载）" align="center" min-width="130">
         <template #default="{ row }">
-          <div class="flex justify-center mt-2">
+          <div class="flex justify-center mt-2 flex-wrap">
             <el-button
               type="success"
               plain

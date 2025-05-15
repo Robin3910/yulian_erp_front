@@ -8,81 +8,123 @@
       :inline="true"
       label-width="68px"
     >
-      <el-form-item label="批次编号" prop="batchNo">
-        <el-input
-          v-model="queryParams.batchNo"
-          placeholder="请输入批次编号"
-          clearable
-          @keyup.enter="handleQuery"
-          class="!w-240px"
-        />
-      </el-form-item>
+      <el-row :gutter="20">
+        <el-col :span="24" :lg="6">
+          <el-form-item label="类目" prop="categoryId" class="w-full">
+            <el-select
+                filterable
+                v-model="queryParams.categoryId"
+                placeholder="请选择类目"
+                clearable
+                multiple
+            >
+              <el-option
+                  v-for="(item, index) in categoryList"
+                  :key="index"
+                  :label="item.categoryName"
+                  :value="item.id"
+              />
+            </el-select>
+          </el-form-item>
+        </el-col>
+        <el-col :span="24" :lg="6">
+          <el-form-item label="店铺" prop="shopId" class="w-full">
+            <el-select filterable v-model="queryParams.shopId" placeholder="请选择店铺" clearable>
+              <el-option
+                v-for="(item, index) in shopList"
+                :key="index"
+                :label="item.shopName"
+                :value="item.shopId"
+              />
+            </el-select>
+          </el-form-item>
+        </el-col>
+        <el-col :span="24" :lg="6">
+          <el-form-item label="批次编号" prop="batchNo" class="w-full">
+            <el-input
+              v-model="queryParams.batchNo"
+              placeholder="请输入批次编号"
+              clearable
+              @keyup.enter="handleQuery"
 
-      <el-form-item label="定制SKU" prop="customSku">
-        <el-input
-          v-model="queryParams.customSku"
-          placeholder="请输入定制SKU"
-          clearable
-          @keyup.enter="handleQuery"
-          class="!w-240px"
-        />
-      </el-form-item>
+            />
+          </el-form-item>
+        </el-col>
+        <el-col :span="24" :lg="6">
+          <el-form-item label="定制SKU" prop="customSku" class="w-full">
+            <el-input
+              v-model="queryParams.customSku"
+              placeholder="请输入定制SKU"
+              clearable
+              @keyup.enter="handleQuery"
 
-      <el-form-item label="订单状态" prop="orderStatus">
-        <el-select
-          v-model="queryParams.status"
-          placeholder="请选择订单状态"
-          clearable
-          class="!w-220px"
-        >
-          <el-option
-            v-for="dict in getStrDictOptions(DICT_TYPE.TEMU_ORDER_BATCH_STATUS)"
-            :key="dict.value"
-            :label="dict.label"
-            :value="dict.value"
-          />
-        </el-select>
-      </el-form-item>
-      <el-form-item label="分配状态" prop="orderStatus">
-        <el-select
-          v-model="queryParams.isDispatchTask"
-          placeholder="请选择分配状态"
-          clearable
-          class="!w-220px"
-        >
-          <el-option
-            v-for="dict in getStrDictOptions(DICT_TYPE.TEMU_ORDER_BATCH_DISPATCH_STATUS)"
-            :key="dict.value"
-            :label="dict.label"
-            :value="dict.value"
-          />
-        </el-select>
-      </el-form-item>
-      <el-form-item label="创建时间" prop="createTime">
-        <el-date-picker
-          v-model="queryParams.createTime"
-          value-format="YYYY-MM-DD HH:mm:ss"
-          type="daterange"
-          start-placeholder="开始日期"
-          end-placeholder="结束日期"
-          :default-time="[new Date('1 00:00:00'), new Date('1 23:59:59')]"
-          class="!w-220px"
-        />
-      </el-form-item>
-      <el-form-item>
-        <el-button @click="handleQuery">
-          <Icon icon="ep:search" class="mr-5px" />
-          搜索
-        </el-button>
-        <el-button @click="resetQuery">
-          <Icon icon="ep:refresh" class="mr-5px" />
-          重置
-        </el-button>
-        <el-button type="primary" @click="handlerDispatchTask">
-          <Icon icon="ep:plus" class="mr-5px" />
-          分配任务
-        </el-button>
-      </el-form-item>
+            />
+          </el-form-item>
+        </el-col>
+        <el-col :span="24" :lg="6">
+          <el-form-item label="订单状态" prop="orderStatus" class="w-full">
+            <el-select
+              v-model="queryParams.status"
+              placeholder="请选择订单状态"
+              clearable
+
+            >
+              <el-option
+                v-for="dict in getStrDictOptions(DICT_TYPE.TEMU_ORDER_BATCH_STATUS)"
+                :key="dict.value"
+                :label="dict.label"
+                :value="dict.value"
+              />
+            </el-select>
+          </el-form-item>
+        </el-col>
+        <el-col :span="24" :lg="6">
+          <el-form-item label="分配状态" prop="orderStatus" class="w-full">
+            <el-select
+              v-model="queryParams.isDispatchTask"
+              placeholder="请选择分配状态"
+              clearable
+
+            >
+              <el-option
+                v-for="dict in getStrDictOptions(DICT_TYPE.TEMU_ORDER_BATCH_DISPATCH_STATUS)"
+                :key="dict.value"
+                :label="dict.label"
+                :value="dict.value"
+              />
+            </el-select>
+          </el-form-item>
+        </el-col>
+        <el-col :span="24" :lg="6">
+          <el-form-item label="创建时间" prop="createTime">
+            <el-date-picker
+              v-model="queryParams.createTime"
+              value-format="YYYY-MM-DD HH:mm:ss"
+              type="daterange"
+              start-placeholder="开始日期"
+              end-placeholder="结束日期"
+              :default-time="[new Date('1 00:00:00'), new Date('1 23:59:59')]"
+              class="!w-220px"
+            />
+          </el-form-item>
+        </el-col>
+        <el-col :span="24" :lg="6">
+          <el-form-item class="w-full">
+            <el-button @click="handleQuery">
+              <Icon icon="ep:search" class="mr-5px" />
+              搜索
+            </el-button>
+            <el-button @click="resetQuery">
+              <Icon icon="ep:refresh" class="mr-5px" />
+              重置
+            </el-button>
+            <el-button type="primary" @click="handlerDispatchTask">
+              <Icon icon="ep:plus" class="mr-5px" />
+              分配任务
+            </el-button>
+          </el-form-item>
+        </el-col>
+      </el-row>
     </el-form>
   </ContentWrap>
 
@@ -405,8 +447,8 @@
                       <div>制作数量：{{ row.quantity || '--' }}</div>
                       <div>单价：{{ row.unitPrice ? '￥' + row.unitPrice.toFixed(6) : '--' }}</div>
                       <div
-                        >总价：{{ row.totalPrice ? '￥' + row.totalPrice.toFixed(2) : '--' }}</div
-                      >
+                        >总价：{{ row.totalPrice ? '￥' + row.totalPrice.toFixed(2) : '--' }}
+                      </div>
                     </div>
                   </div>
                 </template>
@@ -480,25 +522,31 @@
         <template #default="{ row }">
           <div class="batch-info">
             <div class="batch-no">{{ row.batchNo }}</div>
-            <div class="create-time">{{
-              dayjs(row.createTime).format('YYYY-MM-DD HH:mm:ss')
-            }}</div>
+            <div class="create-time"
+              >{{ dayjs(row.createTime).format('YYYY-MM-DD HH:mm:ss') }}
+            </div>
           </div>
         </template>
       </el-table-column>
-      <el-table-column label="品类信息" align="center" min-width="180">
+      <el-table-column label="品类信息" align="center" min-width="260">
         <template #default="{ row }">
           <div class="category-info">
             <template v-if="row.orderList && row.orderList.length > 0">
-              <el-tag
-                v-for="(category,index) in [...new Set(row.orderList.map(order => order.categoryName))]"
-                :key="index"
+          <div class="flex  flex-col" style="align-items:flex-start">
+            <el-tag
+                v-for="(category, index) in [
+                  ...new Set(row.orderList.map((order) => order.categoryName))
+                ]"  :key="index"
                 class="category-tag"
                 type="info"
                 effect="plain"
-              >
-                {{ category }}
-              </el-tag>
+            >
+              <span>{{ category }}</span>
+              <span class="ml-2 ">制作数量：<span class="color-rose-500">{{ row.orderList.filter((order) => order.categoryName === category).reduce((acc, order) => acc + order.quantity, 0) }}</span></span>
+
+            </el-tag>
+          </div>
+
             </template>
             <span v-else class="no-data">暂无品类信息</span>
           </div>
@@ -506,13 +554,14 @@
       </el-table-column>
       <el-table-column label="打印文件地址" align="center" prop="fileUrl" min-width="200">
         <template #default="{ row }">
-          <div class="font-bold flex item-center justify-center" v-if="row.fileUrl">
-            <a :href="row.fileUrl" :download="row.fileUrl">
+          <div class="font-bold flex item-center justify-center flex-wrap" v-if="row.fileUrl">
+            <a :href="row.fileUrl" :download="row.fileUrl" class="mb-2">
               <el-button type="success" plain class="action-button">
                 <Icon icon="ep:download" class="mr-5px" />
                 下载作图文件
               </el-button>
             </a>
+
             <el-button
               v-if="row.status === 0"
               type="primary"
@@ -521,7 +570,7 @@
               class="action-button ml-2"
             >
               <Icon icon="ep:upload" class="mr-5px" />
-              重新上传
+              重新上传文件
             </el-button>
           </div>
           <div class="font-bold" v-else>
@@ -563,18 +612,17 @@
             :value="row.isDispatchTask"
             class="batch-status-tag"
           />
-
         </template>
       </el-table-column>
       <el-table-column label="任务负责人" align="left" min-width="100">
-       <template #default="{ row }">
-         <div v-if="row.isDispatchTask === 1">
-           <div v-for="(item,index) in row.userList" :key="index">
-             <span>{{item.type==1?'作图':'生产'}}:</span>
-             <span>{{item.nickName}}</span>
-           </div>
-         </div>
-       </template>
+        <template #default="{ row }">
+          <div v-if="row.isDispatchTask === 1">
+            <div v-for="(item, index) in row.userList" :key="index">
+              <span>{{ item.type == 1 ? '作图' : '生产' }}:</span>
+              <span>{{ item.nickName }}</span>
+            </div>
+          </div>
+        </template>
       </el-table-column>
       <el-table-column
         label="备注"
@@ -627,6 +675,7 @@
 <script setup lang="ts">
 import { dateFormatter } from '@/utils/formatTime'
 import { OrderBatchApi, OrderBatchVO } from '@/api/temu/order-batch'
+import { TemuCommonApi } from '@/api/temu/common'
 import { DICT_TYPE, getStrDictOptions } from '@/utils/dict'
 import { ElMessageBox, ElMessage, ElNotification } from 'element-plus'
 import JSZip from 'jszip'
@@ -643,6 +692,8 @@ const message = useMessage() // 消息弹窗
 const { t } = useI18n() // 国际化
 
 // 状态变量
+const categoryList = ref<any[]>([])
+const shopList = ref<any[]>([])
 const loading = ref(true) // 列表的加载中
 const list = ref<OrderBatchVO[]>([]) // 列表的数据
 const total = ref(0) // 列表的总页数
@@ -661,7 +712,9 @@ const queryParams = reactive({
   customSku: undefined as string | undefined,
   status: undefined as boolean | undefined,
   isDispatchTask: undefined as boolean | undefined,
-  createTime: [] as string[]
+  createTime: [] as string[],
+  shopId : undefined,
+  categoryId: undefined,
 })
 const orderBatchTaskDispatchVisible = ref(false)
 
@@ -681,7 +734,16 @@ const handlerSelectionChange = (val: any) => {
     }
   })
 }
-
+// 获取店铺列表
+const getShopList = async () => {
+  const data = await TemuCommonApi.getShopList()
+  shopList.value = data.list
+}
+//获取分类列表
+const getProductCategoryList = async () => {
+  const data = await TemuCommonApi.getProductCategoryList()
+  categoryList.value = data.list
+}
 /** 注册表格引用 */
 const registerTableRef = (el: any, batchNo: string) => {
   if (el) {
@@ -971,8 +1033,8 @@ const handlerDispatchTask = () => {
   nextTick(() => {
     if (orderBatchTaskDispatchPopup.value) {
       orderBatchTaskDispatchPopup.value.setVisible(true)
-      orderBatchTaskDispatchPopup.value.formData.orderIds = selectedRows.value.map(
-        (item: any) => String(item.id)
+      orderBatchTaskDispatchPopup.value.formData.orderIds = selectedRows.value.map((item: any) =>
+        String(item.id)
       )
     }
   })
@@ -1033,7 +1095,7 @@ const handlerPrintBatchGoodsSn = async () => {
 
   try {
     // 检查是否有订单的商品条码为空
-    const ordersWithoutGoodsSn = selectedOrders.value.filter(order => !order.goodsSn)
+    const ordersWithoutGoodsSn = selectedOrders.value.filter((order) => !order.goodsSn)
     if (ordersWithoutGoodsSn.length > 0) {
       // 按店铺分组
       const groupedByShop = ordersWithoutGoodsSn.reduce((acc, order) => {
@@ -1046,18 +1108,24 @@ const handlerPrintBatchGoodsSn = async () => {
       }, {})
 
       const missingInfo = Object.entries(groupedByShop)
-        .map(([shopName, skus]) => `
+        .map(
+          ([shopName, skus]) => `
           <div style="margin-bottom: 16px;">
             <div style="color: #606266; font-weight: bold; margin-bottom: 8px;">${shopName}</div>
             <div style="padding-left: 16px;">
-              ${skus.map(sku => `
+              ${skus
+                .map(
+                  (sku) => `
                 <div style="color: #409EFF; margin-bottom: 4px;">
                   ${sku}
                 </div>
-              `).join('')}
+              `
+                )
+                .join('')}
             </div>
           </div>
-        `)
+        `
+        )
         .join('')
 
       ElNotification({
@@ -1133,7 +1201,9 @@ const handlerPrintBatchGoodsSn = async () => {
     }, 10000)
   } catch (error) {
     console.error('批量打印商品条码失败:', error)
-    ElMessage.error('批量打印商品条码失败：' + (error instanceof Error ? error.message : '未知错误'))
+    ElMessage.error(
+      '批量打印商品条码失败：' + (error instanceof Error ? error.message : '未知错误')
+    )
   }
 }
 
@@ -1146,7 +1216,7 @@ const handlerPrintBatchCompliance = async () => {
 
   try {
     // 检查是否有订单的合规单为空
-    const ordersWithoutCompliance = selectedOrders.value.filter(order => !order.complianceUrl)
+    const ordersWithoutCompliance = selectedOrders.value.filter((order) => !order.complianceUrl)
     if (ordersWithoutCompliance.length > 0) {
       // 按店铺分组
       const groupedByShop = ordersWithoutCompliance.reduce((acc, order) => {
@@ -1159,18 +1229,24 @@ const handlerPrintBatchCompliance = async () => {
       }, {})
 
       const missingInfo = Object.entries(groupedByShop)
-        .map(([shopName, skus]) => `
+        .map(
+          ([shopName, skus]) => `
           <div style="margin-bottom: 16px;">
             <div style="color: #606266; font-weight: bold; margin-bottom: 8px;">${shopName}</div>
             <div style="padding-left: 16px;">
-              ${skus.map(sku => `
+              ${skus
+                .map(
+                  (sku) => `
                 <div style="color: #409EFF; margin-bottom: 4px;">
                   ${sku}
                 </div>
-              `).join('')}
+              `
+                )
+                .join('')}
             </div>
           </div>
-        `)
+        `
+        )
         .join('')
 
       ElNotification({
@@ -1195,7 +1271,9 @@ const handlerPrintBatchCompliance = async () => {
     // 加载并合并所有PDF文件
     for (const order of selectedOrders.value) {
       if (!order.complianceUrl) continue
-      const url = order.complianceUrl.startsWith('@') ? order.complianceUrl.substring(1) : order.complianceUrl
+      const url = order.complianceUrl.startsWith('@')
+        ? order.complianceUrl.substring(1)
+        : order.complianceUrl
       try {
         const response = await fetch(url)
         if (!response.ok) {
@@ -1259,7 +1337,9 @@ const handlerPrintBatchMerged = async () => {
 
   try {
     // 检查是否有订单的合并文件为空
-    const ordersWithoutMerged = selectedOrders.value.filter(order => !order.complianceGoodsMergedUrl)
+    const ordersWithoutMerged = selectedOrders.value.filter(
+      (order) => !order.complianceGoodsMergedUrl
+    )
     if (ordersWithoutMerged.length > 0) {
       // 按店铺分组
       const groupedByShop = ordersWithoutMerged.reduce((acc, order) => {
@@ -1272,18 +1352,24 @@ const handlerPrintBatchMerged = async () => {
       }, {})
 
       const missingInfo = Object.entries(groupedByShop)
-        .map(([shopName, skus]) => `
+        .map(
+          ([shopName, skus]) => `
           <div style="margin-bottom: 16px;">
             <div style="color: #606266; font-weight: bold; margin-bottom: 8px;">${shopName}</div>
             <div style="padding-left: 16px;">
-              ${skus.map(sku => `
+              ${skus
+                .map(
+                  (sku) => `
                 <div style="color: #409EFF; margin-bottom: 4px;">
                   ${sku}
                 </div>
-              `).join('')}
+              `
+                )
+                .join('')}
             </div>
           </div>
-        `)
+        `
+        )
         .join('')
 
       ElNotification({
@@ -1361,7 +1447,9 @@ const handlerPrintBatchMerged = async () => {
     }, 10000)
   } catch (error) {
     console.error('批量打印合并文件失败:', error)
-    ElMessage.error('批量打印合并文件失败：' + (error instanceof Error ? error.message : '未知错误'))
+    ElMessage.error(
+      '批量打印合并文件失败：' + (error instanceof Error ? error.message : '未知错误')
+    )
   }
 }
 
@@ -1389,33 +1477,35 @@ const handlerPrintBatchPickList = () => {
   const ORDERS_PER_PAGE = 7
 
   // 按照页面显示顺序获取选中的批次
-  const selectedBatchesInOrder = list.value.filter(batch => 
-    selectedRows.value.some(selected => selected.id === batch.id)
+  const selectedBatchesInOrder = list.value.filter((batch) =>
+    selectedRows.value.some((selected) => selected.id === batch.id)
   )
 
   // 生成打印内容
   const printContent = selectedBatchesInOrder
-    .map(batch => {
+    .map((batch) => {
       // 获取当前批次的订单
-      const orders = batch.orderList?.filter(order => 
-        selectedOrders.value.some(selected => selected.id === order.id)
-      ) || []
+      const orders =
+        batch.orderList?.filter((order) =>
+          selectedOrders.value.some((selected) => selected.id === order.id)
+        ) || []
 
       if (orders.length === 0) return ''
 
       const totalQuantity = orders.reduce((sum, order) => sum + (order.originalQuantity || 0), 0)
       const totalPages = Math.ceil(orders.length / ORDERS_PER_PAGE)
-      
+
       // 将订单分页
       const pages = []
       for (let i = 0; i < orders.length; i += ORDERS_PER_PAGE) {
         const pageOrders = orders.slice(i, i + ORDERS_PER_PAGE)
         const currentPage = Math.floor(i / ORDERS_PER_PAGE) + 1
         const isLastPage = currentPage === totalPages
-        
+
         // 生成当前页的订单列表HTML
         const ordersHtml = pageOrders
-          .map((order, index) => `
+          .map(
+            (order, index) => `
             <tr>
               <td style="text-align: center; vertical-align: middle;">${i + index + 1}</td>
               <td style="vertical-align: top;">
@@ -1435,29 +1525,43 @@ const handlerPrintBatchPickList = () => {
                   <div style="white-space: pre-wrap; font-size: 12px;">${order.customTextList || '--'}</div>
                 </div>
                 <div style="display: flex; gap: 10px; align-items: flex-start;">
-                  ${order.customImageUrls ? `
+                  ${
+                    order.customImageUrls
+                      ? `
                   <div>
                     <strong>定制图片：</strong>
                     <div style="display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px;">
-                      ${order.customImageUrls.split(',').map(url => `
+                      ${order.customImageUrls
+                        .split(',')
+                        .map(
+                          (url) => `
                         <img src="${url}" style="width: 40px; height: 40px; object-fit: contain; border: 1px solid #ddd;">
-                      `).join('')}
+                      `
+                        )
+                        .join('')}
                     </div>
                   </div>
-                  ` : ''}
-                  ${order.effectiveImgUrl ? `
+                  `
+                      : ''
+                  }
+                  ${
+                    order.effectiveImgUrl
+                      ? `
                   <div>
                     <strong>合成预览：</strong>
                     <div style="margin-top: 4px;">
                       <img src="${order.effectiveImgUrl}" style="width: 50px; height: 50px; object-fit: contain; border: 1px solid #ddd;">
                     </div>
                   </div>
-                  ` : ''}
+                  `
+                      : ''
+                  }
                 </div>
               </td>
               <td style="text-align: center; vertical-align: middle;">${order.originalQuantity || 0}</td>
             </tr>
-          `)
+          `
+          )
           .join('')
 
         pages.push(`
@@ -1472,7 +1576,7 @@ const handlerPrintBatchPickList = () => {
                 <div>打印时间：${dayjs().format('YYYY-MM-DD HH:mm:ss')}</div>
               </div>
             </div>
-            
+
             <div class="pick-list-content">
               <table class="pick-list-table">
                 <thead>
@@ -1487,18 +1591,24 @@ const handlerPrintBatchPickList = () => {
                 <tbody>
                   ${ordersHtml}
                 </tbody>
-                ${isLastPage ? `
+                ${
+                  isLastPage
+                    ? `
                 <tfoot>
                   <tr>
                     <td colspan="4" style="text-align: right;"><strong>总数量：</strong></td>
                     <td style="text-align: center;"><strong>${totalQuantity}</strong></td>
                   </tr>
                 </tfoot>
-                ` : ''}
+                `
+                    : ''
+                }
               </table>
             </div>
-            
-            ${isLastPage ? `
+
+            ${
+              isLastPage
+                ? `
             <div class="pick-list-footer">
               <div style="display: flex; justify-content: space-between; padding: 0 40px;">
                 <div>拣货人：____________</div>
@@ -1506,11 +1616,13 @@ const handlerPrintBatchPickList = () => {
                 <div>日期：____________</div>
               </div>
             </div>
-            ` : ''}
+            `
+                : ''
+            }
           </div>
         `)
       }
-      
+
       return pages.join('')
     })
     .join('')
@@ -1594,6 +1706,8 @@ const handlerPrintBatchPickList = () => {
 /** 初始化 **/
 onMounted(() => {
   getList()
+  getShopList()
+  getProductCategoryList()
 })
 
 /** 切换全部展开/收起状态 */
@@ -1601,7 +1715,7 @@ const toggleAllExpand = () => {
   if (isAllExpanded.value) {
     expandedRows.value = []
   } else {
-    expandedRows.value = list.value.map(item => String(item.id))
+    expandedRows.value = list.value.map((item) => String(item.id))
   }
   isAllExpanded.value = !isAllExpanded.value
 }
@@ -2068,7 +2182,7 @@ const toggleAllExpand = () => {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  justify-content: center;
+  justify-content: flex-start;
   padding: 4px;
 
   .category-tag {
@@ -2133,4 +2247,3 @@ const toggleAllExpand = () => {
   justify-content: flex-start;
 }
 </style>
-

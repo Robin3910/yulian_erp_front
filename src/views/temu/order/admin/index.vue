@@ -595,7 +595,6 @@ import { getStrDictOptions } from '@/utils/dict'
 import { ElMessage, ElMessageBox, ElTable } from 'element-plus'
 import { OrderBatchApi } from '@/api/temu/order-batch'
 import OrderRemarkPopup from '@/views/temu/order/admin/components/OrderRemarkPopup.vue'
-import { CopyDocument } from '@element-plus/icons-vue'
 
 /** 订单 列表 */
 defineOptions({ name: 'TemuOrderAdmin' })
