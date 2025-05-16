@@ -118,7 +118,7 @@
             <template v-if="spanArr.trackingSpans[$index] !== 0">
               <div class="tracking-number-cell">
                 <div class="tracking-number-wrapper">
-                  <span class="tracking-number">{{ (row as any).trackingNumber || '-' }}</span>
+                  <span class="tracking-number " :style="{color: `${getColor($index)}`}">{{ (row as any).trackingNumber || '-' }}</span>
                   <!-- <el-button
                     v-if="row.trackingNumber"
                     class="copy-button"
@@ -174,11 +174,11 @@
           min-width="275"
           class-name="order-info-column"
         >
-          <template #default="{ row }">
+          <template #default="{ row,$index }">
             <div class="order-info">
               <div class="order-number">
                 <div class="order-number-wrapper">
-                  <span>订单号：{{ row.orderNo }}</span>
+                  <span :style="{color: `${getColor($index)}`}">订单号：{{ row.orderNo }}</span>
                   <!-- <el-button
                     v-if="row.orderNo"
                     class="copy-button"
@@ -192,12 +192,13 @@
               </div>
               <div class="shop-info">
                 <div class="shop-name">
-                  <span class="label">店铺名称：</span>
-                  {{ row.shopName }}
+                  <span class="label" >店铺名称：</span>
+                  <span :style="{color: `${getColor($index)}`}"> {{ row.shopName }}</span>
+
                 </div>
                 <div class="shop-id">
-                  <span class="label">店铺ID：</span>
-                  {{ row.shopId }}
+                  <span class="label" >店铺ID：</span>
+                 <span :style="{color: `${getColor($index)}`}"> {{ row.shopId }}</span>
                 </div>
                 <div class="mt-2 flex justify-center gap-2">
                   <el-tooltip
@@ -453,8 +454,9 @@ import { ref, reactive, onMounted, onUnmounted } from 'vue'
 import { OrderApi, OrderVO } from '@/api/temu/order'
 import { TemuCommonApi } from '@/api/temu/common'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Printer, Van, CopyDocument } from '@element-plus/icons-vue'
+import { Printer, Van } from '@element-plus/icons-vue'
 import { formatDate } from '@/utils/formatTime'
+import { COLOR_ARRAYS } from '@/utils/color'
 
 declare global {
   interface Window {
@@ -992,6 +994,15 @@ const handleCopy = async (text: string) => {
     console.error('复制失败:', err)
     ElMessage.error('复制失败')
   }
+}
+
+const getColor=(index:number)=>{
+  let randomIndex = Math.floor(Math.random() * 8);
+ console.log('>>>>>>>>>>索引位置',index,randomIndex)
+  if(index<0){
+    return COLOR_ARRAYS[0][randomIndex]||"";
+  }
+  return COLOR_ARRAYS[index][randomIndex]||"";
 }
 
 </script>
