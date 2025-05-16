@@ -45,7 +45,14 @@ const handleClose = () => {
   }, 3000)
 }
 onMounted(() => {
+  let cb = () => {
+    setTimeout(() => {
+      fetchMyWallet()
+      cb()
+    }, 3000)
+  }
   fetchMyWallet()
+  cb()
 })
 </script>
 <style scoped lang="scss"></style>
