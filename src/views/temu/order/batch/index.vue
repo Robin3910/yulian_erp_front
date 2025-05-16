@@ -522,9 +522,7 @@
         <template #default="{ row }">
           <div class="batch-info">
             <div class="batch-no">{{ row.batchNo }}</div>
-            <div class="create-time"
-              >{{ dayjs(row.createTime).format('YYYY-MM-DD HH:mm:ss') }}
-            </div>
+            <div class="create-time">{{ dayjs(row.createTime).format('YYYY-MM-DD HH:mm') }}</div>
           </div>
         </template>
       </el-table-column>
