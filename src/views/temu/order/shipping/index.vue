@@ -61,10 +61,7 @@
                 start-placeholder="开始日期"
                 end-placeholder="结束日期"
                 value-format="YYYY-MM-DD"
-                :default-time="[
-                  new Date(2000, 1, 1, 0, 0, 0),
-                  new Date(2000, 1, 1, 23, 59, 59)
-                ]"
+                :default-time="[new Date(2000, 1, 1, 0, 0, 0), new Date(2000, 1, 1, 23, 59, 59)]"
               />
             </el-form-item>
           </el-col>
@@ -118,7 +115,9 @@
             <template v-if="spanArr.trackingSpans[$index] !== 0">
               <div class="tracking-number-cell">
                 <div class="tracking-number-wrapper">
-                  <span class="tracking-number " :style="{color: `${getColor($index)}`}">{{ (row as any).trackingNumber || '-' }}</span>
+                  <span class="tracking-number" :style="{ color: `${getColor($index)}` }">{{
+                    (row as any).trackingNumber || '-'
+                  }}</span>
                   <!-- <el-button
                     v-if="row.trackingNumber"
                     class="copy-button"
@@ -148,7 +147,9 @@
                     :disabled="!row.expressOutsideImageUrl"
                     @click.stop="handlePrint(row.expressOutsideImageUrl)"
                   >
-                    <el-icon><Printer /></el-icon>
+                    <el-icon>
+                      <Printer />
+                    </el-icon>
                     打印加急面单
                   </el-button>
                 </el-tooltip>
@@ -159,7 +160,9 @@
                   class="action-button ship-button"
                   @click.stop="handleShip(row)"
                 >
-                  <el-icon><Van /></el-icon>
+                  <el-icon>
+                    <Van />
+                  </el-icon>
                   发货
                 </el-button>
               </div>
@@ -174,11 +177,11 @@
           min-width="275"
           class-name="order-info-column"
         >
-          <template #default="{ row,$index }">
+          <template #default="{ row, $index }">
             <div class="order-info">
               <div class="order-number">
                 <div class="order-number-wrapper">
-                  <span :style="{color: `${getColor($index)}`}">订单号：{{ row.orderNo }}</span>
+                  <span :style="{ color: `${getColor($index)}` }">订单号：{{ row.orderNo }}</span>
                   <!-- <el-button
                     v-if="row.orderNo"
                     class="copy-button"
@@ -192,13 +195,12 @@
               </div>
               <div class="shop-info">
                 <div class="shop-name">
-                  <span class="label" >店铺名称：</span>
-                  <span :style="{color: `${getColor($index)}`}"> {{ row.shopName }}</span>
-
+                  <span class="label">店铺名称：</span>
+                  <span :style="{ color: `${getColor($index)}` }"> {{ row.shopName }}</span>
                 </div>
                 <div class="shop-id">
-                  <span class="label" >店铺ID：</span>
-                 <span :style="{color: `${getColor($index)}`}"> {{ row.shopId }}</span>
+                  <span class="label">店铺ID：</span>
+                  <span :style="{ color: `${getColor($index)}` }"> {{ row.shopId }}</span>
                 </div>
                 <div class="mt-2 flex justify-center gap-2">
                   <el-tooltip
@@ -220,7 +222,9 @@
                       :disabled="!row.expressImageUrl"
                       @click.stop="handlePrint(row.expressImageUrl)"
                     >
-                      <el-icon><Printer /></el-icon>
+                      <el-icon>
+                        <Printer />
+                      </el-icon>
                       打印面单
                     </el-button>
                   </el-tooltip>
@@ -243,7 +247,9 @@
                       :disabled="!row.expressSkuImageUrl"
                       @click.stop="handlePrint(row.expressSkuImageUrl)"
                     >
-                      <el-icon><Printer /></el-icon>
+                      <el-icon>
+                        <Printer />
+                      </el-icon>
                       打印商品条码
                     </el-button>
                   </el-tooltip>
@@ -254,12 +260,7 @@
         </el-table-column>
 
         <!-- 订单状态 -->
-        <el-table-column
-          label="订单状态"
-          prop="orderStatus"
-          align="center"
-          min-width="135"
-        >
+        <el-table-column label="订单状态" prop="orderStatus" align="center" min-width="135">
           <template #default="{ row }">
             <el-tag :type="getOrderStatusType(row.orderStatus)" class="status-tag" size="large">
               {{ getOrderStatusText(row.orderStatus) }}
@@ -286,7 +287,7 @@
           min-width="175"
           class-name="text-left-column"
           header-align="center"
-          >
+        >
           <template #default="{ row }">
             <div class="product-info">
               <div class="product-title">
@@ -299,11 +300,11 @@
               </div>
               <div class="product-quantity">
                 <span class="label">官网数量：</span>
-                <span>{{ row.originalQuantity || "--" }}</span>
+                <span>{{ row.originalQuantity || '--' }}</span>
               </div>
               <div class="product-quantity">
                 <span class="label">制作数量：</span>
-                <span>{{ row.quantity|| "--" }}</span>
+                <span>{{ row.quantity || '--' }}</span>
               </div>
             </div>
           </template>
@@ -328,9 +329,9 @@
                 <span>{{ row.skc || '-' }}</span>
               </div>
               <div class="sku-item custom-sku-wrapper">
-                <span class="label" style="font-weight:bolder;">定制SKU：</span>
+                <span class="label" style="font-weight: bolder">定制SKU：</span>
                 <div class="custom-sku-content">
-                  <span v-if="row.customSku" class="custom-sku" >{{ row.customSku }}</span>
+                  <span v-if="row.customSku" class="custom-sku">{{ row.customSku }}</span>
                   <span v-else>-</span>
                   <!-- <el-button
                     v-if="row.customSku"
@@ -365,13 +366,17 @@
         <el-table-column label="定制图片列表" align="center" prop="customImageUrls" min-width="150">
           <template #default="{ row }">
             <div class="custom-images-container" v-if="row.customImageUrls">
-              <div v-for="(item, index) in row.customImageUrls.split(',')" :key="index" class="image-item">
+              <div
+                v-for="(item, index) in row.customImageUrls.split(',')"
+                :key="index"
+                class="image-item"
+              >
                 <el-image
                   :hide-on-click-modal="true"
                   :preview-teleported="true"
                   :src="item"
                   :preview-src-list="[item]"
-                  style="width: 60px; height: 60px;"
+                  style="width: 60px; height: 60px"
                   fit="cover"
                 />
               </div>
@@ -430,7 +435,9 @@
                   :disabled="!row.complianceUrl"
                   @click.stop="handlePrint(row.complianceUrl)"
                 >
-                  <el-icon><Printer /></el-icon>
+                  <el-icon>
+                    <Printer />
+                  </el-icon>
                   打印合规单
                 </el-button>
               </el-tooltip>
@@ -460,53 +467,53 @@ import { COLOR_ARRAYS } from '@/utils/color'
 
 declare global {
   interface Window {
-    handleImageError: () => void;
+    handleImageError: () => void
   }
 }
 
 interface OrderItem {
-  id: number;
-  orderNo: string;
-  productTitle: string;
-  orderStatus: number;
-  sku: string;
-  skc: string;
-  salePrice: number;
-  customSku: string;
-  quantity: number;
-  productProperties: string;
-  shopId: number;
-  customImageUrls: string;
-  customTextList: string | null;
-  productImgUrl: string;
-  categoryId: string;
-  effectiveImgUrl: string;
-  oldTypeUrl: string | null;
+  id: number
+  orderNo: string
+  productTitle: string
+  orderStatus: number
+  sku: string
+  skc: string
+  salePrice: number
+  customSku: string
+  quantity: number
+  productProperties: string
+  shopId: number
+  customImageUrls: string
+  customTextList: string | null
+  productImgUrl: string
+  categoryId: string
+  effectiveImgUrl: string
+  oldTypeUrl: string | null
 }
 
 interface OrderNoGroup {
-  orderNo: string;
-  orderList: OrderItem[];
-  expressImageUrl: string;
-  expressOutsideImageUrl: string;
-  expressSkuImageUrl: string;
+  orderNo: string
+  orderList: OrderItem[]
+  expressImageUrl: string
+  expressOutsideImageUrl: string
+  expressSkuImageUrl: string
 }
 
 interface ShippingOrder {
-  id: number;
-  orderNoList: OrderNoGroup[];
-  trackingNumber: string;
-  shopId: number;
-  shopName: string;
-  expressImageUrl: string;
-  expressOutsideImageUrl: string;
-  expressSkuImageUrl: string;
-  shippingStatus: string | null;
-  createTime: number;
-  updateTime: number;
+  id: number
+  orderNoList: OrderNoGroup[]
+  trackingNumber: string
+  shopId: number
+  shopName: string
+  expressImageUrl: string
+  expressOutsideImageUrl: string
+  expressSkuImageUrl: string
+  shippingStatus: string | null
+  createTime: number
+  updateTime: number
 }
 
-type ExtendedOrderVO = Omit<ShippingOrder, 'orderNoList'> & OrderItem;
+type ExtendedOrderVO = Omit<ShippingOrder, 'orderNoList'> & OrderItem
 
 /** 订单 列表 */
 defineOptions({ name: 'TemuOrderIndex' })
@@ -528,7 +535,7 @@ const queryParams = reactive({
   shopId: undefined,
   createTime: [],
   orderStatus: undefined,
-  customSku:undefined,
+  customSku: undefined
 })
 const queryFormRef = ref() // 搜索的表单
 
@@ -567,7 +574,7 @@ const getList = async () => {
         let hasValidOrders = false
 
         // 计算该物流单号下的所有有效订单项总数
-        shippingOrder.orderNoList.forEach(orderNoGroup => {
+        shippingOrder.orderNoList.forEach((orderNoGroup) => {
           if (orderNoGroup.orderList && orderNoGroup.orderList.length > 0) {
             totalItemsInTracking += orderNoGroup.orderList.length
             hasValidOrders = true
@@ -610,7 +617,7 @@ const getList = async () => {
           spanInfo.trackingSpans.push(...Array(totalItemsInTracking - 1).fill(0))
 
           // 处理每个订单组
-          shippingOrder.orderNoList.forEach(orderNoGroup => {
+          shippingOrder.orderNoList.forEach((orderNoGroup) => {
             if (orderNoGroup.orderList && orderNoGroup.orderList.length > 0) {
               // 为每个订单组添加合并信息
               const orderItemCount = orderNoGroup.orderList.length
@@ -618,7 +625,7 @@ const getList = async () => {
               spanInfo.orderSpans.push(...Array(orderItemCount - 1).fill(0))
 
               // 添加订单项
-              orderNoGroup.orderList.forEach(orderItem => {
+              orderNoGroup.orderList.forEach((orderItem) => {
                 const { orderNoList, ...restShippingData } = shippingOrder
                 extendedList.push({
                   ...restShippingData,
@@ -672,7 +679,7 @@ const resetQuery = () => {
 
 // 处理多选
 const handleSelectionChange = (selection: OrderVO[]) => {
-  selectedRows.value = selection.map(item => {
+  selectedRows.value = selection.map((item) => {
     const { orderNoList, ...rest } = item as unknown as ShippingOrder
     return {
       ...rest,
@@ -733,18 +740,20 @@ const handleUpdateCategory = async (row: { id: number; categoryId: number }) => 
 }
 
 // 处理表格合并
-const handleSpanMethod = ({ rowIndex, columnIndex }: { rowIndex: number, columnIndex: number }) => {
+const handleSpanMethod = ({ rowIndex, columnIndex }: { rowIndex: number; columnIndex: number }) => {
   if (!spanArr.value?.trackingSpans || !spanArr.value?.orderSpans) {
     return { rowspan: 1, colspan: 1 }
   }
 
-  if (columnIndex === 0) { // 物流单号列
+  if (columnIndex === 0) {
+    // 物流单号列
     const rowSpan = spanArr.value.trackingSpans[rowIndex]
     if (rowSpan === 0) {
       return { rowspan: 0, colspan: 0 }
     }
     return { rowspan: rowSpan, colspan: 1 }
-  } else if (columnIndex === 1) { // 订单编号列
+  } else if (columnIndex === 1) {
+    // 订单编号列
     const rowSpan = spanArr.value.orderSpans[rowIndex]
     if (rowSpan === 0) {
       return { rowspan: 0, colspan: 0 }
@@ -768,18 +777,20 @@ onUnmounted(() => {
 })
 
 // 获取订单状态类型
-const getOrderStatusType = (status: number): 'success' | 'warning' | 'info' | 'primary' | 'process' => {
+const getOrderStatusType = (
+  status: number
+): 'success' | 'warning' | 'info' | 'primary' | 'process' => {
   switch (status) {
     case 0:
-      return 'info'     // 待下单 - 浅灰
+      return 'info' // 待下单 - 浅灰
     case 1:
-      return 'primary'  // 已下单待送产 - 浅蓝
+      return 'primary' // 已下单待送产 - 浅蓝
     case 2:
-      return 'warning'  // 已送产待生产 - 浅紫
+      return 'warning' // 已送产待生产 - 浅紫
     case 3:
-      return 'process'  // 已生产待发货 - 浅绿
+      return 'process' // 已生产待发货 - 浅绿
     case 4:
-      return 'success'  // 已发货 - 浅青
+      return 'success' // 已发货 - 浅青
     default:
       return 'info'
   }
@@ -806,9 +817,8 @@ const getOrderStatusText = (status: number) => {
 // 添加判断是否可以发货的方法
 const canShip = (row: ExtendedOrderVO) => {
   // 检查当前物流单号下是否有状态为3的订单
-  const sameTrackingOrders = list.value.filter(item =>
-    item.trackingNumber === row.trackingNumber &&
-    item.orderStatus === 3
+  const sameTrackingOrders = list.value.filter(
+    (item) => item.trackingNumber === row.trackingNumber && item.orderStatus === 3
   )
   return sameTrackingOrders.length > 0
 }
@@ -817,12 +827,11 @@ const canShip = (row: ExtendedOrderVO) => {
 const handleShip = async (row: ExtendedOrderVO) => {
   try {
     // 获取同一物流单号下的所有可发货订单
-    const sameTrackingOrders = list.value.filter(item =>
-      item.trackingNumber === row.trackingNumber &&
-      item.orderStatus === 3
+    const sameTrackingOrders = list.value.filter(
+      (item) => item.trackingNumber === row.trackingNumber && item.orderStatus === 3
     )
 
-    const orderIds = sameTrackingOrders.map(item => item.id)
+    const orderIds = sameTrackingOrders.map((item) => item.id)
 
     if (orderIds.length === 0) {
       ElMessage.warning('没有找到可发货的订单')
@@ -955,34 +964,47 @@ const handlePrint = async (url: string) => {
       cleanup()
       ElMessage.error('打印失败：图片加载失败')
     }
-
   } catch (error) {
     console.error('打印错误:', error)
     ElMessage.error('打印失败：' + (error instanceof Error ? error.message : '未知错误'))
   }
 }
+const colorMap = new Map<string,string>();
 
 // 添加行类名处理函数
 const tableRowClassName = ({ row, rowIndex }: { row: any; rowIndex: number }) => {
-  if (rowIndex === 0) return ''
 
-  const prevRow = list.value[rowIndex - 1]
-  const classes: string[] = []
+  let func1 = ({ row, rowIndex }: { row: any; rowIndex: number }) => {
+    if (rowIndex === 0) return ''
+    const prevRow = list.value[rowIndex - 1]
+    const classes: string[] = []
 
-  // 检查物流单号变化
-  if (row.trackingNumber !== prevRow.trackingNumber) {
-    classes.push('tracking-divider')
+    // 检查物流单号变化
+    if (row.trackingNumber !== prevRow.trackingNumber) {
+      classes.push('tracking-divider')
+    }
+    // 检查订单编号变化
+    else if (row.orderNo !== prevRow.orderNo) {
+      classes.push('order-divider')
+    }
+    // 同一订单内的行
+    else {
+      classes.push('same-order-divider')
+    }
+    return classes.join(' ')
   }
-  // 检查订单编号变化
-  else if (row.orderNo !== prevRow.orderNo) {
-    classes.push('order-divider')
-  }
-  // 同一订单内的行
-  else {
-    classes.push('same-order-divider')
-  }
+  let func2 = ({ row, rowIndex }: { row: any; rowIndex: number }) => {
+    if (colorMap.has(row.trackingNumber)) {
+      return colorMap.get(row.trackingNumber)
+    }else{
+      colorMap.set(row.trackingNumber,`color-${rowIndex%10}-bg`)
+      return colorMap.get(row.trackingNumber)
+    }
 
-  return classes.join(' ')
+  }
+  func1({ row, rowIndex })
+  func2({ row, rowIndex })
+  return func1({ row, rowIndex }) +" "+ func2({ row, rowIndex })
 }
 
 // 复制功能
@@ -996,17 +1018,43 @@ const handleCopy = async (text: string) => {
   }
 }
 
-const getColor=(index:number)=>{
-  let randomIndex = Math.floor(Math.random() * 8);
- console.log('>>>>>>>>>>索引位置',index,randomIndex)
-  if(index<0){
-    return COLOR_ARRAYS[0][randomIndex]||"";
+const getColor = (index: number) => {
+  return ''
+  let randomIndex = Math.floor(Math.random() * 8)
+  if (index < 0) {
+    return COLOR_ARRAYS[0][randomIndex] || ''
   }
-  return COLOR_ARRAYS[index][randomIndex]||"";
+  return COLOR_ARRAYS[index][randomIndex] || ''
 }
-
 </script>
+<style lang="scss">
+$predefined-colors: (
+  // 红色系
+  color-0: #e4c1f9,  // 鲜红色
+  color-1: #ffd166,  // 亮红色
+  color-2: #06d6a0,  // 橙红色
+  color-3: #118ab2,  // 番茄红
 
+  // 橙色系
+  color-4: #96e072,  // 深橙色
+  color-5: #70d6ff,  // 橙色
+  color-6: #ecf39e,  // 琥珀色
+  color-7: #ffd670,  // 金橙色
+
+  // 黄色系
+  color-8: #f1c0e8,  // 金色
+  color-9: #98c1d9,  // 黄色
+  color-10: #4895ef, // 亮黄色
+
+);
+
+// 生成类
+@each $name, $color in $predefined-colors {
+  .#{$name}-bg {
+    background-color: $color!important;
+  }
+}
+</style>
 <style lang="scss" scoped>
 .shipping-container {
   .custom-table {
@@ -1039,7 +1087,7 @@ const getColor=(index:number)=>{
 
     // 为所有行添加底部边框
     td {
-      border-bottom: 1px solid #EBEEF5 !important;
+      border-bottom: 1px solid #ebeef5 !important;
     }
   }
 
@@ -1143,7 +1191,7 @@ const getColor=(index:number)=>{
       color: #909399;
 
       &:hover {
-        color: #409EFF;
+        color: #409eff;
       }
 
       .el-icon {
@@ -1166,8 +1214,8 @@ const getColor=(index:number)=>{
     transition: all 0.3s ease;
     position: relative;
     overflow: hidden;
-    background: #F5F7FA;
-    border: 1px solid #DCDFE6;
+    background: #f5f7fa;
+    border: 1px solid #dcdfe6;
     color: #606266;
     height: 32px;
     font-size: 13px;
@@ -1178,13 +1226,13 @@ const getColor=(index:number)=>{
     &:hover {
       background: #fff;
       border-color: #c6e2ff;
-      color: #409EFF;
+      color: #409eff;
     }
 
     &:disabled {
-      background: #F5F7FA;
-      border-color: #DCDFE6;
-      color: #C0C4CC;
+      background: #f5f7fa;
+      border-color: #dcdfe6;
+      color: #c0c4cc;
     }
 
     .el-icon {
@@ -1197,7 +1245,7 @@ const getColor=(index:number)=>{
     width: 110px;
     height: 32px;
     font-size: 14px;
-    background: #67C23A;
+    background: #67c23a;
     border: none;
     color: white;
     font-weight: 500;
@@ -1254,7 +1302,7 @@ const getColor=(index:number)=>{
         color: #909399;
 
         &:hover {
-          color: #409EFF;
+          color: #409eff;
         }
 
         .el-icon {
@@ -1339,7 +1387,7 @@ const getColor=(index:number)=>{
 
         .custom-sku {
           font-weight: 700;
-          color: #409EFF;
+          color: #409eff;
           background-color: #ecf5ff;
           padding: 2px 6px;
           border-radius: 4px;
@@ -1353,7 +1401,7 @@ const getColor=(index:number)=>{
           color: #909399;
 
           &:hover {
-            color: #409EFF;
+            color: #409eff;
           }
 
           .el-icon {
@@ -1399,19 +1447,19 @@ const getColor=(index:number)=>{
 
     &:hover {
       background: #a4a6a8;
-      color: #F0F4F8;
+      color: #f0f4f8;
     }
   }
 
   // 已下单待送产状态
   &.el-tag--primary {
-    background: #E0F2FE;
-    border: 1px solid #E0F2FE;
-    color: #082F49;
+    background: #e0f2fe;
+    border: 1px solid #e0f2fe;
+    color: #082f49;
 
     &:hover {
-      background: #0EA5E9;
-      color: #E0F2FE;
+      background: #0ea5e9;
+      color: #e0f2fe;
     }
 
     &::before {
@@ -1420,7 +1468,7 @@ const getColor=(index:number)=>{
       width: 8px;
       height: 8px;
       border-radius: 50%;
-      background-color: #0EA5E9;
+      background-color: #0ea5e9;
       margin-right: 8px;
       animation: pulse 1s infinite;
     }
@@ -1428,13 +1476,13 @@ const getColor=(index:number)=>{
 
   // 已送产待生产状态
   &.el-tag--warning {
-    background: #E0E7FF;
-    border: 1px solid #E0E7FF;
-    color: #1E1B4B;
+    background: #e0e7ff;
+    border: 1px solid #e0e7ff;
+    color: #1e1b4b;
 
     &:hover {
-      background: #6366F1;
-      color: #E0E7FF;
+      background: #6366f1;
+      color: #e0e7ff;
     }
 
     &::before {
@@ -1443,7 +1491,7 @@ const getColor=(index:number)=>{
       width: 8px;
       height: 8px;
       border-radius: 50%;
-      background-color: #6366F1;
+      background-color: #6366f1;
       margin-right: 8px;
       animation: pulse 1s infinite;
     }
@@ -1457,7 +1505,7 @@ const getColor=(index:number)=>{
 
     &:hover {
       background: #409eff;
-      color: #DCFCE7;
+      color: #dcfce7;
     }
 
     &::before {
@@ -1533,20 +1581,20 @@ const getColor=(index:number)=>{
     &.el-button--primary,
     &.el-button--warning,
     &.el-button--info {
-      background: #F5F7FA;
-      border: 1px solid #DCDFE6;
+      background: #f5f7fa;
+      border: 1px solid #dcdfe6;
       color: #606266;
 
       &:hover {
         background: #fff;
         border-color: #c6e2ff;
-        color: #409EFF;
+        color: #409eff;
       }
 
       &:disabled {
-        background: #F5F7FA;
-        border-color: #DCDFE6;
-        color: #C0C4CC;
+        background: #f5f7fa;
+        border-color: #dcdfe6;
+        color: #c0c4cc;
       }
     }
 
@@ -1684,8 +1732,8 @@ const getColor=(index:number)=>{
   transition: all 0.3s ease;
   position: relative;
   overflow: hidden;
-  background: #F5F7FA;
-  border: 1px solid #DCDFE6;
+  background: #f5f7fa;
+  border: 1px solid #dcdfe6;
   color: #606266;
   height: 32px;
   font-size: 13px;
@@ -1696,13 +1744,13 @@ const getColor=(index:number)=>{
   &:hover {
     background: #fff;
     border-color: #c6e2ff;
-    color: #409EFF;
+    color: #409eff;
   }
 
   &:disabled {
-    background: #F5F7FA;
-    border-color: #DCDFE6;
-    color: #C0C4CC;
+    background: #f5f7fa;
+    border-color: #dcdfe6;
+    color: #c0c4cc;
   }
 
   .el-icon {

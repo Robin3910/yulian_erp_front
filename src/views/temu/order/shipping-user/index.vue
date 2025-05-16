@@ -965,28 +965,41 @@ const handlePrint = async (url: string) => {
     ElMessage.error('打印失败：' + (error instanceof Error ? error.message : '未知错误'))
   }
 }
-
+const colorMap = new Map<string,string>();
 // 添加行类名处理函数
 const tableRowClassName = ({ row, rowIndex }: { row: any; rowIndex: number }) => {
-  if (rowIndex === 0) return ''
 
-  const prevRow = list.value[rowIndex - 1]
-  const classes = []
+  let func1 = ({ row, rowIndex }: { row: any; rowIndex: number }) => {
+    if (rowIndex === 0) return ''
+    const prevRow = list.value[rowIndex - 1]
+    const classes: string[] = []
 
-  // 检查物流单号变化
-  if (row.trackingNumber !== prevRow.trackingNumber) {
-    classes.push('tracking-divider')
+    // 检查物流单号变化
+    if (row.trackingNumber !== prevRow.trackingNumber) {
+      classes.push('tracking-divider')
+    }
+    // 检查订单编号变化
+    else if (row.orderNo !== prevRow.orderNo) {
+      classes.push('order-divider')
+    }
+    // 同一订单内的行
+    else {
+      classes.push('same-order-divider')
+    }
+    return classes.join(' ')
   }
-  // 检查订单编号变化
-  else if (row.orderNo !== prevRow.orderNo) {
-    classes.push('order-divider')
-  }
-  // 同一订单内的行
-  else {
-    classes.push('same-order-divider')
-  }
+  let func2 = ({ row, rowIndex }: { row: any; rowIndex: number }) => {
+    if (colorMap.has(row.trackingNumber)) {
+      return colorMap.get(row.trackingNumber)
+    }else{
+      colorMap.set(row.trackingNumber,`color-${rowIndex%10}-bg`)
+      return colorMap.get(row.trackingNumber)
+    }
 
-  return classes.join(' ')
+  }
+  func1({ row, rowIndex })
+  func2({ row, rowIndex })
+  return func1({ row, rowIndex }) +" "+ func2({ row, rowIndex })
 }
 
 // 复制功能
@@ -1001,7 +1014,34 @@ const handleCopy = async (text: string) => {
 }
 
 </script>
+<style lang="scss">
+$predefined-colors: (
+  // 红色系
+  color-0: #e4c1f9,  // 鲜红色
+  color-1: #ffd166,  // 亮红色
+  color-2: #06d6a0,  // 橙红色
+  color-3: #118ab2,  // 番茄红
 
+  // 橙色系
+  color-4: #96e072,  // 深橙色
+  color-5: #70d6ff,  // 橙色
+  color-6: #ecf39e,  // 琥珀色
+  color-7: #ffd670,  // 金橙色
+
+  // 黄色系
+  color-8: #f1c0e8,  // 金色
+  color-9: #98c1d9,  // 黄色
+  color-10: #4895ef, // 亮黄色
+
+);
+
+// 生成类
+@each $name, $color in $predefined-colors {
+  .#{$name}-bg {
+    background-color: $color!important;
+  }
+}
+</style>
 <style lang="scss" scoped>
 .shipping-container {
   .custom-table {
