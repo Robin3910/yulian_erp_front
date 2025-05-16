@@ -283,6 +283,7 @@
         <template #default="{ row }">
           <div class="font-bold">
             <div>{{ row.batchNo }}</div>
+            <div class="text-gray-500 text-sm">{{ dayjs(row.createTime).format('YYYY-MM-DD HH:mm') }}</div>
           </div>
         </template>
       </el-table-column>
@@ -455,6 +456,7 @@ import JSZip from 'jszip'
 import { OrderApi, OrderVO } from '@/api/temu/order'
 import printJS from 'print-js'
 import OrderRemarkPopup from '@/views/temu/order/batch/components/OrderRemarkPopup.vue'
+import dayjs from 'dayjs'
 
 /** 订单批次 列表 */
 defineOptions({ name: 'BatchOrderTask' })
