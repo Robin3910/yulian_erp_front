@@ -1030,21 +1030,21 @@ const getColor = (index: number) => {
 <style lang="scss">
 $predefined-colors: (
   // 红色系
-  color-0: #e4c1f9,  // 鲜红色
-  color-1: #ffd166,  // 亮红色
-  color-2: #06d6a0,  // 橙红色
-  color-3: #118ab2,  // 番茄红
+  color-0: rgba(228, 193, 249, 0.5),  // 鲜红色
+  color-1: rgba(255, 209, 102, 0.5),  // 亮红色
+  color-2: rgba(6, 214, 160, 0.5),  // 橙红色
+  color-3: rgba(17, 138, 178, 0.5),  // 番茄红
 
   // 橙色系
-  color-4: #96e072,  // 深橙色
-  color-5: #70d6ff,  // 橙色
-  color-6: #ecf39e,  // 琥珀色
-  color-7: #ffd670,  // 金橙色
+  color-4: rgba(150, 224, 114, 0.5),  // 深橙色
+  color-5: rgba(112, 214, 255, 0.5),  // 橙色
+  color-6: rgba(236, 243, 158, 0.5),  // 琥珀色
+  color-7: rgba(255, 214, 112, 0.5),  // 金橙色
 
   // 黄色系
-  color-8: #f1c0e8,  // 金色
-  color-9: #98c1d9,  // 黄色
-  color-10: #4895ef, // 亮黄色
+  color-8: rgba(241, 192, 232, 0.5),  // 金色
+  color-9: rgba(152, 193, 217, 0.5),  // 黄色
+  color-10: rgba(72, 149, 239, 0.5), // 亮黄色
 
 );
 
