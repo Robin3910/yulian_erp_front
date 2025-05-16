@@ -1218,27 +1218,29 @@ const handlerPrintBatchCompliance = async () => {
     // 检查是否有订单的合规单为空
     const ordersWithoutCompliance = selectedOrders.value.filter((order) => !order.complianceUrl)
     if (ordersWithoutCompliance.length > 0) {
-      // 按店铺分组
+      // 按店铺分组并去重SKC
       const groupedByShop = ordersWithoutCompliance.reduce((acc, order) => {
         const shopName = order.shopName || '未知店铺'
         if (!acc[shopName]) {
-          acc[shopName] = []
+          acc[shopName] = new Set()
         }
-        acc[shopName].push(order.customSku || '未知SKU')
+        if (order.skc) {
+          acc[shopName].add(order.skc)
+        }
         return acc
       }, {})
 
       const missingInfo = Object.entries(groupedByShop)
         .map(
-          ([shopName, skus]) => `
+          ([shopName, skcs]) => `
           <div style="margin-bottom: 16px;">
             <div style="color: #606266; font-weight: bold; margin-bottom: 8px;">${shopName}</div>
             <div style="padding-left: 16px;">
-              ${skus
+              ${Array.from(skcs)
                 .map(
-                  (sku) => `
+                  (skc) => `
                 <div style="color: #409EFF; margin-bottom: 4px;">
-                  ${sku}
+                  ${skc}
                 </div>
               `
                 )
@@ -1252,7 +1254,7 @@ const handlerPrintBatchCompliance = async () => {
       ElNotification({
         title: '无法批量打印',
         message: `
-          <div style="margin-bottom: 10px; color: #303133;">以下定制SKU缺少合规单，请联系相关人员及时补充：</div>
+          <div style="margin-bottom: 10px; color: #303133;">以下SKC缺少合规单，请联系相关人员及时补充：</div>
           <div style="max-height: 300px; overflow-y: auto; padding-right: 10px;">${missingInfo}</div>
         `,
         type: 'warning',
@@ -1341,27 +1343,29 @@ const handlerPrintBatchMerged = async () => {
       (order) => !order.complianceGoodsMergedUrl
     )
     if (ordersWithoutMerged.length > 0) {
-      // 按店铺分组
+      // 按店铺分组并去重SKC
       const groupedByShop = ordersWithoutMerged.reduce((acc, order) => {
         const shopName = order.shopName || '未知店铺'
         if (!acc[shopName]) {
-          acc[shopName] = []
+          acc[shopName] = new Set()
         }
-        acc[shopName].push(order.customSku || '未知SKU')
+        if (order.skc) {
+          acc[shopName].add(order.skc)
+        }
         return acc
       }, {})
 
       const missingInfo = Object.entries(groupedByShop)
         .map(
-          ([shopName, skus]) => `
+          ([shopName, skcs]) => `
           <div style="margin-bottom: 16px;">
             <div style="color: #606266; font-weight: bold; margin-bottom: 8px;">${shopName}</div>
             <div style="padding-left: 16px;">
-              ${skus
+              ${Array.from(skcs)
                 .map(
-                  (sku) => `
+                  (skc) => `
                 <div style="color: #409EFF; margin-bottom: 4px;">
-                  ${sku}
+                  ${skc}
                 </div>
               `
                 )
@@ -1375,7 +1379,7 @@ const handlerPrintBatchMerged = async () => {
       ElNotification({
         title: '无法批量打印',
         message: `
-          <div style="margin-bottom: 10px; color: #303133;">以下定制SKU缺少合并文件，请联系相关人员及时补充：</div>
+          <div style="margin-bottom: 10px; color: #303133;">以下SKC缺少合并文件，请联系相关人员及时补充：</div>
           <div style="max-height: 300px; overflow-y: auto; padding-right: 10px;">${missingInfo}</div>
         `,
         type: 'warning',
