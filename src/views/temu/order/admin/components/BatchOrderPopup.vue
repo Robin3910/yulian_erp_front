@@ -280,6 +280,40 @@ const filterOrderQuantity = (list: any[]) => {
     const productCategoryName = item.productCategoryName.toLowerCase()
     const originalQuantity = item.quantity || 1 // 保存原始订单数量
     
+    console.log('处理商品属性:', properties)
+    
+    // 特殊处理带有 + 号的多个数量情况（如 70pcs+70pcs）
+    if (properties.includes('+')) {
+      console.log('发现带+号的属性:', properties)
+      const parts = properties.split('+')
+      console.log('分割后的部分:', parts)
+      
+      // 检查是否每个部分都包含数量
+      const validParts = parts.filter(part => {
+        const match = part.trim().match(/(\d+)[\s\u00A0-]*(|cps|pc|pcs|set|sets|个|件|片|张)/i)
+        console.log('部分匹配结果:', part.trim(), match ? '匹配成功' : '匹配失败')
+        return match !== null
+      })
+      
+      if (validParts.length >= 2) {
+        console.log('找到多个有效部分，设置数量为:', validParts.length)
+        item.quantity = validParts.length * originalQuantity
+        return
+      }
+    }
+
+    // 特殊处理宣传单类目
+    if (productCategoryName.includes('宣传单')) {
+      item.quantity = 1 * originalQuantity
+      return
+    }
+
+    // 特殊处理 Text 开头的情况
+    if (properties.toLowerCase().startsWith('text')) {
+      item.quantity = 1 * originalQuantity
+      return
+    }
+    
     // 特殊处理 rainbow 情况 - 移到最前面
     if (properties.includes('rainbow')) {
      
