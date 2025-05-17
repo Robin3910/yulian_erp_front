@@ -126,7 +126,7 @@
                         v-else
                         v-model="formData.oldTypeUrl[type]"
                         :limit="1"
-                        :fileType="['image/jpeg', 'image/png', 'image/gif', 'application/pdf']"
+                        :fileType="['application/pdf']"
                         @preview="handlePreview"
                         :disabled="!formData.shopId || !hasSkcsForType(type)"
                       />
