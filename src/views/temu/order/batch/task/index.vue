@@ -110,7 +110,18 @@
               <el-table-column label="订单编号" align="center" prop="orderNo" min-width="150">
                 <template #default="{ row }">
                   <div class="text-left">
+                    <div>
+                      <el-tag type="primary"
+                        >作图任务状态:{{ row.isCompleteDrawTask === 1 ? '✅' : '❌' }}
+                      </el-tag>
+                    </div>
+                    <div>
+                      <el-tag type="success"
+                        >生产任务状态:{{ row.isCompleteProducerTask === 1 ? '✅' : '❌' }}
+                      </el-tag>
+                    </div>
                     <div>{{ row.orderNo }}</div>
+
                     <div>
                       <el-button type="primary" @click="handlerPrintGoodsSn(row, 1)" size="small">
                         打印商品条码
@@ -119,6 +130,15 @@
                     <div>
                       <el-button type="success" @click="handlerPrintGoodsSn(row, 2)" size="small">
                         打印合规单
+                      </el-button>
+                    </div>
+                    <div v-if="(scope.row.taskType===1&&row.isCompleteDrawTask===0)||(scope.row.taskType===2&&row.isCompleteProducerTask===0)">
+                      <el-button
+                        type="primary"
+                        @click="handlerCompleteOrderTask(scope.row, row)"
+                        size="small"
+                      >
+                        完成{{scope.row.taskType==1?'作图':'生产'}}任务
                       </el-button>
                     </div>
                   </div>
@@ -283,7 +303,9 @@
         <template #default="{ row }">
           <div class="font-bold">
             <div>{{ row.batchNo }}</div>
-            <div class="text-gray-500 text-sm">{{ dayjs(row.createTime).format('YYYY-MM-DD HH:mm') }}</div>
+            <div class="text-gray-500 text-sm"
+              >{{ dayjs(row.createTime).format('YYYY-MM-DD HH:mm') }}
+            </div>
           </div>
         </template>
       </el-table-column>
@@ -291,21 +313,26 @@
         <template #default="{ row }">
           <div class="category-info">
             <template v-if="row.orderList && row.orderList.length > 0">
-              <div class="flex  flex-col" style="align-items:flex-start">
+              <div class="flex flex-col" style="align-items: flex-start">
                 <el-tag
                   v-for="(category, index) in [
-                  ...new Set(row.orderList.map((order) => order.categoryName))
-                ]"  :key="index"
+                    ...new Set(row.orderList.map((order) => order.categoryName))
+                  ]"
+                  :key="index"
                   class="category-tag"
                   type="info"
                   effect="plain"
                 >
                   <span>{{ category }}</span>
-                  <span class="ml-2 ">制作数量：<span class="color-rose-500">{{ row.orderList.filter((order) => order.categoryName === category).reduce((acc, order) => acc + order.quantity, 0) }}</span></span>
-
+                  <span class="ml-2"
+                    >制作数量：<span class="color-rose-500">{{
+                      row.orderList
+                        .filter((order) => order.categoryName === category)
+                        .reduce((acc, order) => acc + order.quantity, 0)
+                    }}</span></span
+                  >
                 </el-tag>
               </div>
-
             </template>
             <span v-else class="no-data">暂无品类信息</span>
           </div>
@@ -313,19 +340,20 @@
       </el-table-column>
       <el-table-column label="打印文件地址" align="center" prop="fileUrl" min-width="200">
         <template #default="{ row }">
-          <div class="font-bold flex item-center justify-center" v-if="row.fileUrl">
+          <div class="font-bold flex flex-col item-center justify-center" v-if="row.fileUrl">
             <a :href="row.fileUrl" :download="row.fileUrl">
               <el-button type="success" plain class="action-button">
                 <Icon icon="ep:download" class="mr-5px" />
                 下载作图文件
               </el-button>
             </a>
+
             <el-button
               v-if="row.status === 0 && row.taskType === 1"
               type="primary"
               plain
               @click="handlerHandleUpload(row)"
-              class="action-button ml-2"
+              class="action-button ml-2 mt-2"
             >
               <Icon icon="ep:upload" class="mr-5px" />
               重新上传
@@ -353,7 +381,7 @@
         :show-overflow-tooltip="false"
         width="100"
       />
-      <el-table-column label="定制图片（一键下载）" align="center" min-width="130">
+      <el-table-column label="定制图片（一键下载）" align="center" min-width="150">
         <template #default="{ row }">
           <div class="flex justify-center mt-2 flex-wrap">
             <el-button
@@ -398,9 +426,9 @@
       <el-table-column label="任务负责人" align="left" min-width="100">
         <template #default="{ row }">
           <div v-if="row.isDispatchTask === 1">
-            <div v-for="(item,index) in row.userList" :key="index">
-              <span>{{item.type==1?'作图':'生产'}}:</span>
-              <span>{{item.nickName}}</span>
+            <div v-for="(item, index) in row.userList" :key="index">
+              <span>{{ item.type == 1 ? '作图' : '生产' }}:</span>
+              <span>{{ item.nickName }}</span>
             </div>
           </div>
         </template>
@@ -412,12 +440,9 @@
         width="150"
         :show-overflow-tooltip="true"
       />
-      <el-table-column label="操作" align="center" width="120px" fixed="right">
+      <el-table-column label="操作" align="center" min-width="150px" fixed="right">
         <template #default="scope">
-          <div
-            class="flex justify-center"
-            v-if="scope.row.status === 0 && scope.row.taskType === 2"
-          >
+          <div class="flex justify-center" v-if="scope.row.status === 0">
             <el-popconfirm
               title="是否确认完成订单?"
               placement="top-start"
@@ -426,7 +451,7 @@
               <template #reference>
                 <el-button type="warning" plain class="action-button">
                   <Icon icon="ep:check" class="mr-5px" />
-                  确认完成
+                  完成任务
                 </el-button>
               </template>
             </el-popconfirm>
@@ -525,7 +550,15 @@ const resetQuery = () => {
   queryFormRef.value.resetFields()
   handleQuery()
 }
-
+const handlerCompleteOrderTask = async (scope, row) => {
+  await OrderBatchApi.completeOrderTask({
+    taskId: scope.taskId,
+    id: scope.id,
+    orderId: row.id
+  })
+  ElMessage.success('操作成功')
+  await getList()
+}
 const handlerPrintGoodsSn = async (row: OrderVO, type: string | number) => {
   let { goodsSn, oldTypeUrl } = await OrderApi.getOrderExtraInfo(row.id)
   switch (type) {

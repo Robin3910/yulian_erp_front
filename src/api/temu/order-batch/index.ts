@@ -47,5 +47,9 @@ export const OrderBatchApi = {
   //派发任务
   dispatchTask: async (data: any) => {
     return await request.post({ url: `/temu/order-batch/dispatch-task`, data })
-  }
+  },
+// 完成单个订单任务
+  completeOrderTask: async (data: any) => {
+    return await request.post({ url: `/temu/order-batch/complete-batch-order-task`, data })
+  },
 }
