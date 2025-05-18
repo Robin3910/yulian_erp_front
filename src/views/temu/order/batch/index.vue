@@ -237,15 +237,6 @@
                 <template #default="{ row }">
                   <div class="text-left">
                     <div>
-                      <el-tag type="primary" class="mr-2"
-                      >作图任务状态:{{ row.isCompleteDrawTask === 1 ? '✅' : '❌' }}
-                      </el-tag>
-                      <el-tag type="success"
-                      >生产任务状态:{{ row.isCompleteProducerTask === 1 ? '✅' : '❌' }}
-                      </el-tag>
-                    </div>
-
-                    <div class="flex flex-col">
                       <div class="font-bold">订单号：{{ row.orderNo }}</div>
                       <div class="text-gray-500 mt-1">店铺名称：{{ row.shopName }}</div>
                       <div class="text-gray-500">店铺ID：{{ row.shopId }}</div>
@@ -334,28 +325,6 @@
                           打印条码+合规单
                         </el-button>
                       </el-tooltip>
-                    </div>
-                    <div class="mt-2">
-                      <el-button
-                        v-if="row.isCompleteDrawTask===0"
-                        type="primary"
-                        @click="handlerCompleteOrderTask(scope.row, row,1)"
-                        class="print-action-button"
-                        plain
-                        size="small"
-                      >
-                        完成作图任务
-                      </el-button>
-                      <el-button
-                        v-if="row.isCompleteProducerTask===0"
-                        type="success"
-                        @click="handlerCompleteOrderTask(scope.row, row,2)"
-                        class="print-action-button"
-                        plain
-                        size="small"
-                      >
-                        完成生产任务
-                      </el-button>
                     </div>
                   </div>
                 </template>
@@ -518,13 +487,45 @@
 
               <el-table-column label="订单状态" align="center" prop="orderStatus" min-width="150">
                 <template #default="{ row }">
-                  <el-tag
-                    :type="getOrderStatusType(row.orderStatus)"
-                    class="status-tag"
-                    size="large"
-                  >
-                    {{ getOrderStatusText(row.orderStatus) }}
-                  </el-tag>
+                  <div class="flex flex-col gap-2">
+                    <el-tag
+                      :type="getOrderStatusType(row.orderStatus)"
+                      class="status-tag"
+                      size="large"
+                    >
+                      {{ getOrderStatusText(row.orderStatus) }}
+                    </el-tag>
+                    <div class="task-status">
+                      <el-tag type="primary" class="mr-2">
+                        作图任务:{{ row.isCompleteDrawTask === 1 ? '✅' : '❌' }}
+                      </el-tag>
+                      <el-tag type="success">
+                        生产任务:{{ row.isCompleteProducerTask === 1 ? '✅' : '❌' }}
+                      </el-tag>
+                    </div>
+                    <div class="task-actions">
+                      <el-button
+                        v-if="row.isCompleteDrawTask===0"
+                        type="primary"
+                        @click="handlerCompleteOrderTask(scope.row, row,1)"
+                        class="print-action-button"
+                        plain
+                        size="small"
+                      >
+                        完成作图任务
+                      </el-button>
+                      <el-button
+                        v-if="row.isCompleteProducerTask===0"
+                        type="success"
+                        @click="handlerCompleteOrderTask(scope.row, row,2)"
+                        class="print-action-button"
+                        plain
+                        size="small"
+                      >
+                        完成生产任务
+                      </el-button>
+                    </div>
+                  </div>
                 </template>
               </el-table-column>
 
@@ -1763,6 +1764,35 @@ const toggleAllExpand = () => {
 </script>
 
 <style lang="scss" scoped>
+// ... existing code ...
+.task-status {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 8px 0;
+
+  .el-tag {
+    width: fit-content;
+    margin: 0 auto;
+    font-size: 13px;
+    padding: 4px 8px;
+  }
+}
+
+.task-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 4px;
+
+  .el-button {
+    width: fit-content;
+    margin: 0 auto;
+    font-size: 13px;
+    padding: 4px 12px;
+  }
+}
+// ... existing code ...
 :deep(.el-table__header-wrapper) {
   position: sticky;
   top: 0;
