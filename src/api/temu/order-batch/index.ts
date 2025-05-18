@@ -52,4 +52,8 @@ export const OrderBatchApi = {
   completeOrderTask: async (data: any) => {
     return await request.post({ url: `/temu/order-batch/complete-batch-order-task`, data })
   },
+// 完成单个订单任务[管理员版本]
+  completeOrderTaskByAdmin: async (data: any) => {
+    return await request.post({ url: `/temu/order-batch/complete-batch-order-task-by-admin`, data })
+  },
 }

@@ -236,6 +236,15 @@
               >
                 <template #default="{ row }">
                   <div class="text-left">
+                    <div>
+                      <el-tag type="primary" class="mr-2"
+                      >作图任务状态:{{ row.isCompleteDrawTask === 1 ? '✅' : '❌' }}
+                      </el-tag>
+                      <el-tag type="success"
+                      >生产任务状态:{{ row.isCompleteProducerTask === 1 ? '✅' : '❌' }}
+                      </el-tag>
+                    </div>
+
                     <div class="flex flex-col">
                       <div class="font-bold">订单号：{{ row.orderNo }}</div>
                       <div class="text-gray-500 mt-1">店铺名称：{{ row.shopName }}</div>
@@ -325,6 +334,28 @@
                           打印条码+合规单
                         </el-button>
                       </el-tooltip>
+                    </div>
+                    <div class="mt-2">
+                      <el-button
+                        v-if="row.isCompleteDrawTask===0"
+                        type="primary"
+                        @click="handlerCompleteOrderTask(scope.row, row,1)"
+                        class="print-action-button"
+                        plain
+                        size="small"
+                      >
+                        完成作图任务
+                      </el-button>
+                      <el-button
+                        v-if="row.isCompleteProducerTask===0"
+                        type="success"
+                        @click="handlerCompleteOrderTask(scope.row, row,2)"
+                        class="print-action-button"
+                        plain
+                        size="small"
+                      >
+                        完成生产任务
+                      </el-button>
                     </div>
                   </div>
                 </template>
@@ -777,7 +808,15 @@ const clearAllSelections = () => {
   selectedOrders.value = []
   selectedRows.value = []
 }
-
+const handlerCompleteOrderTask = async (scope, row,taskType) => {
+  await OrderBatchApi.completeOrderTaskByAdmin({
+    taskType,
+    id: scope.id,
+    orderId: row.id
+  })
+  ElMessage.success('操作成功')
+  await getList()
+}
 /** 查询列表 */
 const getList = async () => {
   loading.value = true
