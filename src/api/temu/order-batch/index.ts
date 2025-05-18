@@ -1,5 +1,5 @@
 import request from '@/config/axios'
-
+import { OrderVO } from '../order/index'
 export interface OrderBatchVO {
   id: number // 主键
   batchNo: string // 批次编号

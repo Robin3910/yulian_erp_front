@@ -62,6 +62,7 @@
       <el-table-column label="主键ID" align="center" prop="id" />
       <el-table-column label="店铺ID" align="center" prop="shopId" />
       <el-table-column label="店铺名称" align="center" prop="shopName" />
+      <el-table-column label="店铺别名" align="center" prop="aliasName" />
       <el-table-column label="信息通知机器人webhook地址" align="center" prop="webhook" />
 
       <el-table-column

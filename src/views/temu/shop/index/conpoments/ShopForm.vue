@@ -8,10 +8,10 @@
       v-loading="formLoading"
     >
       <el-form-item label="店铺ID" prop="shopId">
-        <el-input 
+        <el-input
           ref="shopIdInputRef"
-          v-model="formData.shopId" 
-          placeholder="请输入店铺ID" 
+          v-model="formData.shopId"
+          placeholder="请输入店铺ID"
         />
       </el-form-item>
       <el-form-item label="授权token" prop="accessToken">
@@ -19,6 +19,9 @@
       </el-form-item>
       <el-form-item label="店铺名称" prop="shopName">
         <el-input v-model="formData.shopName" placeholder="请输入店铺名称" />
+      </el-form-item>
+      <el-form-item label="店铺别名" prop="aliasName">
+        <el-input v-model="formData.aliasName" placeholder="请输入店铺名称" />
       </el-form-item>
       <el-form-item label="webhook地址" prop="webhook">
         <el-input v-model="formData.webhook" placeholder="请输入信息通知机器人webhook地址" />
@@ -35,9 +38,9 @@
                   <span class="age-label">{{ label }}</span>
                   <!-- 删除描述信息的tooltip -->
                   <!-- 保留删除按钮 -->
-                  <el-tooltip 
-                    v-if="Number(type) >= 3" 
-                    content="删除此合规单类型" 
+                  <el-tooltip
+                    v-if="Number(type) >= 3"
+                    content="删除此合规单类型"
                     placement="top"
                   >
                     <el-button
@@ -52,7 +55,7 @@
                 </div>
                 <div class="skc-manage-btn">
                   <div @click="handleSkcButtonClick(type)">
-                    <el-button 
+                    <el-button
                       ref="skcButtonRefs"
                       :type="hasSkcsForType(type) ? 'primary' : 'default'"
                       class="skc-button"
@@ -71,8 +74,8 @@
                         <div class="file-container">
                           <!-- 图片预览 -->
                           <template v-if="!isPdfFile(getOldTypeImageUrl(type))">
-                            <img 
-                              :src="getOldTypeImageUrl(type)" 
+                            <img
+                              :src="getOldTypeImageUrl(type)"
                               class="preview-image"
                               @click.stop="handlePreview(getOldTypeImageUrl(type))"
                             />
@@ -230,6 +233,7 @@ const formData = ref({
   id: undefined,
   shopId: undefined,
   shopName: undefined,
+  aliasName: undefined,
   webhook: undefined,
   accessToken: undefined,
   oldTypes: [] as ShopOldTypeVO[],
@@ -281,7 +285,7 @@ const initShopOldTypeMap = async (shopId: number | string) => {
       '1': '3+',
       '2': '14+'
     }
-    
+
     // 获取该店铺的所有合规单类型
     const response = await ShopApi.getShopOldType(shopId)
     if (response && response.length > 0) {
@@ -306,7 +310,7 @@ const open = async (type: string, id?: number) => {
   dialogTitle.value = t('action.' + type)
   formType.value = type
   resetForm()
-  
+
   formLoading.value = true
   try {
     if (id) {
@@ -320,7 +324,7 @@ const open = async (type: string, id?: number) => {
       if (formData.value.shopId) {
         // 初始化该店铺的合规单类型映射
         await initShopOldTypeMap(formData.value.shopId)
-        
+
         const response = await ShopApi.getShopOldType(formData.value.shopId)
         if (response && response.length > 0) {
           formData.value.oldTypes = response
@@ -339,7 +343,7 @@ const open = async (type: string, id?: number) => {
               newOldTypeUrl[oldType] = itemWithUrl.oldTypeUrl
             }
           })
-          
+
           formData.value.oldTypeUrl = newOldTypeUrl
         }
       }
@@ -355,7 +359,7 @@ const emit = defineEmits(['success']) // 定义 success 事件，用于操作成
 const submitForm = async () => {
   // 校验表单
   await formRef.value.validate()
-  
+
   // 检查合规单SKC绑定情况
   for (const [oldType, url] of Object.entries(formData.value.oldTypeUrl)) {
     if (url) {  // 如果上传了合规单
@@ -465,7 +469,7 @@ const showUploadTip = ref(false)
 // SKC管理成功回调
 const handleSkcSuccess = async () => {
   showUploadTip.value = false  // 成功后隐藏提示
-  
+
   try {
     if (formData.value.shopId) {
       // 只更新 SKC 列表数据
@@ -551,15 +555,15 @@ const handleAddType = async () => {
 // 提交新增类型
 const submitAddType = async () => {
   await addTypeFormRef.value.validate()
-  
+
   addTypeLoading.value = true
   try {
     const newType = Object.keys(oldTypeMap.value).length.toString()
     oldTypeMap.value[newType] = addTypeForm.value.label
-    
+
     // 初始化新类型的URL
     formData.value.oldTypeUrl[newType] = undefined
-    
+
     addTypeDialogVisible.value = false
     message.success('新增合规单类型成功')
   } catch (error) {
@@ -588,7 +592,7 @@ const handleDeleteType = async (type: string) => {
         confirmButtonClass: 'el-button--danger'
       }
     )
-    
+
     // 获取当前类型下的所有SKC
     const skcList = formData.value.oldTypes
       .filter(item => item.oldType === type)
@@ -607,10 +611,10 @@ const handleDeleteType = async (type: string) => {
     const newOldTypeMap = { ...oldTypeMap.value }
     delete newOldTypeMap[type]
     oldTypeMap.value = newOldTypeMap
-    
+
     delete formData.value.oldTypeUrl[type]
     formData.value.oldTypes = formData.value.oldTypes.filter(item => item.oldType !== type)
-    
+
     message.success('删除成功')
   } catch (error) {
     if (error !== 'cancel') {
@@ -655,7 +659,7 @@ const handleUploadClick = async (type: string) => {
     shopIdInputRef.value?.focus()
     return
   }
-  
+
   if (!hasSkcsForType(type)) {
     showUploadTip.value = true
     currentOldType.value = type
@@ -669,7 +673,7 @@ const handleUploadClick = async (type: string) => {
 const handleDeleteImage = (type: string) => {
   // 清除对应类型的URL
   formData.value.oldTypeUrl[type] = undefined
-  
+
   // 清除对应类型的oldTypes中的oldTypeImageUrl
   formData.value.oldTypes = formData.value.oldTypes.map(item => {
     if (item.oldType === type) {
@@ -701,7 +705,7 @@ const onBeforeUpload = (file: File, oldType: string) => {
     message.warning('请先填写店铺ID')
     return false
   }
-  
+
   // 检查SKC
   if (!hasSkcsForType(oldType)) {
     message.warning('请先补充至少一条SKC！')
@@ -712,13 +716,13 @@ const onBeforeUpload = (file: File, oldType: string) => {
     }
     return false
   }
-  
+
   // 检查文件类型
   if (file.type !== 'application/pdf') {
     message.error('只能上传PDF格式文件！')
     return false
   }
-  
+
   // 检查文件大小（2MB）
   const isLt2M = file.size / 1024 / 1024 < 2
   if (!isLt2M) {
@@ -738,7 +742,7 @@ const onBeforeUpload = (file: File, oldType: string) => {
     }
     return item
   })
-  
+
   return true
 }
 
@@ -748,7 +752,7 @@ const handleReplaceSuccess = (response: any, oldType: string) => {
   if (response.data) {  // 直接检查response.data是否存在
     // 更新URL
     formData.value.oldTypeUrl[oldType] = response.data
-    
+
     // 更新oldTypes
     formData.value.oldTypes = formData.value.oldTypes.map(item => {
       if (item.oldType === oldType) {
@@ -760,7 +764,7 @@ const handleReplaceSuccess = (response: any, oldType: string) => {
       }
       return item
     })
-    
+
     message.success('更换成功')
   } else {
     message.error('更换失败')
