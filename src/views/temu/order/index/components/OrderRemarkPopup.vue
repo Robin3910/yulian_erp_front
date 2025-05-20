@@ -1,4 +1,4 @@
-<template v-if="dialogVisible">
+<template>
   <el-dialog v-model="dialogVisible" title="设置备注" width="30%" :before-close="handleClose">
     <el-form :model="formData" ref="formRef">
       <el-form-item
@@ -12,47 +12,57 @@
     <template #footer>
       <span class="dialog-footer">
         <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleConfirm"> 确认 </el-button>
+        <el-button type="primary" @click="handleConfirm">确认</el-button>
       </span>
     </template>
   </el-dialog>
 </template>
-<script setup lang="ts">
-import { ref } from 'vue'
 
-const formEl = useTemplateRef('formRef')
-const emit = defineEmits(['confirm'])
+<script setup lang="ts">
+import { ref, reactive } from 'vue'
+import type { FormInstance } from 'element-plus'
+
 defineOptions({
   name: 'OrderRemarkPopup'
 })
+
+const emit = defineEmits(['confirm'])
 const dialogVisible = ref(false)
+const formRef = ref<FormInstance>()
 const formData = reactive({
   orderId: '',
   remark: ''
 })
+
 const setVisible = (visible: boolean) => {
   dialogVisible.value = visible
 }
+
+const handleClose = () => {
+  dialogVisible.value = false
+}
+
+const handleConfirm = async () => {
+  if (!formRef.value) return
+  
+  await formRef.value.validate((valid) => {
+    if (valid) {
+      dialogVisible.value = false
+      emit('confirm', formData)
+    }
+  })
+}
+
 defineExpose({
   formData,
   setVisible
 })
-const handleClose = () => {
-  dialogVisible.value = false
-}
-const handleConfirm = () => {
-  if (formEl && formEl.value) {
-    formEl.value.validate((valid) => {
-      if (valid) {
-        dialogVisible.value = false
-        emit('confirm', formData)
-      }
-    })
-    return
-  }
-}
-
-
 </script>
 
-<style scoped lang="scss"></style>
+<style scoped lang="scss">
+.dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+</style>

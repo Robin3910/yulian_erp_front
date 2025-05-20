@@ -1,9 +1,72 @@
+# Dependencies
 node_modules
-.DS_Store
+.pnp
+.pnp.js
+
+# Testing
+coverage
+
+# Production
 dist
 dist-ssr
-/dist*
-pnpm-debug
-auto-*.d.ts
+*.local
+
+package-lock.json
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
 .idea
-.history
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Environment files
+.env
+.env.local
+.env.*.local
+.env.development
+.env.test
+.env.production
+
+# Cache
+.cache
+.temp
+.DS_Store
+*.local
+.eslintcache
+
+# Misc
+stats.html
+auto-imports.d.ts
+components.d.ts
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Optional stylelint cache
+.stylelintcache
+
+# Yarn
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions
+.pnp.*

@@ -529,17 +529,20 @@
     v-if="batchOrderPopup"
     @confirm="getList"
   />
+  <!-- 新增备注弹窗组件 -->
+  <OrderRemarkPopup ref="orderRemarkPopup" @confirm="handlerRemarkConfirm" />
 </template>
 
 <script setup lang="ts">
 import OrderStatusPopup from '@/views/temu/order/index/components/OrderStatusPopup.vue'
+import BatchOrderPopup from "@/views/temu/order/admin/components/BatchOrderPopup.vue";
+import OrderRemarkPopup from '@/views/temu/order/index/components/OrderRemarkPopup.vue'
 import { DICT_TYPE } from '@/utils/dict'
 import { dateFormatter } from '@/utils/formatTime'
 import { OrderApi, OrderVO } from '@/api/temu/order'
 import { TemuCommonApi } from '@/api/temu/common'
 import { getStrDictOptions } from '@/utils/dict'
 import { ElMessage,ElTable } from 'element-plus'
-import BatchOrderPopup from "@/views/temu/order/admin/components/BatchOrderPopup.vue";
 
 
 /** 订单 列表 */
