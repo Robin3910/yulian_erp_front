@@ -112,16 +112,16 @@
         </el-col>
         <el-col :span="24" :lg="24">
           <el-form-item>
-            <el-button @click="handleQuery">
+            <el-button @click="handleQuery" :disabled="isProcessing">
               <Icon icon="ep:search" class="mr-5px" />
               搜索
             </el-button>
-            <el-button @click="resetQuery">
+            <el-button @click="resetQuery" :disabled="isProcessing">
               <Icon icon="ep:refresh" class="mr-5px" />
               重置
             </el-button>
 
-            <el-button @click="handleBatchOrder" type="primary"> 批量下单</el-button>
+            <el-button @click="handleBatchOrder" type="primary" :disabled="isProcessing"> 批量下单</el-button>
 
           </el-form-item>
         </el-col>
@@ -254,6 +254,7 @@
               v-model="row.categoryId"
               placeholder="请选择类目"
               clearable
+              :disabled="isProcessing"
             >
               <el-option
                 v-for="(item, index) in categoryList"
@@ -266,6 +267,7 @@
               title="是否更新类目?"
               placement="top-start"
               @confirm="handleUpdateCategory(row)"
+              :disabled="isProcessing"
             >
               <template #reference>
                 <el-button class="ml-1" type="primary">更新</el-button>
@@ -396,6 +398,7 @@
               plain
               class="action-button"
               @click="handleSingleOrder(row)"
+              :disabled="isProcessing"
             >
               下单
             </el-button>
@@ -412,6 +415,7 @@
                     orderStatus: 2
                   })
                 "
+                :disabled="isProcessing"
               >
                 <template #reference>
                   <el-button size="small" type="primary" plain class="action-button">已送产待生产</el-button>
@@ -427,6 +431,7 @@
                     orderStatus: 0
                   })
                 "
+                :disabled="isProcessing"
               >
                 <template #reference>
                   <el-button size="small" type="info" plain class="action-button mt-2">取消订单</el-button>
@@ -446,6 +451,7 @@
                     orderStatus: 3
                   })
                 "
+                :disabled="isProcessing"
               >
                 <template #reference>
                   <el-button size="small" type="primary" plain class="action-button">已生产待发货</el-button>
@@ -461,6 +467,7 @@
                     orderStatus: 0
                   })
                 "
+                :disabled="isProcessing"
               >
                 <template #reference>
                   <el-button size="small" type="info" plain class="action-button mt-2">取消订单</el-button>
@@ -480,6 +487,7 @@
                     orderStatus: 4
                   })
                 "
+                :disabled="isProcessing"
               >
                 <template #reference>
                   <el-button size="small" type="primary" plain class="action-button">已发货</el-button>
@@ -495,13 +503,14 @@
                     orderStatus: 0
                   })
                 "
+                :disabled="isProcessing"
               >
                 <template #reference>
                   <el-button size="small" type="info" plain class="action-button mt-2">取消订单</el-button>
                 </template>
               </el-popconfirm>
             </template>
-            <el-button  size="small" type="text" @click="handlerRemark(row)">备注</el-button>
+            <el-button size="small" type="text" @click="handlerRemark(row)" :disabled="isProcessing">备注</el-button>
 
           </div>
         </template>
@@ -564,6 +573,8 @@ const orderStatusPopup = useTemplateRef('orderStatusPopup')
 const batchOrderPopupRef = useTemplateRef('batchOrderPopup')
 // 备注引用
 const orderRemarkPopup = useTemplateRef('orderRemarkPopup')
+// 添加处理状态变量
+const isProcessing = ref(false)
 
 const queryParams = reactive({
   pageNo: 1,
@@ -647,40 +658,94 @@ const handleBatchSetStatus = async () => {
 }
 // 处理状态修改确认弹窗的回调
 const handleUpdateStatus = async (status: number) => {
-  //检查所有已经选择的订单状态是否一致
-  if (selectedRows.value.length > 0) {
-    const statusList = selectedRows.value.map((item) => item.orderStatus)
-    if (new Set(statusList).size > 1) {
-      ElMessage.warning('已选择的订单状态不一致，请重新选择')
-      return
-    }
-  }
-  await OrderApi.updateOrderStatus(
-    selectedRows.value.map((item) => {
-      return {
-        id: item.id,
-        orderStatus: status
+  try {
+    //检查所有已经选择的订单状态是否一致
+    if (selectedRows.value.length > 0) {
+      const statusList = selectedRows.value.map((item) => item.orderStatus)
+      if (new Set(statusList).size > 1) {
+        ElMessage.warning('已选择的订单状态不一致，请重新选择')
+        return
       }
+    }
+    
+    isProcessing.value = true
+    ElMessage({
+      type: 'info',
+      message: '正在批量更新订单状态，请稍候...',
+      duration: 0,
+      showClose: true
     })
-  )
-  ElMessage.success('操作成功')
-  getList()
+    
+    await OrderApi.updateOrderStatus(
+      selectedRows.value.map((item) => {
+        return {
+          id: item.id,
+          orderStatus: status
+        }
+      })
+    )
+    ElMessage.closeAll()
+    ElMessage.success('操作成功')
+    getList()
+  } catch (error) {
+    console.error('批量更新订单状态失败:', error)
+    ElMessage.closeAll()
+    ElMessage.error('更新失败，请重试')
+  } finally {
+    isProcessing.value = false
+  }
 }
 // 更新单个订单状态
 const handleUpdateRowStatus = async (row: { id: number; orderStatus: number }) => {
-  await OrderApi.updateOrderStatus([row])
-  ElMessage.success('操作成功')
-  getList()
+  try {
+    isProcessing.value = true
+    ElMessage({
+      type: 'info',
+      message: '正在更新订单状态，请稍候...',
+      duration: 0,
+      showClose: true
+    })
+    await OrderApi.updateOrderStatus([row])
+    ElMessage.closeAll()
+    ElMessage.success('操作成功')
+    getList()
+  } catch (error) {
+    console.error('更新订单状态失败:', error)
+    ElMessage.closeAll()
+    ElMessage.error('更新失败，请重试')
+  } finally {
+    isProcessing.value = false
+  }
 }
 const handleUpdateCategory = async (row: { id: number; categoryId: number }) => {
-  await OrderApi.updateOrderCategory({
-    id: row.id,
-    categoryId: row.categoryId
-  })
-  ElMessage.success('操作成功')
-  getList()
+  try {
+    isProcessing.value = true
+    ElMessage({
+      type: 'info',
+      message: '正在更新订单类目，请稍候...',
+      duration: 0,
+      showClose: true
+    })
+    await OrderApi.updateOrderCategory({
+      id: row.id,
+      categoryId: row.categoryId
+    })
+    ElMessage.closeAll()
+    ElMessage.success('操作成功')
+    getList()
+  } catch (error) {
+    console.error('更新订单类目失败:', error)
+    ElMessage.closeAll()
+    ElMessage.error('更新失败，请重试')
+  } finally {
+    isProcessing.value = false
+  }
 }
 const handleBatchOrder = () => {
+  if (isProcessing.value) {
+    ElMessage.warning('正在处理中，请稍候...')
+    return
+  }
   if (selectedRows.value.length === 0) {
     ElMessage.warning('请选择要操作的订单')
     return
@@ -703,6 +768,10 @@ const handleBatchOrder = () => {
 const handleSingleOrder = (row: OrderVO) => {
   if (!row.categoryId) {
     ElMessage.error('请先设置分类')
+    return
+  }
+  if (isProcessing.value) {
+    ElMessage.warning('正在处理中，请稍候...')
     return
   }
   batchOrderPopup.value = true

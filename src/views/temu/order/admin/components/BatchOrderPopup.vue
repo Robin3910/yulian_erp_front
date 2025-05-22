@@ -1,5 +1,5 @@
 <template>
-  <el-dialog v-model="dialogVisible" title="批量下单" width="60%" :before-close="handleClose">
+  <el-dialog v-model="dialogVisible" title="批量下单" width="60%" :before-close="handleClose" :close-on-click-modal="false" :close-on-press-escape="false">
     <div class="max-h-50vh overflow-y-auto overflow-x-hidden">
       <el-form :model="formData" ref="formRef">
         <el-form-item label="" v-for="(item, index) in formData.orderList" :key="index">
@@ -26,184 +26,43 @@
               </el-form-item>
               <!--  定制图片-->
               <el-form-item label="定制图片：" class="mb-2 cursor-pointer">
-                <div class="text-left flex" v-if="item.customImageUrls">
-                  <div
-                    v-for="(_item, _index) in item.customImageUrls.split(',')"
-                    :key="_index"
-                    class="mr-1"
-                  >
-                    <el-image
-                      class="w-10 h-10"
-                      :hide-on-click-modal="true"
-                      :preview-teleported="true"
-                      :src="_item"
-                      :preview-src-list="[_item]"
-                    />
-                  </div>
+                <div class="flex flex-wrap gap-2">
+                  <el-image
+                    v-for="(url, imgIndex) in item.customImageUrls?.split(',')"
+                    :key="imgIndex"
+                    :src="url"
+                    :preview-src-list="item.customImageUrls?.split(',')"
+                    fit="cover"
+                    class="w-100px h-100px"
+                  />
                 </div>
               </el-form-item>
               <!--  定制文字-->
               <el-form-item label="定制文字：" class="mb-2 cursor-pointer">
-                <div
-                  class="text-left truncate"
-                  :title="item.customTextList"
-                  v-if="item.customTextList"
-                >
+                <div class="" :title="item.customTextList" v-if="item.customTextList">
                   {{ item.customTextList }}
                 </div>
               </el-form-item>
-              <!-- 官网原始数量 -->
-              <el-form-item label="官网数量：" class="mb-2 cursor-pointer">
-                <div class="text-left">
-                  {{ item.originalQuantity }}
+              <!--  合成预览图-->
+              <el-form-item label="合成预览图：" class="mb-2 cursor-pointer">
+                <div class="flex flex-wrap gap-2">
+                  <el-image
+                    v-if="item.effectiveImgUrl"
+                    :src="item.effectiveImgUrl"
+                    :preview-src-list="[item.effectiveImgUrl]"
+                    fit="cover"
+                    class="w-100px h-100px"
+                  />
                 </div>
               </el-form-item>
-              <!--  分类名称-->
-              <el-form-item label="类目名称：" class="mb-2 cursor-pointer">
-                <div class="text-left" :title="item.categoryName" v-if="item.categoryName">
-                  {{ item.categoryName }}
-                </div>
-              </el-form-item>
-              <!--计价规则-->
-              <el-form-item label="计价规则：" class="mb-2 cursor-pointer">
-                <div class="text-left" v-if="item.categoryRuleType">
-                  <span v-if="item.categoryRuleType === 1">按数量计价</span>
-                  <span v-if="item.categoryRuleType === 2">按版面计价</span>
-                </div>
-              </el-form-item>
-              <template v-if="item.categoryRuleType === 1">
-                <!-- 分类价格 -->
-                <el-form-item label="分类价格：" class="mb-2 cursor-pointer">
-                  <div class="text-left" v-if="item.categoryPriceRule">
-                    <div
-                      v-for="(_rule, _index) in sortRulePrice(
-                        (item.categoryPriceRule as RulePriceByNumber).unitPrice
-                      )"
-                      :key="_index"
-                    >
-                      <div
-                        >数量：
-                        <el-tag size="small">
-                          {{
-                            sortRulePrice((item.categoryPriceRule as RulePriceByNumber).unitPrice)[
-                              _index - 1
-                            ]
-                              ? sortRulePrice(
-                                  (item.categoryPriceRule as RulePriceByNumber).unitPrice
-                                )[_index - 1].max
-                              : 0
-                          }}
-                        </el-tag>
-                        ~
-                        <el-tag size="small">{{ _rule.max }}</el-tag>
-                        价格：
-                        <el-tag size="small"
-                          >¥{{ parseFloat((_rule.price as any) || 0).toFixed(2) }}
-                        </el-tag>
-                      </div>
-                    </div>
-                    <div v-if="(item.categoryPriceRule as RulePriceByNumber).defaultPrice">
-                      <div>
-                        数量大于{{
-                          sortRulePrice((item.categoryPriceRule as RulePriceByNumber).unitPrice)[
-                            sortRulePrice((item.categoryPriceRule as RulePriceByNumber).unitPrice)
-                              .length - 1
-                          ].max
-                        }}价格是：
-                        <el-tag size="small">
-                          ¥{{
-                            parseFloat(
-                              ((item.categoryPriceRule as RulePriceByNumber).defaultPrice as any) ||
-                                0
-                            ).toFixed(2)
-                          }}
-                        </el-tag>
-                      </div>
-                    </div>
-                  </div>
-                </el-form-item>
-              </template>
-              <template v-if="item.categoryRuleType === 2">
-                <!-- 分类价格 -->
-                <el-form-item label="分类价格：" class="mb-2 cursor-pointer">
-                  <div class="text-left" v-if="item.categoryPriceRule">
-                    <div v-if="item.categoryPriceRule as RulePriceByLayout">
-                      <div
-                        >单个产品的价格:
-                        <el-tag size="small"
-                          >¥{{
-                            parseFloat(
-                              ((item.categoryPriceRule as RulePriceByLayout).singlePrice as any) ||
-                                0
-                            ).toFixed(2)
-                          }}
-                        </el-tag>
-                      </div>
-                    </div>
-                    <div v-if="item.categoryPriceRule as RulePriceByLayout">
-                      <div
-                        >单个版面可以制作的产品数量:
-                        <el-tag size="small">
-                          {{ (item.categoryPriceRule as RulePriceByLayout).singleLayoutCount }}
-                        </el-tag>
-                      </div>
-                    </div>
-                    <div
-                      v-for="(_rule, _index) in sortRulePrice(
-                        (item.categoryPriceRule as RulePriceByLayout).unitPrice
-                      )"
-                      :key="_index"
-                    >
-                      <div
-                        >版面数量：
-                        <el-tag size="small">
-                          {{
-                            sortRulePrice((item.categoryPriceRule as RulePriceByLayout).unitPrice)[
-                              _index - 1
-                            ]
-                              ? sortRulePrice(
-                                  (item.categoryPriceRule as RulePriceByLayout).unitPrice
-                                )[_index - 1].max
-                              : 0
-                          }}
-                        </el-tag>
-                        ~
-                        <el-tag size="small">{{ _rule.max }}</el-tag>
-                        价格：
-                        <el-tag size="small"
-                          >¥{{ parseFloat((_rule.price as any) || 0).toFixed(2) }}
-                        </el-tag>
-                      </div>
-                    </div>
-                    <div v-if="(item.categoryPriceRule as RulePriceByLayout).defaultPrice">
-                      <div>
-                        版面数量大于{{
-                          sortRulePrice((item.categoryPriceRule as RulePriceByLayout).unitPrice)[
-                            sortRulePrice((item.categoryPriceRule as RulePriceByLayout).unitPrice)
-                              .length - 1
-                          ].max
-                        }}价格是：
-                        <el-tag size="small">
-                          ¥{{
-                            parseFloat(
-                              ((item.categoryPriceRule as RulePriceByLayout).defaultPrice as any) ||
-                                0
-                            ).toFixed(2)
-                          }}
-                        </el-tag>
-                      </div>
-                    </div>
-                  </div>
-                </el-form-item>
-              </template>
-              <!--  数量-->
+              <!--  制作数量-->
               <el-form-item
                 label="制作数量："
                 class="mb-2 cursor-pointer"
                 :prop="`orderList.${index}.quantity`"
                 :rules="[{ required: true, message: '请输入数量', trigger: 'blur' }]"
               >
-                <el-input v-model.number="item.quantity" class="!w-240px" clearable />
+                <el-input v-model.number="item.quantity" class="!w-240px" clearable :disabled="isProcessing" />
               </el-form-item>
               <!-- 单价 -->
               <el-form-item label="单价：" class="mb-2 cursor-pointer">
@@ -238,8 +97,10 @@
           >
         </div>
         <div>
-          <el-button @click="dialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="handleConfirm"> 确认</el-button>
+          <el-button @click="handleClose" :disabled="isProcessing">取消</el-button>
+          <el-button type="primary" @click="handleConfirm" :loading="isProcessing" :disabled="isProcessing">
+            {{ isProcessing ? '处理中...' : '确认' }}
+          </el-button>
         </div>
       </div>
     </template>
@@ -258,6 +119,21 @@ const emit = defineEmits(['confirm', 'visible-event'])
 defineOptions({
   name: 'BatchOrderPopup'
 })
+
+const props = defineProps({
+  visible: {
+    type: Boolean,
+    default: false
+  }
+})
+
+const dialogVisible = ref(false)
+const isProcessing = ref(false)
+
+const formData = reactive({
+  orderList: [] as any[]
+})
+
 // ##########################方法区###################################################
 // 排序规则价格
 const sortRulePrice = (arr: rulePrice[]) => {
@@ -448,41 +324,7 @@ const setOrderList = (list: any[]) => {
   filterOrderQuantity(newList)
   formData.orderList = newList
 }
-const props = defineProps({
-  visible: {
-    type: Boolean,
-    default: false
-  }
-})
-const dialogVisible = ref(false)
-const formData = reactive({
-  orderList: [] as any[]
-})
 
-const handleClose = () => {
-  dialogVisible.value = false
-}
-const handleConfirm = () => {
-  if (formEl && formEl.value) {
-    formEl.value.validate(async (valid) => {
-      if (valid) {
-        await OrderApi.batchCreateOrder(
-          formData.orderList.map((item) => {
-            return {
-              id: item.id,
-              quantity: item.quantity
-            }
-          })
-        )
-        ElMessage.success('操作成功')
-        console.log('>>>>>>>>>>>触达确认事件')
-        emit('confirm')
-        dialogVisible.value = false
-      }
-    })
-    return
-  }
-}
 // ##########################事件监听处理区###################################################
 onMounted(() => {
   dialogVisible.value = props.visible
@@ -492,10 +334,62 @@ watch(dialogVisible, (val) => {
     emit('visible-event', false)
   }
 })
+
 // 组件对外暴露方法
 defineExpose({
   setOrderList
 })
+
+const handleClose = () => {
+  if (isProcessing.value) {
+    ElMessage.warning('正在处理中，请稍候...')
+    return
+  }
+  dialogVisible.value = false
+}
+
+const handleConfirm = () => {
+  if (formEl && formEl.value) {
+    formEl.value.validate(async (valid) => {
+      if (valid) {
+        try {
+          isProcessing.value = true
+          ElMessage({
+            type: 'info',
+            message: '正在处理订单，请耐心等待...',
+            duration: 0,
+            showClose: true
+          })
+          
+          await OrderApi.batchCreateOrder(
+            formData.orderList.map((item) => {
+              return {
+                id: item.id,
+                quantity: item.quantity
+              }
+            })
+          )
+          
+          ElMessage.closeAll()
+          ElMessage.success('下单成功')
+          emit('confirm')
+          dialogVisible.value = false
+        } catch (error) {
+          console.error('批量下单失败:', error)
+          ElMessage.closeAll()
+          ElMessage.error('下单失败，请重试')
+        } finally {
+          isProcessing.value = false
+        }
+      }
+    })
+    return
+  }
+}
 </script>
 
-<style scoped lang="scss"></style>
+<style scoped lang="scss">
+.dialog-footer {
+  padding: 20px 0 0;
+}
+</style>
