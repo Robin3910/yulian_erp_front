@@ -11,7 +11,7 @@
       <el-row :gutter="20">
         <el-col :span="24" :lg="6">
           <el-form-item label="店铺" prop="shopId" class="w-full">
-            <el-select filterable v-model="queryParams.shopId" placeholder="请选择店铺" clearable>
+            <el-select filterable v-model="queryParams.shopId" placeholder="请选择店铺" clearable multiple>
               <el-option
                 v-for="(item, index) in shopList"
                 :key="index"
@@ -578,7 +578,7 @@ const queryParams = reactive({
   quantity: undefined,
   productProperties: undefined,
   bookingTime: [],
-  shopId: undefined,
+  shopId: [],
   createTime: [],
   customImageUrls: undefined,
   customTextList: undefined,

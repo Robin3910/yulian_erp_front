@@ -18,7 +18,8 @@
                   v-model="queryParams.shopId"
                   placeholder="请选择店铺"
                   clearable
-                >
+                  multiple
+                >  
                   <el-option
                     v-for="(item, index) in shopList"
                     :key="index"
@@ -667,7 +668,7 @@ const queryParams = reactive({
   quantity: undefined,
   productProperties: undefined,
   bookingTime: [],
-  shopId: undefined,
+  shopId: [],
   createTime: [],
   customImageUrls: undefined,
   customTextList: undefined,
