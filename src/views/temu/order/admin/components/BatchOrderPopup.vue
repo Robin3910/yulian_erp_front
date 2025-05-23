@@ -340,6 +340,19 @@ const filterOrderQuantity = (list: any[]) => {
       }
     }
 
+    if (properties.includes("多色-S") && shopName.includes("shein-LEKUDZ")) {
+      item.quantity = 5 * originalQuantity
+      return
+    }
+    if (properties.includes("多色-M") && shopName.includes("shein-LEKUDZ")) {
+      item.quantity = 20 * originalQuantity
+      return
+    }
+    if (properties.includes("多色-L") && shopName.includes("shein-LEKUDZ")) {
+      item.quantity = 40 * originalQuantity
+      return
+    }
+
     if (productTitle.includes("5件") && shopName.includes("QTLK")) {
       item.quantity = 5 * originalQuantity
       return
