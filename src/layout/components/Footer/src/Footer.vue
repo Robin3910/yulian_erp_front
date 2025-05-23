@@ -22,6 +22,6 @@ const currentYear = computed(() => new Date().getFullYear())
     :class="prefixCls"
     class="h-[var(--app-footer-height)] bg-[var(--app-content-bg-color)] text-center leading-[var(--app-footer-height)] text-[var(--el-text-color-placeholder)] dark:bg-[var(--el-bg-color)] overflow-hidden"
   >
-    <span class="text-14px">Copyright ©{{ currentYear }} {{ title }}</span>
+    <span class="text-14px">Copyright ©{{ currentYear }} {{ title }} | 粤ICP备2025419982号</span>
   </div>
 </template>

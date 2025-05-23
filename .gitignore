@@ -10,6 +10,7 @@ coverage
 dist
 dist-ssr
 *.local
+dist-prod
 
 package-lock.json
 
