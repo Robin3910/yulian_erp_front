@@ -231,16 +231,17 @@
         <div class="text-left text-orange-500">
           <span>订单数：{{ formData.orderList.length || 0 }} </span>
           <span class="ml-2"
-          >总价：¥{{
-              formData.orderList
-                .reduce((acc, item) => acc + calculateUnitPrice(item) * item.quantity, 0)
-                .toFixed(2)
+            >总价：¥{{
+              _.round(formData.orderList
+                .reduce((acc, item) => acc + calculateUnitPrice(item) * item.quantity, 0),3).toFixed(2)
             }}</span
           >
         </div>
         <div>
-          <el-button @click="dialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="handleConfirm"> 确认</el-button>
+          <el-button @click="dialogVisible = false" :disabled="loading">取消</el-button>
+          <el-button type="primary" @click="handleConfirm" :loading="loading">
+            {{ loading ? '处理中...' : '确认' }}
+          </el-button>
         </div>
       </div>
     </template>
@@ -450,6 +451,7 @@ const props = defineProps({
   }
 })
 const dialogVisible = ref(false)
+const loading = ref(false)
 const formData = reactive({
   orderList: [] as any[]
 })
@@ -461,18 +463,32 @@ const handleConfirm = () => {
   if (formEl && formEl.value) {
     formEl.value.validate(async (valid) => {
       if (valid) {
-        await OrderApi.batchCreateOrder(
-          formData.orderList.map((item) => {
-            return {
-              id: item.id,
-              quantity: item.quantity
-            }
-          })
-        )
-        ElMessage.success('操作成功')
-        console.log('>>>>>>>>>>>触达确认事件')
-        emit('confirm')
-        dialogVisible.value = false
+        loading.value = true
+        ElMessage({
+          message: '正在处理订单中，请稍等...',
+          type: 'info',
+          duration: 0,
+          showClose: true
+        })
+        try {
+          await OrderApi.batchCreateOrder(
+            formData.orderList.map((item) => {
+              return {
+                id: item.id,
+                quantity: item.quantity
+              }
+            })
+          )
+          ElMessage.closeAll()
+          ElMessage.success('操作成功')
+          emit('confirm')
+          dialogVisible.value = false
+        } catch (error) {
+          ElMessage.closeAll()
+          ElMessage.error('操作失败')
+        } finally {
+          loading.value = false
+        }
       }
     })
     return
