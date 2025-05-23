@@ -550,10 +550,15 @@
         </template>
       </el-table-column>
 
-      <el-table-column label="批次编号" align="center" prop="batchNo" min-width="180">
+      <el-table-column label="批次编号" align="center" prop="batchNo" min-width="280">
         <template #default="{ row }">
           <div class="batch-info">
-            <div class="batch-no">{{ row.batchNo }}</div>
+            <div class="flex items-center gap-4">
+              <div class="batch-no">{{ row.batchNo }}</div>
+              <el-tag size="large" type="primary" effect="dark" class="order-count-tag">
+                {{ row.orderList?.length || 0 }}个订单
+              </el-tag>
+            </div>
             <div class="create-time">{{ dayjs(row.createTime).format('YYYY-MM-DD HH:mm') }}</div>
           </div>
         </template>
@@ -562,21 +567,26 @@
         <template #default="{ row }">
           <div class="category-info">
             <template v-if="row.orderList && row.orderList.length > 0">
-          <div class="flex  flex-col" style="align-items:flex-start">
-            <el-tag
-                v-for="(category, index) in [
-                  ...new Set(row.orderList.map((order) => order.categoryName))
-                ]"  :key="index"
-                class="category-tag"
-                type="info"
-                effect="plain"
-            >
-              <span>{{ category }}</span>
-              <span class="ml-2 ">制作数量：<span class="color-rose-500">{{ row.orderList.filter((order) => order.categoryName === category).reduce((acc, order) => acc + order.quantity, 0) }}</span></span>
-
-            </el-tag>
-          </div>
-
+              <div class="flex flex-col" style="align-items: flex-start">
+                <el-tag
+                  v-for="(category, index) in [
+                    ...new Set(row.orderList.map((order) => order.categoryName))
+                  ]"
+                  :key="index"
+                  class="category-tag"
+                  type="info"
+                  effect="plain"
+                >
+                  <span>{{ category }}</span>
+                  <span class="ml-2"
+                    >制作数量：<span class="color-rose-500">{{
+                      row.orderList
+                        .filter((order) => order.categoryName === category)
+                        .reduce((acc, order) => acc + order.quantity, 0)
+                    }}</span></span
+                  >
+                </el-tag>
+              </div>
             </template>
             <span v-else class="no-data">暂无品类信息</span>
           </div>
@@ -2228,13 +2238,13 @@ const toggleAllExpand = () => {
 .batch-info {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  padding: 2px;
+  gap: 8px;
+  padding: 4px;
 
   .batch-no {
-    font-size: 17px;
+    font-size: 18px;
     font-weight: 600;
-    color: rgb(61, 58, 58);
+    color: var(--el-text-color-primary);
     transition: all 0.3s ease;
 
     &:hover {
@@ -2243,8 +2253,46 @@ const toggleAllExpand = () => {
   }
 
   .create-time {
-    font-size: 15px;
+    font-size: 14px;
     color: var(--el-text-color-secondary);
+  }
+}
+
+.order-count-tag {
+  font-size: 16px;
+  font-weight: 600;
+  padding: 8px 16px;
+  border-radius: 6px;
+  background: linear-gradient(135deg, var(--el-color-primary) 0%, var(--el-color-primary-light-3) 100%);
+  border: none;
+  box-shadow: 0 2px 8px rgba(64, 158, 255, 0.25);
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 100px;
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+    transform: translateX(-100%);
+    transition: transform 0.6s ease;
+  }
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(64, 158, 255, 0.35);
+
+    &::before {
+      transform: translateX(100%);
+    }
   }
 }
 

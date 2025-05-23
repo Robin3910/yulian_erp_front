@@ -299,13 +299,16 @@
         </template>
       </el-table-column>
 
-      <el-table-column label="批次编号" align="center" prop="batchNo" min-width="180">
+      <el-table-column label="批次编号" align="center" prop="batchNo" min-width="280">
         <template #default="{ row }">
-          <div class="font-bold">
-            <div>{{ row.batchNo }}</div>
-            <div class="text-gray-500 text-sm"
-              >{{ dayjs(row.createTime).format('YYYY-MM-DD HH:mm') }}
+          <div class="batch-info">
+            <div class="flex items-center gap-4">
+              <div class="batch-no">{{ row.batchNo }}</div>
+              <el-tag size="large" type="primary" effect="dark" class="order-count-tag">
+                {{ row.orderList?.length || 0 }}个订单
+              </el-tag>
             </div>
+            <div class="create-time">{{ dayjs(row.createTime).format('YYYY-MM-DD HH:mm') }}</div>
           </div>
         </template>
       </el-table-column>
@@ -373,14 +376,6 @@
           </div>
         </template>
       </el-table-column>
-      <el-table-column
-        label="创建时间"
-        align="center"
-        prop="createTime"
-        :formatter="dateFormatter"
-        :show-overflow-tooltip="false"
-        width="100"
-      />
       <el-table-column label="定制图片（一键下载）" align="center" min-width="150">
         <template #default="{ row }">
           <div class="flex justify-center mt-2 flex-wrap">
@@ -924,6 +919,67 @@ onMounted(() => {
     padding: 10px 18px;
     font-size: 16px;
     font-weight: 600;
+  }
+}
+
+.batch-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 4px;
+
+  .batch-no {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--el-text-color-primary);
+    transition: all 0.3s ease;
+
+    &:hover {
+      opacity: 0.8;
+    }
+  }
+
+  .create-time {
+    font-size: 14px;
+    color: var(--el-text-color-secondary);
+  }
+}
+
+.order-count-tag {
+  font-size: 16px;
+  font-weight: 600;
+  padding: 8px 16px;
+  border-radius: 6px;
+  background: linear-gradient(135deg, var(--el-color-primary) 0%, var(--el-color-primary-light-3) 100%);
+  border: none;
+  box-shadow: 0 2px 8px rgba(64, 158, 255, 0.25);
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 100px;
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+    transform: translateX(-100%);
+    transition: transform 0.6s ease;
+  }
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(64, 158, 255, 0.35);
+
+    &::before {
+      transform: translateX(100%);
+    }
   }
 }
 </style>
