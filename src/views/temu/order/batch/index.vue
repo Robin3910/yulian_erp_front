@@ -169,6 +169,15 @@
             <Icon icon="ep:document" class="mr-5px" />
             打印批次拣货单
           </el-button>
+          <el-button
+            type="warning"
+            @click="handlePrintSelectedOrders"
+            plain
+            :disabled="selectedInnerOrders.length === 0"
+          >
+            <Icon icon="ep:printer" class="mr-5px" />
+            打印选中订单条码+合规单
+          </el-button>
         </div>
         <div v-if="selectedOrders.length > 0" class="mt-2 flex items-center selection-info">
           <el-tag type="info" class="mr-2 selection-tag">
@@ -225,7 +234,10 @@
                   if (el) registerTableRef(el, scope.row.batchNo)
                 }
               "
+              @selection-change="(selection) => handleInnerSelectionChange(selection, scope.row)"
             >
+              <!--选择-->
+              <el-table-column reserve-selection type="selection" width="30" align="center" />
               <!--订单编号-->
               <el-table-column
                 label="订单信息"
@@ -536,7 +548,13 @@
                 :formatter="dateFormatter"
                 :show-overflow-tooltip="false"
                 width="150px"
-              />
+              >
+                <template #default="{ row }">
+                  <div :class="['booking-time', getTimeClass(row.bookingTime)]">
+                    {{ dayjs(row.bookingTime).format('YYYY-MM-DD HH:mm') }}
+                  </div>
+                </template>
+              </el-table-column>
               <!--  备注-->
               <el-table-column
                 label="备注"
@@ -810,7 +828,7 @@ const handleInnerSelectionChange = (selection: OrderVO[], batchRow: any) => {
   batchSelections.value.forEach((orders) => {
     allSelected.push(...orders)
   })
-  selectedOrders.value = allSelected
+  selectedInnerOrders.value = allSelected
 }
 
 /** 清除所有选择 */
@@ -850,14 +868,9 @@ const getList = async () => {
 
     list.value = Array.from(batchGroups.values())
     total.value = data.total
-    // 默认展开第一条批次
-    if (list.value.length > 0) {
-      expandedRows.value = [String(list.value[0].id)]
-      isAllExpanded.value = false
-    } else {
-      expandedRows.value = []
-      isAllExpanded.value = false
-    }
+    // 默认不展开任何行
+    expandedRows.value = []
+    isAllExpanded.value = false
   } finally {
     loading.value = false
   }
@@ -1771,6 +1784,140 @@ const toggleAllExpand = () => {
   }
   isAllExpanded.value = !isAllExpanded.value
 }
+
+const getTimeClass = (time: string) => {
+  const hour = dayjs(time).hour()
+  return hour < 12 ? 'morning-time' : 'afternoon-time'
+}
+
+const selectedInnerOrders = ref<OrderVO[]>([]) // 选中的内部订单
+
+/** 批量打印选中的订单条码+合规单 */
+const handlePrintSelectedOrders = async () => {
+  if (!selectedInnerOrders.value || selectedInnerOrders.value.length === 0) {
+    ElMessage.warning('请先选择要打印的订单')
+    return
+  }
+
+  try {
+    // 检查是否有订单的合并文件为空
+    const ordersWithoutMerged = selectedInnerOrders.value.filter(
+      (order) => !order.complianceGoodsMergedUrl
+    )
+    if (ordersWithoutMerged.length > 0) {
+      // 按店铺分组并去重SKC
+      const groupedByShop = ordersWithoutMerged.reduce((acc, order) => {
+        const shopName = order.shopName || '未知店铺'
+        if (!acc[shopName]) {
+          acc[shopName] = new Set()
+        }
+        if (order.skc) {
+          acc[shopName].add(order.skc)
+        }
+        return acc
+      }, {})
+
+      const missingInfo = Object.entries(groupedByShop)
+        .map(
+          ([shopName, skcs]) => `
+          <div style="margin-bottom: 16px;">
+            <div style="color: #606266; font-weight: bold; margin-bottom: 8px;">${shopName}</div>
+            <div style="padding-left: 16px;">
+              ${Array.from(skcs)
+                .map(
+                  (skc) => `
+                <div style="color: #409EFF; margin-bottom: 4px;">
+                  ${skc}
+                </div>
+              `
+                )
+                .join('')}
+            </div>
+          </div>
+        `
+        )
+        .join('')
+
+      ElNotification({
+        title: '无法批量打印',
+        message: `
+          <div style="margin-bottom: 10px; color: #303133;">以下SKC缺少合并文件，请联系相关人员及时补充：</div>
+          <div style="max-height: 300px; overflow-y: auto; padding-right: 10px;">${missingInfo}</div>
+        `,
+        type: 'warning',
+        duration: 0,
+        dangerouslyUseHTMLString: true,
+        offset: 60
+      })
+      return
+    }
+
+    // 创建一个新的PDF文档
+    const mergedPdf = await PDFDocument.create()
+    let successCount = 0
+    let failCount = 0
+
+    // 加载并合并所有PDF文件
+    for (const order of selectedInnerOrders.value) {
+      if (!order.complianceGoodsMergedUrl) continue
+      const url = order.complianceGoodsMergedUrl.startsWith('@')
+        ? order.complianceGoodsMergedUrl.substring(1)
+        : order.complianceGoodsMergedUrl
+      try {
+        const response = await fetch(url)
+        if (!response.ok) {
+          console.error(`加载PDF失败: ${url}`)
+          failCount++
+          continue
+        }
+        const pdfBytes = await response.arrayBuffer()
+        const pdf = await PDFDocument.load(pdfBytes)
+        const copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices())
+        copiedPages.forEach((page) => {
+          mergedPdf.addPage(page)
+        })
+        successCount++
+      } catch (error) {
+        console.error(`加载PDF失败: ${url}`, error)
+        failCount++
+      }
+    }
+
+    if (mergedPdf.getPageCount() === 0) {
+      ElMessage.error('没有可打印的合并文件PDF')
+      return
+    }
+
+    // 保存合并后的PDF
+    const mergedPdfBytes = await mergedPdf.save()
+    const mergedPdfBlob = new Blob([mergedPdfBytes], { type: 'application/pdf' })
+    const mergedPdfUrl = URL.createObjectURL(mergedPdfBlob)
+
+    // 使用print-js打印PDF
+    printJS({
+      printable: mergedPdfUrl,
+      type: 'pdf',
+      showModal: true
+    })
+
+    // 显示处理结果
+    if (failCount > 0) {
+      ElMessage.warning(`成功处理${successCount}个订单，${failCount}个订单处理失败`)
+    } else {
+      ElMessage.success(`成功处理${successCount}个订单`)
+    }
+
+    // 清理资源
+    setTimeout(() => {
+      URL.revokeObjectURL(mergedPdfUrl)
+    }, 10000)
+  } catch (error) {
+    console.error('批量打印合并文件失败:', error)
+    ElMessage.error(
+      '批量打印合并文件失败：' + (error instanceof Error ? error.message : '未知错误')
+    )
+  }
+}
 </script>
 
 <style lang="scss" scoped>
@@ -2364,5 +2511,57 @@ const toggleAllExpand = () => {
 :deep(.el-table__expand-column .cell) {
   display: flex;
   justify-content: flex-start;
+}
+
+.booking-time {
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+  }
+
+  &.morning-time {
+    background-color: #e6f7ff;
+    color: #0050b3;
+    border: 1px solid #91d5ff;
+    box-shadow: 0 2px 4px rgba(24, 144, 255, 0.1);
+
+    &::before {
+      background-color: #1890ff;
+    }
+
+    &:hover {
+      background-color: #bae7ff;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 8px rgba(24, 144, 255, 0.2);
+    }
+  }
+
+  &.afternoon-time {
+    background-color: #fff1f0;
+    color: #cf1322;
+    border: 1px solid #ffa39e;
+    box-shadow: 0 2px 4px rgba(255, 77, 79, 0.1);
+
+    &::before {
+      background-color: #ff4d4f;
+    }
+
+    &:hover {
+      background-color: #ffccc7;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 8px rgba(255, 77, 79, 0.2);
+    }
+  }
 }
 </style>
