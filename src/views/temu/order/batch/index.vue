@@ -715,8 +715,8 @@
       :total="total"
       v-model:page="queryParams.pageNo"
       v-model:limit="queryParams.pageSize"
-      :page-sizes="[10, 20, 50]"
-      :default-page-size="50"
+      :page-sizes="[1, 3, 5, 10, 20]"
+      :default-page-size="5"
       @pagination="getList"
     />
   </ContentWrap>

@@ -52,7 +52,7 @@ onMounted(() => {
     }, 3000)
   }
   fetchMyWallet()
-  cb()
+  // cb()
 })
 </script>
 <style scoped lang="scss"></style>
