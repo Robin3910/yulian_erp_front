@@ -229,6 +229,7 @@
               :data="scope.row.orderList"
               :stripe="true"
               :show-overflow-tooltip="true"
+              row-key="id"
               :ref="
                 (el) => {
                   if (el) registerTableRef(el, scope.row.batchNo)
@@ -837,14 +838,23 @@ const clearAllSelections = () => {
   selectedOrders.value = []
   selectedRows.value = []
 }
-const handlerCompleteOrderTask = async (scope, row,taskType) => {
-  await OrderBatchApi.completeOrderTaskByAdmin({
-    taskType,
-    id: scope.id,
-    orderId: row.id
-  })
-  ElMessage.success('操作成功')
-  await getList()
+const handlerCompleteOrderTask = async (scope, row, taskType) => {
+  try {
+    await OrderBatchApi.completeOrderTaskByAdmin({
+      taskType,
+      id: scope.id,
+      orderId: row.id
+    })
+    // 直接更新对应的任务状态
+    if (taskType === 1) {
+      row.isCompleteDrawTask = 1
+    } else if (taskType === 2) {
+      row.isCompleteProducerTask = 1
+    }
+    ElMessage.success('操作成功')
+  } catch (error) {
+    ElMessage.error('操作失败：' + error.message)
+  }
 }
 /** 查询列表 */
 const getList = async () => {
