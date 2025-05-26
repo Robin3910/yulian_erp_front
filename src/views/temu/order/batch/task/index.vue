@@ -105,6 +105,7 @@
               :data="scope.row.orderList"
               :stripe="true"
               :show-overflow-tooltip="true"
+              row-key="id"
             >
               <!--订单编号-->
               <el-table-column label="订单编号" align="center" prop="orderNo" min-width="150">
@@ -546,13 +547,22 @@ const resetQuery = () => {
   handleQuery()
 }
 const handlerCompleteOrderTask = async (scope, row) => {
-  await OrderBatchApi.completeOrderTask({
-    taskId: scope.taskId,
-    id: scope.id,
-    orderId: row.id
-  })
-  ElMessage.success('操作成功')
-  await getList()
+  try {
+    await OrderBatchApi.completeOrderTask({
+      taskId: scope.taskId,
+      id: scope.id,
+      orderId: row.id
+    })
+    // 直接更新状态，无需刷新页面
+    if (scope.taskType === 1) {
+      row.isCompleteDrawTask = 1
+    } else if (scope.taskType === 2) {
+      row.isCompleteProducerTask = 1
+    }
+    ElMessage.success('操作成功')
+  } catch (error) {
+    ElMessage.error('操作失败：' + error.message)
+  }
 }
 const handlerPrintGoodsSn = async (row: OrderVO, type: string | number) => {
   let { goodsSn, oldTypeUrl } = await OrderApi.getOrderExtraInfo(row.id)
