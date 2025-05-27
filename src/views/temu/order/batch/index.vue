@@ -205,6 +205,9 @@
       :header-cell-style="{ background: 'var(--el-bg-color)' }"
       row-key="id"
       @selection-change="handlerSelectionChange"
+      v-infinite-scroll="loadMore"
+      infinite-scroll-disabled="loading"
+      infinite-scroll-distance="10"
     >
       <!--选择-->
       <el-table-column reserve-selection type="selection" width="30" align="center" />
@@ -352,6 +355,10 @@
                       :preview-teleported="true"
                       :src="row.productImgUrl"
                       :preview-src-list="[row.productImgUrl]"
+                      lazy
+                      :initial-index="0"
+                      fit="cover"
+                      loading="lazy"
                     />
                   </div>
                 </template>
@@ -406,6 +413,10 @@
                         :preview-teleported="true"
                         :src="item"
                         :preview-src-list="[item]"
+                        lazy
+                        :initial-index="0"
+                        fit="cover"
+                        loading="lazy"
                       />
                     </div>
                   </div>
@@ -745,6 +756,7 @@ import OrderBatchTaskDispatchPopup from '@/views/temu/order/batch/components/Ord
 import { CopyDocument, Printer, ArrowDown } from '@element-plus/icons-vue'
 import { PDFDocument } from 'pdf-lib'
 import dayjs from 'dayjs'
+import { ElImageViewer } from 'element-plus'
 
 defineOptions({ name: 'BatchOrderPopup' })
 const message = useMessage() // 消息弹窗
@@ -868,7 +880,6 @@ const getList = async () => {
     }
 
     const data = await OrderBatchApi.getOrderBatchPage(params)
-
     const batchGroups = new Map()
     data.list.forEach((item) => {
       if (!batchGroups.has(item.batchNo)) {
@@ -1928,6 +1939,67 @@ const handlePrintSelectedOrders = async () => {
     )
   }
 }
+
+// 添加虚拟滚动相关变量
+const finished = ref(false)
+const pageSize = ref(10)
+const currentPage = ref(1)
+
+// 优化图片加载
+const imageOptions = {
+  lazy: true,
+  loading: 'lazy',
+  fit: 'cover',
+  initialIndex: 0,
+  previewTeleported: true,
+  hideOnClickModal: true
+}
+
+// 优化数据加载
+const loadMore = async () => {
+  if (loading.value || finished.value) return
+  
+  loading.value = true
+  try {
+    const params = {
+      ...queryParams,
+      pageNo: currentPage.value,
+      pageSize: pageSize.value
+    }
+    
+    const data = await OrderBatchApi.getOrderBatchPage(params)
+    
+    if (data.list.length < pageSize.value) {
+      finished.value = true
+    }
+    
+    list.value = [...list.value, ...data.list]
+    currentPage.value++
+  } catch (error) {
+    console.error('加载更多数据失败:', error)
+  } finally {
+    loading.value = false
+  }
+}
+
+// 优化图片预览
+const handleImagePreview = (url: string) => {
+  if (!url) return
+  const img = new Image()
+  img.src = url
+  img.onload = () => {
+    // 图片加载完成后再显示预览
+    ElImageViewer({
+      urlList: [url],
+      initialIndex: 0,
+      onClose: () => {
+        // 清理资源
+        img.src = ''
+      }
+    })
+  }
+}
+
 </script>
 
 <style lang="scss" scoped>
@@ -2572,6 +2644,34 @@ const handlePrintSelectedOrders = async () => {
       transform: translateY(-1px);
       box-shadow: 0 4px 8px rgba(255, 77, 79, 0.2);
     }
+  }
+}
+
+// 添加图片懒加载相关样式
+.el-image {
+  transition: opacity 0.3s;
+  &.is-loading {
+    opacity: 0.5;
+  }
+  &.is-loaded {
+    opacity: 1;
+  }
+}
+
+// 优化滚动性能
+:deep(.el-table__body-wrapper) {
+  overflow-y: auto;
+  scrollbar-width: thin;
+  &::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: #c0c4cc;
+    border-radius: 3px;
+  }
+  &::-webkit-scrollbar-track {
+    background: #f5f7fa;
   }
 }
 </style>
