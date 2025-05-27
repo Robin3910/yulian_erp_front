@@ -149,6 +149,9 @@
         :header-cell-style="{ background: 'var(--el-bg-color)' }"
         :row-class-name="tableRowClassName"
         row-key="uniqueId"
+        :virtual-scrolling="true"
+        :scrollbar-always-on="true"
+        :max-height="800"
       >
         <!-- 复选框列 -->
         <el-table-column
@@ -315,6 +318,11 @@
               :src="row.productImgUrl"
               :preview-src-list="[row.productImgUrl]"
               style="width: 80px; height: 80px"
+              loading="lazy"
+              :initial-index="0"
+              fit="contain"
+              :z-index="3000"
+              :preview="false"
             />
           </template>
         </el-table-column>
@@ -407,6 +415,9 @@
                   :preview-src-list="[item]"
                   style="width: 60px; height: 60px"
                   fit="cover"
+                  loading="lazy"
+                  :initial-index="0"
+                  :preview="false"
                 />
               </div>
             </div>
@@ -425,6 +436,9 @@
               :preview-src-list="[row.effectiveImgUrl]"
               style="width: 80px; height: 80px"
               fit="cover"
+              loading="lazy"
+              :initial-index="0"
+              :preview="false"
             />
             <span v-else>-</span>
           </template>
@@ -507,7 +521,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, onUnmounted } from 'vue'
+import { ref, reactive, onMounted, onUnmounted, nextTick } from 'vue'
 import { OrderApi, OrderVO } from '@/api/temu/order'
 import { TemuCommonApi } from '@/api/temu/common'
 import { ElMessage, ElMessageBox, ElNotification } from 'element-plus'
@@ -609,6 +623,15 @@ const selectedStats = ref({
   total: 0
 })
 
+// 添加图片预加载函数
+const preloadImages = (urls: string[]) => {
+  urls.forEach(url => {
+    if (!url) return
+    const img = new Image()
+    img.src = url
+  })
+}
+
 /** 查询列表 */
 const getList = async () => {
   loading.value = true
@@ -630,6 +653,9 @@ const getList = async () => {
       trackingSpans: [],
       orderSpans: []
     }
+
+    // 收集所有需要预加载的图片URL
+    const imageUrls: string[] = []
 
     ;(data.list as ShippingOrder[]).forEach((shippingOrder, shippingIndex) => {
       if (shippingOrder.orderNoList && shippingOrder.orderNoList.length > 0) {
@@ -712,11 +738,33 @@ const getList = async () => {
           })
         }
       }
+
+      // 收集图片URL
+      if (shippingOrder.expressImageUrl) imageUrls.push(shippingOrder.expressImageUrl)
+      if (shippingOrder.expressOutsideImageUrl) imageUrls.push(shippingOrder.expressOutsideImageUrl)
+      if (shippingOrder.expressSkuImageUrl) imageUrls.push(shippingOrder.expressSkuImageUrl)
+      
+      shippingOrder.orderNoList.forEach((orderNoGroup) => {
+        if (orderNoGroup.orderList && orderNoGroup.orderList.length > 0) {
+          orderNoGroup.orderList.forEach((orderItem) => {
+            if (orderItem.productImgUrl) imageUrls.push(orderItem.productImgUrl)
+            if (orderItem.effectiveImgUrl) imageUrls.push(orderItem.effectiveImgUrl)
+            if (orderItem.customImageUrls) {
+              imageUrls.push(...orderItem.customImageUrls.split(','))
+            }
+          })
+        }
+      })
     })
 
     list.value = extendedList
     total.value = data.total
     spanArr.value = spanInfo
+
+    // 在数据加载完成后，使用nextTick确保DOM更新后再预加载图片
+    nextTick(() => {
+      preloadImages(imageUrls)
+    })
   } catch (error) {
     console.error('获取数据失败:', error)
     list.value = []
@@ -1849,13 +1897,47 @@ $predefined-colors: (
 <style lang="scss" scoped>
 .shipping-container {
   .custom-table {
-    // 设置表头样式
-    :deep(.el-table__header-wrapper) {
-      position: sticky;
-      top: 0;
-      z-index: 1;
+    // 添加硬件加速
+    transform: translateZ(0);
+    will-change: transform;
+    backface-visibility: hidden;
+    
+    // 优化滚动性能
+    :deep(.el-table__body-wrapper) {
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      scroll-behavior: smooth;
+      
+      // 优化图片渲染
+      img {
+        will-change: transform;
+        transform: translateZ(0);
+        backface-visibility: hidden;
+      }
     }
   }
+}
+
+// 优化图片容器
+.custom-images-container {
+  .image-item {
+    transform: translateZ(0);
+    will-change: transform;
+    backface-visibility: hidden;
+    
+    img {
+      will-change: transform;
+      transform: translateZ(0);
+      backface-visibility: hidden;
+    }
+  }
+}
+
+// 优化表格行渲染
+:deep(.el-table__row) {
+  transform: translateZ(0);
+  will-change: transform;
+  backface-visibility: hidden;
 }
 
 .custom-table {
