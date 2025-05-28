@@ -286,27 +286,15 @@
       <!-- 定制图片 -->
       <el-table-column label="定制图片" align="center" prop="customImageUrls" min-width="180">
         <template #default="{ row }">
-          <div class="custom-image-container">
-            <div class="flex flex-wrap justify-center" v-if="row.customImageUrls">
-              <div
-                v-for="(item, index) in row.customImageUrls.split(',')"
-                :key="index"
-                class="image-item"
-              >
-                <el-image
-                  class="w-60px h-60px"
-                  :hide-on-click-modal="true"
-                  :preview-teleported="true"
-                  :src="item"
-                  :preview-src-list="[item]"
-                />
-              </div>
-            </div>
-            <div class="upload-button-container">
-              <el-button size="small" type="primary" @click="openCustomImageUploader(row)">
-                <el-icon><Upload /></el-icon>
-                上传定制图片
-              </el-button>
+          <div class="flex flex-wrap" v-if="row.customImageUrls">
+            <div v-for="(item, index) in row.customImageUrls.split(',')" :key="index" class="ml-2">
+              <el-image
+                class="w-60px h-60px"
+                :hide-on-click-modal="true"
+                :preview-teleported="true"
+                :src="item"
+                :preview-src-list="[item]"
+              />
             </div>
           </div>
         </template>
@@ -543,23 +531,6 @@
   />
   <!-- 新增备注弹窗组件 -->
   <OrderRemarkPopup ref="orderRemarkPopup" @confirm="handlerRemarkConfirm" />
-  <!-- 定制图片上传弹窗 -->
-  <el-dialog 
-    v-model="customImageUploaderVisible" 
-    title="定制图片上传" 
-    width="900px" 
-    top="5vh"
-    center
-    destroy-on-close
-    :close-on-click-modal="false"
-    :fullscreen="false"
-  >
-    <CustomImageUploader 
-      :orderId="selectedOrder?.id" 
-      :customImageUrls="selectedOrder?.customImageUrls || ''"
-      @saved="onCustomImageSaved"
-    />
-  </el-dialog>
 </template>
 
 <script setup lang="ts">
@@ -572,8 +543,7 @@ import { OrderApi, OrderVO } from '@/api/temu/order'
 import { TemuCommonApi } from '@/api/temu/common'
 import { getStrDictOptions } from '@/utils/dict'
 import { ElMessage,ElTable } from 'element-plus'
-import { Upload } from '@element-plus/icons-vue'
-import CustomImageUploader from '@/views/temu/order/admin/components/CustomImageUploader.vue'
+
 
 /** 订单 列表 */
 defineOptions({ name: 'TemuOrderIndex' })
@@ -797,25 +767,6 @@ const handleCopy = async (text: string) => {
   } catch (err) {
     console.error('复制失败:', err)
     ElMessage.error('复制失败')
-  }
-}
-
-// 定制图片上传相关
-const customImageUploaderVisible = ref(false)
-const selectedOrder = ref<OrderVO>()
-
-// 打开定制图片上传弹窗
-const openCustomImageUploader = (row: OrderVO) => {
-  selectedOrder.value = row
-  customImageUploaderVisible.value = true
-}
-
-// 保存定制图片后的回调
-const onCustomImageSaved = (customImageUrls: string) => {
-  if (selectedOrder.value) {
-    selectedOrder.value.customImageUrls = customImageUrls
-    customImageUploaderVisible.value = false
-    ElMessage.success('定制图片保存成功')
   }
 }
 
@@ -1137,30 +1088,5 @@ onMounted(() => {
       }
     }
   }
-}
-
-// 定制图片容器样式
-.custom-image-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  width: 100%;
-}
-
-.image-item {
-  margin: 5px;
-  position: relative;
-  transition: all 0.3s;
-}
-
-.image-item:hover {
-  transform: scale(1.05);
-}
-
-.upload-button-container {
-  margin-top: 10px;
-  width: 100%;
-  display: flex;
-  justify-content: center;
 }
 </style>
