@@ -182,7 +182,7 @@
                 <span class="arrow-item">➤</span>
                 <span class="arrow-item">➤</span>
               </div>
-              <el-tag type="process" class="status-tag" size="large">已生产待发货</el-tag>
+              <el-tag type="danger" class="status-tag" size="large">已生产待发货</el-tag>
               <div class="flow-arrow">
                 <span class="arrow-item">➤</span>
                 <span class="arrow-item">➤</span>
@@ -321,19 +321,27 @@
         <!-- 定制图片 -->
         <el-table-column label="定制图片" align="center" prop="customImageUrls" min-width="180">
           <template #default="{ row }">
-            <div class="flex flex-wrap" v-if="row.customImageUrls">
-              <div
-                v-for="(item, index) in row.customImageUrls.split(',')"
-                :key="index"
-                class="ml-2"
-              >
-                <el-image
-                  class="w-60px h-60px"
-                  :hide-on-click-modal="true"
-                  :preview-teleported="true"
-                  :src="item"
-                  :preview-src-list="[item]"
-                />
+            <div class="custom-image-container">
+              <div class="flex flex-wrap justify-center" v-if="row.customImageUrls">
+                <div
+                  v-for="(item, index) in row.customImageUrls.split(',')"
+                  :key="index"
+                  class="image-item"
+                >
+                  <el-image
+                    class="w-60px h-60px"
+                    :hide-on-click-modal="true"
+                    :preview-teleported="true"
+                    :src="item"
+                    :preview-src-list="[item]"
+                  />
+                </div>
+              </div>
+              <div class="upload-button-container">
+                <el-button size="small" type="primary" @click="openCustomImageUploader(row)">
+                  <el-icon><Upload /></el-icon>
+                  上传定制图片
+                </el-button>
               </div>
             </div>
           </template>
@@ -583,6 +591,23 @@
   />
   <!--修改备注-->
   <OrderRemarkPopup @confirm="handlerRemarkConfirm" ref="orderRemarkPopup" />
+  <!-- 定制图片上传弹窗 -->
+  <el-dialog 
+    v-model="customImageUploaderVisible" 
+    title="定制图片上传" 
+    width="900px" 
+    top="5vh"
+    center
+    destroy-on-close
+    :close-on-click-modal="false"
+    :fullscreen="false"
+  >
+    <CustomImageUploader 
+      :orderId="selectedOrder?.id" 
+      :customImageUrls="selectedOrder?.customImageUrls || ''"
+      @saved="onCustomImageSaved"
+    />
+  </el-dialog>
 </template>
 
 <script setup lang="ts">
@@ -596,6 +621,8 @@ import { getStrDictOptions } from '@/utils/dict'
 import { ElMessage, ElMessageBox, ElTable } from 'element-plus'
 import { OrderBatchApi } from '@/api/temu/order-batch'
 import OrderRemarkPopup from '@/views/temu/order/admin/components/OrderRemarkPopup.vue'
+import { Upload } from '@element-plus/icons-vue'
+import CustomImageUploader from './components/CustomImageUploader.vue'
 
 /** 订单 列表 */
 defineOptions({ name: 'TemuOrderAdmin' })
@@ -617,10 +644,14 @@ const batchOrderPopupRef = useTemplateRef('batchOrderPopup')
 // 备注引用
 const orderRemarkPopup = useTemplateRef('orderRemarkPopup')
 
+// 定制图片上传相关
+const customImageUploaderVisible = ref(false)
+const selectedOrder = ref<any>(null)
+
 // 获取订单状态类型
 const getOrderStatusType = (
   status: number
-): 'success' | 'warning' | 'info' | 'primary' | 'process' => {
+): 'success' | 'warning' | 'info' | 'primary' | 'danger' => {
   switch (status) {
     case 0:
       return 'info' // 待下单 - 浅灰
@@ -629,7 +660,7 @@ const getOrderStatusType = (
     case 2:
       return 'warning' // 已送产待生产 - 浅紫
     case 3:
-      return 'process' // 已生产待发货 - 浅绿
+      return 'danger' // 已生产待发货 - 浅绿（改为danger类型）
     case 4:
       return 'success' // 已发货 - 浅青
     default:
@@ -841,7 +872,7 @@ const handleBatchGenerate = async () => {
 const handlerRemark = async (row: OrderVO) => {
   if (orderRemarkPopup.value) {
     orderRemarkPopup.value.setVisible(true)
-    orderRemarkPopup.value.formData.orderId = row.id
+    orderRemarkPopup.value.formData.orderId = String(row.id)
     orderRemarkPopup.value.formData.remark = row.remark
   }
 }
@@ -860,6 +891,28 @@ const handleCopy = async (text: string) => {
     console.error('复制失败:', err)
     ElMessage.error('复制失败')
   }
+}
+
+/**
+ * 打开定制图片上传器
+ */
+const openCustomImageUploader = (row: any) => {
+  selectedOrder.value = row
+  customImageUploaderVisible.value = true
+}
+
+/**
+ * 定制图片保存成功回调
+ */
+const onCustomImageSaved = (customImageUrls: string) => {
+  // 更新当前行的定制图片
+  if (selectedOrder.value) {
+    selectedOrder.value.customImageUrls = customImageUrls
+  }
+  // 关闭弹窗
+  customImageUploaderVisible.value = false
+  // 刷新表格
+  getList()
 }
 
 /** 初始化 **/
@@ -1180,5 +1233,26 @@ onMounted(() => {
       }
     }
   }
+}
+
+// 定制图片列样式
+.custom-image-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.image-item {
+  margin: 4px;
+  border: 1px solid #ebeef5;
+  border-radius: 4px;
+  overflow: hidden;
+  background-color: white;
+}
+
+.upload-button-container {
+  margin-top: 8px;
+  width: 100%;
 }
 </style>

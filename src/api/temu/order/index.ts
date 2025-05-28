@@ -89,5 +89,9 @@ export const OrderApi = {
   //   修改备注
   updateOrderRemark: async (data: { orderId: number; remark: string }) => {
     return await request.put({ url: `/temu/order/update-order-remark`, data })
+  },
+  // 更新订单定制图片
+  updateOrderCustomImages: async (data: { orderId: number; customImageUrls: string }) => {
+    return await request.put({ url: `/temu/order/update-custom-images`, data })
   }
 }
