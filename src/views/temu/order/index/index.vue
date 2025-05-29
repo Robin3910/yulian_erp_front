@@ -181,24 +181,35 @@
       <!--选择-->
       <el-table-column type="selection" width="55" align="center" reserve-selection fixed="left" />
       <!--订单编号和状态-->
-      <el-table-column label="订单编号/状态" align="center" min-width="160" fixed="left">
+      <el-table-column label="订单编号/状态/时间" align="center" min-width="160" fixed="left">
         <template #default="{ row }">
           <div class="flex flex-col items-center">
             <div class="font-bold mb-2 flex items-center">
               {{ row.orderNo }}
-              <!-- <el-button
-                v-if="row.orderNo"
-                class="copy-button !ml-1"
-                type="default"
-                link
-                @click.stop="handleCopy(row.orderNo)"
-              >
-                <el-icon><CopyDocument /></el-icon>
-              </el-button> -->
             </div>
             <el-tag :type="getOrderStatusType(row.orderStatus)" class="status-tag" size="large">
               {{ getOrderStatusText(row.orderStatus) }}
             </el-tag>
+            <div class="mt-2 text-gray-500 text-sm">
+              {{ row.bookingTime ? dayjs(row.bookingTime).format('YYYY-MM-DD HH:mm:ss') : '' }}
+            </div>
+          </div>
+        </template>
+      </el-table-column>
+      <!--任务完成状态-->
+      <el-table-column label="任务完成状态" align="center" min-width="160" fixed="left">
+        <template #default="{ row }">
+          <div class="flex flex-col items-center">
+            <div class="mb-2">
+              <el-tag :type="row.isCompleteDrawTask ? 'success' : 'warning'" class="task-tag" size="large">
+                {{ row.isCompleteDrawTask ? '作图完成' : '作图未完成' }}
+              </el-tag>
+            </div>
+            <div>
+              <el-tag :type="row.isCompleteProducerTask ? 'success' : 'warning'" class="task-tag" size="large">
+                {{ row.isCompleteProducerTask ? '生产完成' : '生产未完成' }}
+              </el-tag>
+            </div>
           </div>
         </template>
       </el-table-column>
@@ -213,6 +224,7 @@
           </div>
         </template>
       </el-table-column>
+      
       <!--产品图片-->
       <el-table-column label="产品图片" align="center" prop="productImgUrl" width="115">
         <template #default="{ row }">
@@ -233,12 +245,12 @@
           <div class="text-left">
             <!-- 修改标题容器 -->
             <div class="product-title mb-2">
-              <span class="font-bold">产品标题：</span>{{ row.productTitle }}
+              <span class="font-bold">标题：</span>{{ row.productTitle }}
             </div>
 
             <!-- 商品属性 -->
             <div class="flex items-start mb-2">
-              <div><span class="font-bold">商品属性:</span></div>
+              <div><span class="font-bold">属性:</span></div>
               <div class="ml-2">{{ row.productProperties || '--' }}</div>
             </div>
           </div>
@@ -375,15 +387,6 @@
           </div>
         </template>
       </el-table-column>
-
-      <el-table-column
-        label="预定单创建时间"
-        align="center"
-        prop="bookingTime"
-        :formatter="dateFormatter"
-        :show-overflow-tooltip="false"
-        width="150px"
-      />
 
       <el-table-column label="操作" fixed="right" align="center" min-width="130px">
         <template #default="{ row }">
@@ -538,11 +541,12 @@ import OrderStatusPopup from '@/views/temu/order/index/components/OrderStatusPop
 import BatchOrderPopup from "@/views/temu/order/admin/components/BatchOrderPopup.vue";
 import OrderRemarkPopup from '@/views/temu/order/index/components/OrderRemarkPopup.vue'
 import { DICT_TYPE } from '@/utils/dict'
-import { dateFormatter } from '@/utils/formatTime'
+import { dateFormatter, formatDate } from '@/utils/formatTime'
 import { OrderApi, OrderVO } from '@/api/temu/order'
 import { TemuCommonApi } from '@/api/temu/common'
 import { getStrDictOptions } from '@/utils/dict'
 import { ElMessage,ElTable } from 'element-plus'
+import dayjs from 'dayjs'
 
 
 /** 订单 列表 */
@@ -757,17 +761,6 @@ const handlerRemarkConfirm = async (data: any) => {
   await OrderApi.updateOrderRemark(data)
   ElMessage.success('操作成功')
   getList()
-}
-
-// 处理复制功能
-const handleCopy = async (text: string) => {
-  try {
-    await navigator.clipboard.writeText(text)
-    ElMessage.success('复制成功')
-  } catch (err) {
-    console.error('复制失败:', err)
-    ElMessage.error('复制失败')
-  }
 }
 
 /** 初始化 **/
@@ -1070,23 +1063,15 @@ onMounted(() => {
           border-radius: 4px;
           font-size: 14px;
         }
-
-        .copy-button {
-          padding: 2px;
-          height: 24px;
-          font-size: 16px;
-          color: #909399;
-
-          &:hover {
-            color: #409EFF;
-          }
-
-          .el-icon {
-            margin: 0;
-          }
-        }
       }
     }
   }
+}
+
+// 任务状态标签样式
+.task-tag {
+  font-size: 15px !important;
+  border-radius: 8px !important;
+  padding: 6px 12px !important;
 }
 </style>

@@ -182,7 +182,7 @@
                 <span class="arrow-item">➤</span>
                 <span class="arrow-item">➤</span>
               </div>
-              <el-tag type="danger" class="status-tag" size="large">已生产待发货</el-tag>
+              <el-tag type="process" class="status-tag" size="large">已生产待发货</el-tag>
               <div class="flow-arrow">
                 <span class="arrow-item">➤</span>
                 <span class="arrow-item">➤</span>
@@ -216,24 +216,35 @@
           fixed="left"
         />
         <!--订单编号和状态-->
-        <el-table-column label="订单编号/状态" align="center" min-width="160" fixed="left">
+        <el-table-column label="订单编号/状态/时间" align="center" min-width="160" fixed="left">
           <template #default="{ row }">
             <div class="flex flex-col items-center">
               <div class="font-bold mb-2 flex items-center">
                 {{ row.orderNo }}
-                <!-- <el-button
-                  v-if="row.orderNo"
-                  class="copy-button !ml-1"
-                  type="default"
-                  link
-                  @click.stop="handleCopy(row.orderNo)"
-                >
-                  <el-icon><CopyDocument /></el-icon>
-                </el-button> -->
               </div>
               <el-tag :type="getOrderStatusType(row.orderStatus)" class="status-tag" size="large">
                 {{ getOrderStatusText(row.orderStatus) }}
               </el-tag>
+              <div class="mt-2 text-gray-500 text-sm">
+                {{ row.bookingTime ? dayjs(row.bookingTime).format('YYYY-MM-DD HH:mm:ss') : '' }}
+              </div>
+            </div>
+          </template>
+        </el-table-column>
+        <!--任务完成状态-->
+        <el-table-column label="任务完成状态" align="center" min-width="120" fixed="left">
+          <template #default="{ row }">
+            <div class="flex flex-col items-center">
+              <div class="mb-2">
+                <el-tag :type="row.isCompleteDrawTask ? 'success' : 'warning'" class="task-tag" size="large">
+                  {{ row.isCompleteDrawTask ? '作图完成' : '作图未完成' }}
+                </el-tag>
+              </div>
+              <div>
+                <el-tag :type="row.isCompleteProducerTask ? 'success' : 'warning'" class="task-tag" size="large">
+                  {{ row.isCompleteProducerTask ? '生产完成' : '生产未完成' }}
+                </el-tag>
+              </div>
             </div>
           </template>
         </el-table-column>
@@ -248,6 +259,7 @@
             </div>
           </template>
         </el-table-column>
+        
         <!--产品图片-->
         <el-table-column label="产品图片" align="center" prop="productImgUrl" width="115">
           <template #default="{ row }">
@@ -268,12 +280,12 @@
     <div class="text-left">
       <!-- 修改标题容器 -->
       <div class="product-title mb-2">
-        <span class="font-bold">产品标题：</span>{{ row.productTitle }}
+        <span class="font-bold">标题：</span>{{ row.productTitle }}
       </div>
 
       <!-- 商品属性 -->
       <div class="flex items-start mb-2">
-        <div><span class="font-bold">商品属性:</span></div>
+        <div><span class="font-bold">属性:</span></div>
         <div class="ml-2">{{ row.productProperties || '--' }}</div>
       </div>
     </div>
@@ -423,15 +435,6 @@
             </div>
           </template>
         </el-table-column>
-
-        <el-table-column
-          label="预定单创建时间"
-          align="center"
-          prop="bookingTime"
-          :formatter="dateFormatter"
-          :show-overflow-tooltip="false"
-          width="150px"
-        />
 
         <el-table-column label="操作" fixed="right" align="center" min-width="130px">
           <template #default="{ row }">
@@ -615,6 +618,7 @@ import OrderStatusPopup from '@/views/temu/order/admin/components/OrderStatusPop
 import BatchOrderPopup from '@/views/temu/order/admin/components/BatchOrderPopup.vue'
 import { DICT_TYPE } from '@/utils/dict'
 import { dateFormatter } from '@/utils/formatTime'
+import dayjs from 'dayjs'
 import { OrderApi, OrderVO } from '@/api/temu/order'
 import { TemuCommonApi } from '@/api/temu/common'
 import { getStrDictOptions } from '@/utils/dict'
@@ -651,7 +655,7 @@ const selectedOrder = ref<any>(null)
 // 获取订单状态类型
 const getOrderStatusType = (
   status: number
-): 'success' | 'warning' | 'info' | 'primary' | 'danger' => {
+): 'success' | 'warning' | 'info' | 'primary' | 'danger' | 'process' => {
   switch (status) {
     case 0:
       return 'info' // 待下单 - 浅灰
@@ -660,7 +664,7 @@ const getOrderStatusType = (
     case 2:
       return 'warning' // 已送产待生产 - 浅紫
     case 3:
-      return 'danger' // 已生产待发货 - 浅绿（改为danger类型）
+      return 'process' // 已生产待发货 - 浅绿（改为danger类型）
     case 4:
       return 'success' // 已发货 - 浅青
     default:
@@ -1254,5 +1258,12 @@ onMounted(() => {
 .upload-button-container {
   margin-top: 8px;
   width: 100%;
+}
+
+// 任务状态标签样式
+.task-tag {
+  font-size: 15px !important;
+  border-radius: 8px !important;
+  padding: 6px 12px !important;
 }
 </style>
