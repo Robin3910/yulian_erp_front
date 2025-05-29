@@ -338,7 +338,7 @@
                 <div
                   v-for="(item, index) in row.customImageUrls.split(',')"
                   :key="index"
-                  class="image-item"
+                  class="image-item no-border"
                 >
                   <el-image
                     class="w-60px h-60px"
@@ -350,9 +350,8 @@
                 </div>
               </div>
               <div class="upload-button-container">
-                <el-button size="small" type="primary" @click="openCustomImageUploader(row)">
-                  <el-icon><Upload /></el-icon>
-                  上传定制图片
+                <el-button size="small" type="text" @click="openCustomImageUploader(row)">
+                  编辑
                 </el-button>
               </div>
             </div>
@@ -625,7 +624,7 @@ import { getStrDictOptions } from '@/utils/dict'
 import { ElMessage, ElMessageBox, ElTable } from 'element-plus'
 import { OrderBatchApi } from '@/api/temu/order-batch'
 import OrderRemarkPopup from '@/views/temu/order/admin/components/OrderRemarkPopup.vue'
-import { Upload } from '@element-plus/icons-vue'
+import { Upload, Edit } from '@element-plus/icons-vue'
 import CustomImageUploader from './components/CustomImageUploader.vue'
 
 /** 订单 列表 */
@@ -1249,10 +1248,13 @@ onMounted(() => {
 
 .image-item {
   margin: 4px;
-  border: 1px solid #ebeef5;
   border-radius: 4px;
   overflow: hidden;
   background-color: white;
+}
+
+.image-item.no-border {
+  border: none;
 }
 
 .upload-button-container {

@@ -15,22 +15,11 @@
             class="preview-image"
             :src="image"
             fit="contain"
-            :preview-src-list="imageList"
-            :initial-index="index"
+            :preview-src-list="[]"
             preview-teleported
             @click="showImageViewer(index)"
           />
           <div class="image-actions">
-            <el-tooltip content="预览大图" placement="top" :effect="'light'" :enterable="false">
-              <el-button
-                type="primary"
-                size="default"
-                circle
-                @click="showImageViewer(index)"
-              >
-                <el-icon :size="18"><ZoomIn /></el-icon>
-              </el-button>
-            </el-tooltip>
             <el-tooltip content="替换图片" placement="top" :effect="'light'" :enterable="false">
               <el-button
                 type="warning"
@@ -190,7 +179,7 @@ import { OssApi } from '@/api/temu/oss'
 import { OrderApi } from '@/api/temu/order'
 import type { UploadProps, UploadRequestOptions } from 'element-plus'
 import { 
-  Delete, Upload, Check, Plus, ZoomIn, RefreshRight, 
+  Delete, Upload, Check, Plus, RefreshRight, 
   WarningFilled, Close, ArrowLeft, ArrowRight 
 } from '@element-plus/icons-vue'
 

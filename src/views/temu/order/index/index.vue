@@ -298,15 +298,22 @@
       <!-- 定制图片 -->
       <el-table-column label="定制图片" align="center" prop="customImageUrls" min-width="180">
         <template #default="{ row }">
-          <div class="flex flex-wrap" v-if="row.customImageUrls">
-            <div v-for="(item, index) in row.customImageUrls.split(',')" :key="index" class="ml-2">
-              <el-image
-                class="w-60px h-60px"
-                :hide-on-click-modal="true"
-                :preview-teleported="true"
-                :src="item"
-                :preview-src-list="[item]"
-              />
+          <div class="custom-image-container">
+            <div class="flex flex-wrap justify-center" v-if="row.customImageUrls">
+              <div v-for="(item, index) in row.customImageUrls.split(',')" :key="index" class="image-item no-border">
+                <el-image
+                  class="w-60px h-60px"
+                  :hide-on-click-modal="true"
+                  :preview-teleported="true"
+                  :src="item"
+                  :preview-src-list="[item]"
+                />
+              </div>
+            </div>
+            <div class="upload-button-container">
+              <el-button size="small" type="text" @click="openCustomImageUploader(row)">
+                编辑
+              </el-button>
             </div>
           </div>
         </template>
@@ -534,12 +541,31 @@
   />
   <!-- 新增备注弹窗组件 -->
   <OrderRemarkPopup ref="orderRemarkPopup" @confirm="handlerRemarkConfirm" />
+  
+  <!-- 定制图片上传弹窗 -->
+  <el-dialog 
+    v-model="customImageUploaderVisible" 
+    title="定制图片上传" 
+    width="900px" 
+    top="5vh"
+    center
+    destroy-on-close
+    :close-on-click-modal="false"
+    :fullscreen="false"
+  >
+    <CustomImageUploader 
+      :orderId="selectedOrder?.id" 
+      :customImageUrls="selectedOrder?.customImageUrls || ''"
+      @saved="onCustomImageSaved"
+    />
+  </el-dialog>
 </template>
 
 <script setup lang="ts">
 import OrderStatusPopup from '@/views/temu/order/index/components/OrderStatusPopup.vue'
 import BatchOrderPopup from "@/views/temu/order/admin/components/BatchOrderPopup.vue";
 import OrderRemarkPopup from '@/views/temu/order/index/components/OrderRemarkPopup.vue'
+import CustomImageUploader from '@/views/temu/order/admin/components/CustomImageUploader.vue'
 import { DICT_TYPE } from '@/utils/dict'
 import { dateFormatter, formatDate } from '@/utils/formatTime'
 import { OrderApi, OrderVO } from '@/api/temu/order'
@@ -568,6 +594,10 @@ const orderStatusPopup = useTemplateRef('orderStatusPopup')
 const batchOrderPopupRef = useTemplateRef('batchOrderPopup')
 // 备注引用
 const orderRemarkPopup = useTemplateRef('orderRemarkPopup')
+
+// 定制图片上传相关
+const customImageUploaderVisible = ref(false)
+const selectedOrder = ref<any>(null)
 
 const queryParams = reactive({
   pageNo: 1,
@@ -753,13 +783,35 @@ const getOrderStatusText = (status: number) => {
 const handlerRemark = async (row: OrderVO) => {
   if (orderRemarkPopup.value) {
     orderRemarkPopup.value.setVisible(true)
-    orderRemarkPopup.value.formData.orderId = row.id
+    orderRemarkPopup.value.formData.orderId = String(row.id)
     orderRemarkPopup.value.formData.remark = row.remark
   }
 }
 const handlerRemarkConfirm = async (data: any) => {
   await OrderApi.updateOrderRemark(data)
   ElMessage.success('操作成功')
+  getList()
+}
+
+/**
+ * 打开定制图片上传器
+ */
+const openCustomImageUploader = (row: any) => {
+  selectedOrder.value = row
+  customImageUploaderVisible.value = true
+}
+
+/**
+ * 定制图片保存成功回调
+ */
+const onCustomImageSaved = (customImageUrls: string) => {
+  // 更新当前行的定制图片
+  if (selectedOrder.value) {
+    selectedOrder.value.customImageUrls = customImageUrls
+  }
+  // 关闭弹窗
+  customImageUploaderVisible.value = false
+  // 刷新表格
   getList()
 }
 
@@ -1066,6 +1118,30 @@ onMounted(() => {
       }
     }
   }
+}
+
+// 定制图片列样式
+.custom-image-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.image-item {
+  margin: 4px;
+  border-radius: 4px;
+  overflow: hidden;
+  background-color: white;
+}
+
+.image-item.no-border {
+  border: none;
+}
+
+.upload-button-container {
+  margin-top: 8px;
+  width: 100%;
 }
 
 // 任务状态标签样式
