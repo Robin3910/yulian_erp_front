@@ -431,12 +431,7 @@
                 title="确认取消订单吗？回退到待下单状态"
                 placement="left"
                 popper-class="custom-popconfirm"
-                @confirm="
-                  handleUpdateRowStatus({
-                    id: row.id,
-                    orderStatus: 0
-                  })
-                "
+                @confirm="handleCancelOrder(row)"
               >
                 <template #reference>
                   <el-button size="small" type="info" plain class="action-button mt-2">取消订单</el-button>
@@ -465,12 +460,7 @@
                 title="确认取消订单吗？回退到待下单状态"
                 placement="left"
                 popper-class="custom-popconfirm"
-                @confirm="
-                  handleUpdateRowStatus({
-                    id: row.id,
-                    orderStatus: 0
-                  })
-                "
+                @confirm="handleCancelOrder(row)"
               >
                 <template #reference>
                   <el-button size="small" type="info" plain class="action-button mt-2">取消订单</el-button>
@@ -499,12 +489,7 @@
                 title="确认取消订单吗？回退到待下单状态"
                 placement="left"
                 popper-class="custom-popconfirm"
-                @confirm="
-                  handleUpdateRowStatus({
-                    id: row.id,
-                    orderStatus: 0
-                  })
-                "
+                @confirm="handleCancelOrder(row)"
               >
                 <template #reference>
                   <el-button size="small" type="info" plain class="action-button mt-2">取消订单</el-button>
@@ -821,6 +806,17 @@ onMounted(() => {
   getProductCategoryList()
   getShopList()
 })
+
+const handleCancelOrder = async (row: OrderVO) => {
+  if (row.isCompleteDrawTask || row.isCompleteProducerTask) {
+    ElMessage.warning('当前订单已做图或以生产，无法取消！')
+    return
+  }
+  await handleUpdateRowStatus({
+    id: row.id,
+    orderStatus: 0
+  })
+}
 </script>
 
 <style lang="scss" scoped>
