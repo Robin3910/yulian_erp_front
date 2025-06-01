@@ -298,18 +298,22 @@
       <!-- 定制图片 -->
       <el-table-column label="定制图片" align="center" prop="customImageUrls" min-width="180">
         <template #default="{ row }">
-          <div class="custom-image-container">
-            <div class="flex flex-wrap justify-center" v-if="row.customImageUrls">
-              <div v-for="(item, index) in row.customImageUrls.split(',')" :key="index" class="image-item no-border">
-                <el-image
-                  class="w-60px h-60px"
-                  :hide-on-click-modal="true"
-                  :preview-teleported="true"
-                  :src="item"
-                  :preview-src-list="[item]"
-                />
+            <div class="custom-image-container">
+              <div class="flex flex-wrap justify-center items-center" v-if="row.customImageUrls">
+                <div
+                  v-for="(item, index) in row.customImageUrls.split(',')"
+                  :key="index"
+                  class="image-item no-border flex items-center justify-center"
+                >
+                  <el-image
+                    class="w-60px h-60px object-contain"
+                    :hide-on-click-modal="true"
+                    :preview-teleported="true"
+                    :src="item"
+                    :preview-src-list="[item]"
+                  />
+                </div>
               </div>
-            </div>
             <div class="upload-button-container">
               <el-button size="small" type="text" @click="openCustomImageUploader(row)">
                 编辑
