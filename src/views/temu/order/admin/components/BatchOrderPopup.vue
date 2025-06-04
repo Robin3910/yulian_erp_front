@@ -340,15 +340,15 @@ const filterOrderQuantity = (list: any[]) => {
       }
     }
 
-    if (properties.includes("多色-s") && shopName.includes("shein-LEKUDZ")) {
+    if (properties.includes("多色-s") && shopName.includes("LEKUDZ")) {
       item.quantity = 5 * originalQuantity
       return
     }
-    if (properties.includes("多色-m") && shopName.includes("shein-LEKUDZ")) {
+    if (properties.includes("多色-m") && shopName.includes("LEKUDZ")) {
       item.quantity = 20 * originalQuantity
       return
     }
-    if (properties.includes("多色-l") && shopName.includes("shein-LEKUDZ")) {
+    if (properties.includes("多色-l") && shopName.includes("LEKUDZ")) {
       item.quantity = 40 * originalQuantity
       return
     }
