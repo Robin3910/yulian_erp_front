@@ -239,9 +239,15 @@
                   <span class="label">店铺名称：</span>
                   <span :style="{ color: `${getColor($index)}` }"> {{ row.shopName }}</span>
                 </div>
-                <div class="shop-id">
-                  <span class="label">店铺ID：</span>
-                  <span :style="{ color: `${getColor($index)}` }"> {{ row.shopId }}</span>
+                <div class="count-info">
+                  <div class="package-count" v-if="getPackageCount(row) > 0">
+                    <span class="label">包裹数量</span>
+                    <span class="count" :style="{ color: `${getColor($index)}` }">{{ getPackageCount(row) }}个</span>
+                  </div>
+                  <div class="product-count">
+                    <span class="label">产品总数</span>
+                    <span class="count" :style="{ color: `${getColor($index)}` }">{{ getProductCount(row) }}件</span>
+                  </div>
                 </div>
                 <div class="mt-2 flex justify-center gap-2">
                   <el-tooltip
@@ -425,6 +431,15 @@
           </template>
         </el-table-column>
 
+        <!-- 包裹标签列 -->
+        <el-table-column label="包裹标签" align="center" min-width="120">
+          <template #default="{ row }">
+            <div class="package-tag">
+              {{ getPackageTag(row) }}
+            </div>
+          </template>
+        </el-table-column>
+
         <!-- 合成预览图 -->
         <el-table-column label="合成预览图" prop="effectiveImgUrl" align="center" min-width="110">
           <template #default="{ row }">
@@ -547,6 +562,7 @@ interface OrderItem {
   salePrice: number
   customSku: string
   quantity: number
+  originalQuantity: number
   productProperties: string
   shopId: number
   customImageUrls: string
@@ -632,8 +648,12 @@ const preloadImages = (urls: string[]) => {
   })
 }
 
+// 修改包裹标签相关的逻辑
+const packageTagMap = new Map<string, string>()
+
 /** 查询列表 */
 const getList = async () => {
+  packageTagMap.clear() // 清空包裹标签映射
   loading.value = true
   try {
     const data = await OrderApi.getShippingOrderPage({
@@ -1865,6 +1885,35 @@ const handlerPrintPickList = () => {
     `
   })
 }
+
+// 添加获取包裹数量的函数
+const getPackageCount = (row: ExtendedOrderVO) => {
+  // 获取同一订单号下的所有订单
+  const sameOrderItems = list.value.filter(item => item.orderNo === row.orderNo)
+  // 使用Set来统计不同的包裹组合
+  const uniquePackages = new Set(
+    sameOrderItems.map(item => `${item.skc}_${item.sku}`)
+  )
+  return uniquePackages.size
+}
+
+// 添加获取产品数量的函数
+const getProductCount = (row: ExtendedOrderVO) => {
+  // 获取同一订单号下的所有订单
+  const sameOrderItems = list.value.filter(item => item.orderNo === row.orderNo)
+  // 累加所有订单的官网数量
+  return sameOrderItems.reduce((sum, item) => sum + (item.originalQuantity || 0), 0)
+}
+
+// 获取包裹标签
+const getPackageTag = (row: ExtendedOrderVO) => {
+  const key = `${row.orderNo}_${row.skc}_${row.sku}`
+  if (!packageTagMap.has(key)) {
+    const tag = String.fromCharCode(65 + packageTagMap.size % 26) // A, B, C...
+    packageTagMap.set(key, tag)
+  }
+  return packageTagMap.get(key)
+}
 </script>
 <style lang="scss">
 $predefined-colors: (
@@ -2648,6 +2697,88 @@ $predefined-colors: (
 
     &:first-child {
       font-weight: bold;
+    }
+  }
+}
+
+// 修改包裹标签样式
+.package-tag {
+  display: inline-block;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-weight: bold;
+  font-size: 18px;
+  min-width: 32px;
+  text-align: center;
+  color: #fff;
+  background-color: #409EFF;
+  border: 2px solid #409EFF;
+  box-shadow: 0 2px 4px rgba(64, 158, 255, 0.2);
+  transition: all 0.3s ease;
+  margin: 4px 0;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(64, 158, 255, 0.3);
+  }
+}
+
+// 添加包裹数量样式
+.package-count {
+  font-size: 14px;
+  color: var(--el-text-color-regular);
+  margin-top: 4px;
+  line-height: 1.4;
+
+  .label {
+    color: var(--el-text-color-secondary);
+    margin-right: 4px;
+  }
+}
+
+// 添加产品数量样式
+.product-count {
+  font-size: 14px;
+  color: var(--el-text-color-regular);
+  margin-top: 4px;
+  line-height: 1.4;
+
+  .label {
+    color: var(--el-text-color-secondary);
+    margin-right: 4px;
+  }
+}
+
+// 修改数量信息样式
+.count-info {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 12px;
+  padding: 8px;
+  background-color: var(--el-fill-color-light);
+  border-radius: 6px;
+
+  .package-count,
+  .product-count {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    min-width: 80px;
+
+    .label {
+      font-size: 13px;
+      color: var(--el-text-color-secondary);
+      text-align: center;
+    }
+
+    .count {
+      font-size: 20px;
+      font-weight: bold;
+      line-height: 1.2;
+      text-align: center;
     }
   }
 }
