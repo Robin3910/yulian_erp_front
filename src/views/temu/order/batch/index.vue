@@ -255,7 +255,6 @@
                     <div>
                       <div class="font-bold">订单号：{{ row.orderNo }}</div>
                       <div class="text-gray-500 mt-1">店铺名称：{{ row.shopName }}</div>
-                      <div class="text-gray-500">店铺ID：{{ row.shopId }}</div>
                     </div>
                     <div class="mt-2 flex gap-2">
                       <el-tooltip
@@ -469,10 +468,6 @@
                     <div>
                       <div>官网数量：{{ row.originalQuantity || '--' }}</div>
                       <div>制作数量：{{ row.quantity || '--' }}</div>
-                      <div>单价：{{ row.unitPrice ? '￥' + row.unitPrice.toFixed(6) : '--' }}</div>
-                      <div
-                        >总价：{{ row.totalPrice ? '￥' + row.totalPrice.toFixed(2) : '--' }}
-                      </div>
                     </div>
                   </div>
                 </template>
