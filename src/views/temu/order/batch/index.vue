@@ -344,34 +344,30 @@
                   </div>
                 </template>
               </el-table-column>
-              <!-- 产品图片 -->
-              <el-table-column label="产品图片" align="center" prop="productImgUrl" width="120">
-                <template #default="{ row }">
-                  <div class="text-left">
-                    <el-image
-                      class="w-80px h-80px"
-                      :hide-on-click-modal="true"
-                      :preview-teleported="true"
-                      :src="row.productImgUrl"
-                      :preview-src-list="[row.productImgUrl]"
-                      lazy
-                      :initial-index="0"
-                      fit="cover"
-                      loading="lazy"
-                    />
-                  </div>
-                </template>
-              </el-table-column>
               <!-- 商品信息 -->
               <el-table-column label="商品信息" align="center" prop="productImgUrl" min-width="240">
                 <template #default="{ row }">
-                  <div class="text-left">
-                    <div class="truncate mb-2 font-bold">产品标题：{{ row.productTitle }}</div>
-
-                    <!-- 商品属性 -->
-                    <div class="flex items-start mb-2">
-                      <div>商品属性:</div>
-                      <div class="ml-2">{{ row.productProperties || '--' }}</div>
+                  <div class="text-left flex items-start gap-4">
+                    <div class="flex-shrink-0">
+                      <el-image
+                        class="w-80px h-80px"
+                        :hide-on-click-modal="true"
+                        :preview-teleported="true"
+                        :src="row.productImgUrl"
+                        :preview-src-list="[row.productImgUrl]"
+                        lazy
+                        :initial-index="0"
+                        fit="cover"
+                        loading="lazy"
+                      />
+                    </div>
+                    <div class="flex-1">
+                      <div class="truncate mb-2 font-bold">标题：{{ row.productTitle }}</div>
+                      <!-- 商品属性 -->
+                      <div class="flex items-start mb-2">
+                        <div>属性:</div>
+                        <div class="ml-2">{{ row.productProperties || '--' }}</div>
+                      </div>
                     </div>
                   </div>
                 </template>
@@ -504,64 +500,74 @@
                 </template>
               </el-table-column>
 
-              <el-table-column label="订单状态" align="center" prop="orderStatus" min-width="150">
+              <el-table-column label="作图状态" align="center" min-width="120">
                 <template #default="{ row }">
                   <div class="flex flex-col gap-2">
                     <el-tag
-                      :type="getOrderStatusType(row.orderStatus)"
+                      :type="row.isCompleteDrawTask === 1 ? 'success' : 'info'"
                       class="status-tag"
                       size="large"
                     >
-                      {{ getOrderStatusText(row.orderStatus) }}
+                      {{ row.isCompleteDrawTask === 1 ? '作图完成' : '作图待完成' }}
                     </el-tag>
-                    <div class="task-status">
-                      <el-tag type="primary" class="mr-2">
-                        作图任务:{{ row.isCompleteDrawTask === 1 ? '✅' : '❌' }}
-                      </el-tag>
-                      <el-tag type="success">
-                        生产任务:{{ row.isCompleteProducerTask === 1 ? '✅' : '❌' }}
-                      </el-tag>
-                    </div>
-                    <div class="task-actions">
+                    <div class="task-actions" v-if="row.isCompleteDrawTask === 0">
                       <el-button
-                        v-if="row.isCompleteDrawTask===0"
                         type="primary"
-                        @click="handlerCompleteOrderTask(scope.row, row,1)"
+                        @click="handlerCompleteOrderTask(scope.row, row, 1)"
                         class="print-action-button"
                         plain
                         size="small"
                       >
-                        完成作图任务
+                        标记作图完成
                       </el-button>
+                    </div>
+                  </div>
+                </template>
+              </el-table-column>
+              <el-table-column label="生产状态" align="center" min-width="120">
+                <template #default="{ row }">
+                  <div class="flex flex-col gap-2">
+                    <el-tag
+                      :type="row.isCompleteProducerTask === 1 ? 'success' : 'info'"
+                      class="status-tag"
+                      size="large"
+                    >
+                      {{ row.isCompleteProducerTask === 1 ? '生产完成' : '生产待完成' }}
+                    </el-tag>
+                    <div class="task-actions" v-if="row.isCompleteProducerTask === 0">
                       <el-button
-                        v-if="row.isCompleteProducerTask===0"
                         type="success"
-                        @click="handlerCompleteOrderTask(scope.row, row,2)"
+                        @click="handlerCompleteOrderTask(scope.row, row, 2)"
                         class="print-action-button"
                         plain
                         size="small"
                       >
-                        完成生产任务
+                        标记生产完成
                       </el-button>
                     </div>
                   </div>
                 </template>
               </el-table-column>
 
-              <el-table-column
-                label="预定单创建时间"
-                align="center"
-                prop="bookingTime"
-                :formatter="dateFormatter"
-                :show-overflow-tooltip="false"
-                width="150px"
-              >
+              <el-table-column label="订单状态/时间" align="center" min-width="200">
                 <template #default="{ row }">
-                  <div :class="['booking-time', getTimeClass(row.bookingTime)]">
-                    {{ dayjs(row.bookingTime).format('YYYY-MM-DD HH:mm') }}
+                  <div class="flex flex-col items-center gap-2">
+                    <div class="w-[90px]">
+                      <el-tag
+                        :type="getOrderStatusType(row.orderStatus)"
+                        class="status-tag"
+                        size="large"
+                      >
+                        {{ getOrderStatusText(row.orderStatus) }}
+                      </el-tag>
+                    </div>
+                    <div :class="['booking-time', getTimeClass(row.bookingTime)]">
+                      {{ dayjs(row.bookingTime).format('YYYY-MM-DD HH:mm:ss') }}
+                    </div>
                   </div>
                 </template>
               </el-table-column>
+
               <!--  备注-->
               <el-table-column
                 label="备注"
@@ -1051,7 +1057,7 @@ const handleCopy = async (text: string) => {
 // 获取订单状态类型
 const getOrderStatusType = (
   status: number
-): 'success' | 'warning' | 'info' | 'primary' | 'danger' => {
+): 'success' | 'warning' | 'info' | 'primary' | 'danger' | 'process' => {
   switch (status) {
     case 0:
       return 'info' // 待下单 - 浅灰
@@ -1060,7 +1066,7 @@ const getOrderStatusType = (
     case 2:
       return 'warning' // 已送产待生产 - 浅紫
     case 3:
-      return 'primary' // 已生产待发货 - 浅绿
+      return 'process' // 已生产待发货 - 浅绿
     case 4:
       return 'success' // 已发货 - 浅青
     default:
@@ -2049,7 +2055,6 @@ const handleImagePreview = (url: string) => {
   border-radius: 4px;
   font-weight: 500;
   position: relative;
-  transition: all 0.3s ease;
   min-width: 90px;
 
   // 待下单状态
@@ -2057,23 +2062,13 @@ const handleImagePreview = (url: string) => {
     background: #c3c5c7;
     border: 1px solid #c3c5c7;
     color: white;
-
-    &:hover {
-      background: #a4a6a8;
-      color: #f0f4f8;
-    }
   }
 
-  // 已下单待送产状态和已生产待发货状态
+  // 已下单待送产状态
   &.el-tag--primary {
-    background: #5da2e7;
-    border: 1px solid #75bdec;
-    color: #fff;
-
-    &:hover {
-      background: #409eff;
-      color: #dcfce7;
-    }
+    background: #e0f2fe;
+    border: 1px solid #e0f2fe;
+    color: #082f49;
 
     &::before {
       content: '';
@@ -2081,7 +2076,7 @@ const handleImagePreview = (url: string) => {
       width: 8px;
       height: 8px;
       border-radius: 50%;
-      background-color: #f4f7f5;
+      background-color: #0ea5e9;
       margin-right: 8px;
       animation: pulse 1s infinite;
     }
@@ -2092,11 +2087,6 @@ const handleImagePreview = (url: string) => {
     background: #e0e7ff;
     border: 1px solid #e0e7ff;
     color: #1e1b4b;
-
-    &:hover {
-      background: #6366f1;
-      color: #e0e7ff;
-    }
 
     &::before {
       content: '';
@@ -2110,16 +2100,29 @@ const handleImagePreview = (url: string) => {
     }
   }
 
+  // 已生产待发货状态
+  &.el-tag--process {
+    background: #5da2e7;
+    border: 1px solid #75bdec;
+    color: #fff;
+
+    &::before {
+      content: '';
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: #f4f7f5;
+      margin-right: 8px;
+      animation: pulse 1s infinite;
+    }
+  }
+
   // 已发货状态
   &.el-tag--success {
     background: #75c945;
     border: 1px solid #73d13d;
     color: #fff;
-
-    &:hover {
-      background: #73d13d;
-      color: #fff;
-    }
 
     &::before {
       content: '✓';
@@ -2127,12 +2130,32 @@ const handleImagePreview = (url: string) => {
       font-weight: bold;
     }
   }
+}
 
-  &:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+@keyframes pulse {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(1.2);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
   }
 }
+
+// ... existing code ...
+
+.print-action-button {
+  min-width: 80px !important;
+  height: 26px;
+  font-size: 12px;
+  padding: 0 8px;
+}
+// ... existing code ...
 
 @keyframes pulse {
   0% {
@@ -2594,7 +2617,6 @@ const handleImagePreview = (url: string) => {
   padding: 4px 8px;
   border-radius: 4px;
   font-weight: 500;
-  transition: all 0.3s ease;
   position: relative;
   overflow: hidden;
 
@@ -2611,16 +2633,9 @@ const handleImagePreview = (url: string) => {
     background-color: #e6f7ff;
     color: #0050b3;
     border: 1px solid #91d5ff;
-    box-shadow: 0 2px 4px rgba(24, 144, 255, 0.1);
 
     &::before {
       background-color: #1890ff;
-    }
-
-    &:hover {
-      background-color: #bae7ff;
-      transform: translateY(-1px);
-      box-shadow: 0 4px 8px rgba(24, 144, 255, 0.2);
     }
   }
 
@@ -2628,16 +2643,9 @@ const handleImagePreview = (url: string) => {
     background-color: #fff1f0;
     color: #cf1322;
     border: 1px solid #ffa39e;
-    box-shadow: 0 2px 4px rgba(255, 77, 79, 0.1);
 
     &::before {
       background-color: #ff4d4f;
-    }
-
-    &:hover {
-      background-color: #ffccc7;
-      transform: translateY(-1px);
-      box-shadow: 0 4px 8px rgba(255, 77, 79, 0.2);
     }
   }
 }
