@@ -34,10 +34,10 @@
             <span class="value" style="font-weight: bold; color: #67C23A; font-size: 23px;">{{ getTotalProductCount() }}件</span>
           </div>
           <div class="info-item">
-            <el-button type="primary" plain @click="handlePrint(formData.orders[0].expressOutsideImageUrl)">
+            <el-button  plain @click="handlePrint(formData.orders[0].expressOutsideImageUrl)">
               打印加急单
             </el-button>
-            <el-button type="success" plain @click="handlePrint(formData.orders[0].expressImageUrl)">
+            <el-button  plain @click="handlePrint(formData.orders[0].expressImageUrl)">
               打印物流面单
             </el-button>
           </div>
@@ -140,7 +140,7 @@
                 <!-- 打印按钮组 -->
                 <div class="print-buttons">
                   
-                  <el-button type="warning" plain @click="handlePrint(order.complianceGoodsMergedUrl)">
+                  <el-button plain @click="handlePrint(order.complianceGoodsMergedUrl)">
                     <el-icon><Printer /></el-icon>
                     打印条码+合规单
                   </el-button>
@@ -170,10 +170,15 @@
                     />
                   </div>
                   <el-image
+                    :hide-on-click-modal="true"
+                    :preview-teleported="true"
                     :src="order.effectiveImgUrl"
                     :preview-src-list="[order.effectiveImgUrl]"
-                    fit="cover"
                     style="width: 300px; height: 300px"
+                    fit="cover"
+                    loading="lazy"
+                    :initial-index="0"
+                    :preview="false"
                   />
                 </div>
 
