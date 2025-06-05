@@ -180,6 +180,30 @@
                 </div>
                 <el-tooltip
                   effect="dark"
+                  content="进入专注模式"
+                  placement="top"
+                  popper-class="custom-tooltip"
+                  :show-after="100"
+                  :hide-after="200"
+                  :enterable="false"
+                  :offset="20"
+                >
+                  <el-button
+                    size="small"
+                    type="primary"
+                    plain
+                    class="action-button urgent-print-button"
+                    @click.stop="handleFocus(row)"
+                  >
+                    <el-icon>
+                      <Aim />
+                    </el-icon>
+                    产看详情
+                  </el-button>
+                </el-tooltip>
+
+                <el-tooltip
+                  effect="dark"
                   content="当前加急面单尚未上传，请联系相关人员及时上传！"
                   placement="top"
                   :disabled="!!row.expressOutsideImageUrl"
@@ -532,6 +556,9 @@
         @pagination="getList"
       />
     </ContentWrap>
+
+    <ShippingInfoPopup @confirm="handlerRemarkConfirm" ref="shippingInfoPopup" />
+
   </div>
 </template>
 
@@ -539,12 +566,15 @@
 import { ref, reactive, onMounted, onUnmounted, nextTick } from 'vue'
 import { OrderApi, OrderVO } from '@/api/temu/order'
 import { TemuCommonApi } from '@/api/temu/common'
-import { ElMessage, ElMessageBox, ElNotification } from 'element-plus'
-import { Printer, Van } from '@element-plus/icons-vue'
+import { ElMessage, ElMessageBox, ElNotification, ElTable } from 'element-plus'
+import { Aim, Printer, Van } from '@element-plus/icons-vue'
 import { formatDate } from '@/utils/formatTime'
 import { COLOR_ARRAYS } from '@/utils/color'
 import printJS from 'print-js'
 import { PDFDocument } from 'pdf-lib'
+import ShippingInfoPopup from './components/ShippingInfoPopup.vue'
+// const tableRef = useTemplateRef<InstanceType<typeof ElTable>>('tableRef')
+const shippingInfoPopup = useTemplateRef('shippingInfoPopup')
 
 declare global {
   interface Window {
@@ -574,6 +604,11 @@ interface OrderItem {
   complianceUrl: string | null
   complianceImageUrl: string | null
   complianceGoodsMergedUrl: string | null
+  isCompleteDrawTask: number,
+  isCompleteProducerTask: number,
+  packageCount: number,
+  productCount: number,
+  packageTag: string | undefined,
 }
 
 interface OrderNoGroup {
@@ -648,6 +683,37 @@ const preloadImages = (urls: string[]) => {
   })
 }
 
+const handlerRemarkConfirm = (data: any) => {
+  // 处理备注确认逻辑
+  console.log('备注确认:', data)
+}
+
+const handleFocus = async (row: any) => {
+  // 获取同一物流单号下的所有订单信息
+  const sameTrackingOrders = list.value.filter(item => item.trackingNumber === row.trackingNumber)
+  // 设置包裹数量和产品总数
+  const packageCount = getPackageCount(row)
+  const productCount = getProductCount(row)
+  
+  // 设置包裹标签
+  const packageTag = getPackageTag(row)
+  
+  // 更新订单信息
+  sameTrackingOrders.forEach(order => {
+    order.packageCount = packageCount
+    order.productCount = productCount
+    order.packageTag = packageTag
+  })
+  
+  if (shippingInfoPopup.value) {
+    shippingInfoPopup.value.setVisible(true)
+    shippingInfoPopup.value.formData.orderId = String(row.id)
+    shippingInfoPopup.value.formData.remark = row.remark
+    // 传递该物流单号下的所有订单信息
+    shippingInfoPopup.value.formData.orders = sameTrackingOrders
+  }
+}
+
 // 修改包裹标签相关的逻辑
 const packageTagMap = new Map<string, string>()
 
@@ -675,9 +741,9 @@ const getList = async () => {
     }
 
     // 收集所有需要预加载的图片URL
-    const imageUrls: string[] = []
+    const imageUrls: string[] = [];
 
-    ;(data.list as ShippingOrder[]).forEach((shippingOrder, shippingIndex) => {
+    (data.list as ShippingOrder[]).forEach((shippingOrder, shippingIndex) => {
       if (shippingOrder.orderNoList && shippingOrder.orderNoList.length > 0) {
         let totalItemsInTracking = 0
         let hasValidOrders = false
@@ -708,6 +774,7 @@ const getList = async () => {
             salePrice: 0,
             customSku: '',
             quantity: 0,
+            originalQuantity: 0,
             productProperties: '',
             customImageUrls: '',
             customTextList: null,
@@ -961,7 +1028,7 @@ const getOrderStatusType = (status: number): 'success' | 'warning' | 'info' | 'p
     case 2:
       return 'warning'  // 已送产待生产 - 浅紫
     case 3:
-      return 'process'  // 已生产待发货 - 浅绿，改为primary
+      return 'primary'  // 已生产待发货 - 浅绿，改为primary
     case 4:
       return 'success'  // 已发货 - 浅青
     default:
@@ -1173,7 +1240,7 @@ const handlerPrintBatchMerged = async () => {
           <div style="margin-bottom: 16px;">
             <div style="color: #606266; font-weight: bold; margin-bottom: 8px;">${shopName}</div>
             <div style="padding-left: 16px;">
-              ${Array.from(skcs)
+              ${Array.from(skcs as any)
                 .map(
                   (skc) => `
                 <div style="color: #409EFF; margin-bottom: 4px;">
