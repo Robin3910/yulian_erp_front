@@ -94,6 +94,15 @@
       <div class="mb-10px flex justify-between">
         <div class="flex gap-2">
           <el-button
+            type="success"
+            @click="handlerPrintBatchAll"
+            plain
+            :disabled="selectedStats.total === 0"
+          >
+            <Icon icon="ep:printer" class="mr-5px" />
+            打印全部
+          </el-button>
+          <el-button
             type="danger"
             @click="handlerPrintBatchUrgent"
             plain
@@ -2086,7 +2095,7 @@ const isProductionComplete = (row: ExtendedOrderVO) => {
   const sameTrackingOrders = list.value.filter(
     (item) => item.trackingNumber === row.trackingNumber
   )
-  
+
   // 检查是否所有订单都已生产完成 (isCompleteProducerTask为1表示已完成)
   if (sameTrackingOrders.length === 0) return false
   
@@ -2094,6 +2103,204 @@ const isProductionComplete = (row: ExtendedOrderVO) => {
   return sameTrackingOrders.every((order) => {
     return order && typeof order === 'object' && 'isCompleteProducerTask' in order && order.isCompleteProducerTask === 1
   })
+}
+
+/** 批量打印加急面单、面单和条码+合规单 */
+const handlerPrintBatchAll = async () => {
+  if (!selectedRows.value || selectedRows.value.length === 0) {
+    ElMessage.warning('请先选择要打印的订单')
+    return
+  }
+
+  try {
+    // 按照页面显示顺序获取所有选中的订单
+    const allOrders: ExtendedOrderVO[] = []
+    list.value.forEach(row => {
+      // 如果当前行被选中，获取该物流单号下的所有订单
+      if (selectedRows.value.some(selected => selected.uniqueId === row.uniqueId)) {
+        const sameTrackingOrders = list.value.filter(item =>
+          item.trackingNumber === row.trackingNumber
+        )
+        // 确保不重复添加同一物流单号的订单
+        if (!allOrders.some(order => order.trackingNumber === row.trackingNumber)) {
+          allOrders.push(...sameTrackingOrders)
+        }
+      }
+    })
+
+    // 检查是否有订单缺少必要的文件
+    const ordersWithoutFiles = allOrders.filter(
+      (order) => !order.expressOutsideImageUrl || !order.expressImageUrl || !order.complianceGoodsMergedUrl
+    )
+    if (ordersWithoutFiles.length > 0) {
+      // 按店铺分组并去重SKC
+      const groupedByShop = ordersWithoutFiles.reduce((acc, order) => {
+        const shopName = order.shopName || '未知店铺'
+        if (!acc[shopName]) {
+          acc[shopName] = new Set()
+        }
+        if (order.skc) {
+          acc[shopName].add(order.skc)
+        }
+        return acc
+      }, {} as Record<string, Set<string>>)
+
+      const missingInfo = Object.entries(groupedByShop)
+        .map(
+          ([shopName, skcs]) => `
+          <div style="margin-bottom: 16px;">
+            <div style="color: #606266; font-weight: bold; margin-bottom: 8px;">${shopName}</div>
+            <div style="padding-left: 16px;">
+              ${Array.from(skcs)
+            .map(
+              (skc) => `
+                <div style="color: #409EFF; margin-bottom: 4px;">
+                  ${skc}
+                </div>
+              `
+            )
+            .join('')}
+            </div>
+          </div>
+        `
+        )
+        .join('')
+
+      ElNotification({
+        title: '无法批量打印',
+        message: `
+          <div style="margin-bottom: 10px; color: #303133;">以下SKC缺少必要的打印文件，请联系相关人员及时补充：</div>
+          <div style="max-height: 300px; overflow-y: auto; padding-right: 10px;">${missingInfo}</div>
+        `,
+        type: 'warning',
+        duration: 0,
+        dangerouslyUseHTMLString: true,
+        offset: 60
+      })
+      return
+    }
+
+    // 创建一个新的PDF文档
+    const mergedPdf = await PDFDocument.create()
+    let successCount = 0
+    let failCount = 0
+
+    // 按物流单号分组订单，但保持页面显示顺序
+    const ordersByTracking = new Map<string, ExtendedOrderVO[]>()
+    allOrders.forEach(order => {
+      if (!ordersByTracking.has(order.trackingNumber)) {
+        ordersByTracking.set(order.trackingNumber, [])
+      }
+      ordersByTracking.get(order.trackingNumber)?.push(order)
+    })
+
+    // 按照页面显示顺序处理每个物流单号
+    for (const [trackingNumber, orders] of ordersByTracking) {
+      try {
+        // 1. 首先添加加急面单（每个物流单号只需要一次）
+        const urgentUrl = orders[0].expressOutsideImageUrl
+        if (urgentUrl) {
+          const printUrl = urgentUrl.startsWith('@') ? urgentUrl.substring(1) : urgentUrl
+          const response = await fetch(printUrl)
+          if (response.ok) {
+            const pdfBytes = await response.arrayBuffer()
+            const pdf = await PDFDocument.load(pdfBytes)
+            const copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices())
+            copiedPages.forEach(page => mergedPdf.addPage(page))
+          }
+        }
+
+        // 2. 按订单编号分组
+        const ordersByOrderNo = new Map<string, ExtendedOrderVO[]>()
+        orders.forEach(order => {
+          if (!ordersByOrderNo.has(order.orderNo)) {
+            ordersByOrderNo.set(order.orderNo, [])
+          }
+          ordersByOrderNo.get(order.orderNo)?.push(order)
+        })
+
+        // 3. 处理每个订单编号
+        for (const [orderNo, sameOrderItems] of ordersByOrderNo) {
+          // 3.1 首先打印该订单编号的面单（只打印一次）
+          const firstOrder = sameOrderItems[0]
+          if (firstOrder.expressImageUrl) {
+            const printUrl = firstOrder.expressImageUrl.startsWith('@')
+              ? firstOrder.expressImageUrl.substring(1)
+              : firstOrder.expressImageUrl
+            const response = await fetch(printUrl)
+            if (response.ok) {
+              const pdfBytes = await response.arrayBuffer()
+              const pdf = await PDFDocument.load(pdfBytes)
+              const copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices())
+              copiedPages.forEach(page => mergedPdf.addPage(page))
+            }
+          }
+
+          // 3.2 然后打印该订单编号下每个订单项的条码+合规单
+          for (const orderItem of sameOrderItems) {
+            if (orderItem.complianceGoodsMergedUrl) {
+              const url = orderItem.complianceGoodsMergedUrl.startsWith('@')
+                ? orderItem.complianceGoodsMergedUrl.substring(1)
+                : orderItem.complianceGoodsMergedUrl
+              const response = await fetch(url)
+              if (response.ok) {
+                const pdfBytes = await response.arrayBuffer()
+                const pdf = await PDFDocument.load(pdfBytes)
+                const copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices())
+                const copies = orderItem.originalQuantity || 1
+                for (let i = 0; i < copies; i++) {
+                  copiedPages.forEach(page => mergedPdf.addPage(page))
+                }
+              }
+            }
+          }
+        }
+
+        // 4. 添加空白页作为分隔（如果不是最后一个物流单号）
+        if ([...ordersByTracking.keys()].indexOf(trackingNumber) < ordersByTracking.size - 1) {
+          const blankPage = mergedPdf.addPage()
+        }
+
+        successCount++
+      } catch (error) {
+        console.error(`处理物流单号 ${trackingNumber} 失败:`, error)
+        failCount++
+      }
+    }
+
+    if (mergedPdf.getPageCount() === 0) {
+      ElMessage.error('没有可打印的文件')
+      return
+    }
+
+    // 保存合并后的PDF
+    const mergedPdfBytes = await mergedPdf.save()
+    const mergedPdfBlob = new Blob([mergedPdfBytes], { type: 'application/pdf' })
+    const mergedPdfUrl = URL.createObjectURL(mergedPdfBlob)
+
+    // 使用print-js打印PDF
+    printJS({
+      printable: mergedPdfUrl,
+      type: 'pdf',
+      showModal: true,
+      onLoadingEnd: () => {
+        // 清理资源
+        URL.revokeObjectURL(mergedPdfUrl)
+      }
+    })
+
+    // 显示处理结果
+    if (failCount > 0) {
+      ElMessage.warning(`成功处理${successCount}个物流单号，${failCount}个物流单号处理失败`)
+    } else {
+      ElMessage.success(`成功处理${successCount}个物流单号`)
+    }
+  } catch (error) {
+    console.error('批量打印失败:', error)
+    ElMessage.error(
+      '批量打印失败：' + (error instanceof Error ? error.message : '未知错误')
+    )
+  }
 }
 </script>
 <style lang="scss">
