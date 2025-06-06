@@ -170,6 +170,14 @@
           <template #default="{ row, $index }">
             <template v-if="spanArr.trackingSpans[$index] !== 0">
               <div class="tracking-number-cell">
+                <!-- 添加"货已备齐"状态标签 -->
+                <el-tag
+                  :type="isProductionComplete(row) ? 'success' : 'warning'"
+                  class="stock-status-tag"
+                  size="small"
+                >
+                  {{ isProductionComplete(row) ? '货已备齐' : '货未备齐' }}
+                </el-tag>
                 <div class="tracking-number-wrapper">
                   <span class="tracking-number" :style="{ color: `${getColor($index)}` }">{{
                     (row as any).trackingNumber || '-'
@@ -1820,6 +1828,22 @@ const handlerPrintBatchExpress = async () => {
     )
   }
 }
+
+// 添加判断是否生产完成的方法
+const isProductionComplete = (row: ExtendedOrderVO) => {
+  // 获取同一物流单号下的所有订单
+  const sameTrackingOrders = list.value.filter(
+    (item) => item.trackingNumber === row.trackingNumber
+  )
+  
+  // 检查是否所有订单都已生产完成 (isCompleteProducerTask为1表示已完成)
+  if (sameTrackingOrders.length === 0) return false
+  
+  // 使用可选链和类型守卫检查isCompleteProducerTask属性
+  return sameTrackingOrders.every((order) => {
+    return order && typeof order === 'object' && 'isCompleteProducerTask' in order && order.isCompleteProducerTask === 1
+  })
+}
 </script>
 <style lang="scss">
 $predefined-colors: (
@@ -2570,6 +2594,32 @@ $predefined-colors: (
     &:first-child {
       font-weight: bold;
     }
+  }
+}
+
+// "货已备齐"状态标签
+.stock-status-tag {
+  font-size: 14px;
+  padding: 8px 16px;
+  border-radius: 4px;
+  margin-bottom: 8px;
+  width: 110px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 500;
+
+  &.el-tag--success {
+    background-color: #67c23a;
+    border-color: #67c23a;
+    color: #fff;
+  }
+
+  &.el-tag--warning {
+    background-color: #e6a23c;
+    border-color: #e6a23c;
+    color: #fff;
   }
 }
 </style>
