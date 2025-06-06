@@ -379,8 +379,24 @@ const filterOrderQuantity = (list: any[]) => {
     }
 
     // 针对BLDDZ店铺的特殊处理逻辑
-    if (shopName.includes("BLDDZ") && properties.match(/style\s*\d+/i)) {
+    if (shopName.includes("BLDDZ")) {
+      // 匹配形如"3.15inch/24set"的格式
+      const inchSetMatch = properties.match(/\d+\.\d+inch\/(\d+)set/i);
+      if (inchSetMatch) {
+        const propertyQuantity = parseInt(inchSetMatch[1], 10);
+        item.quantity = propertyQuantity * originalQuantity;
+        return;
+      }
       // 当BLDDZ店铺的属性描述为"style 数字"格式时，使用官网数量
+      if (properties.match(/style\s*\d+/i)) {
+        item.quantity = originalQuantity;
+        return;
+      }
+    }
+
+    // 针对HZLZDZ店铺的特殊处理逻辑
+    if (shopName.includes("HZLZDZ") && properties.match(/style\s*\d+/i)) {
+      // 当HZLZDZ店铺的属性描述为"style 数字"格式时，使用官网数量
       item.quantity = originalQuantity;
       return;
     }
