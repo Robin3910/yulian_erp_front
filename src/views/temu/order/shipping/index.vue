@@ -504,8 +504,8 @@
         <el-table-column label="发货订单创建时间" prop="createTime" align="center" min-width="140">
           <template #default="{ row }">
             <div class="create-time" v-if="row.createTime">
-              <div class="date">{{ formatDate(row.createTime, 'YYYY-MM-DD') }}</div>
-              <div class="time">{{ formatDate(row.createTime, 'HH:mm:ss') }}</div>
+              <div class="date">{{ formatDateSafe(row.createTime, 'YYYY-MM-DD') }}</div>
+              <div class="time">{{ formatDateSafe(row.createTime, 'HH:mm:ss') }}</div>
             </div>
             <span v-else>-</span>
           </template>
@@ -611,21 +611,28 @@ interface OrderItem {
   quantity: number
   originalQuantity: number
   productProperties: string
-  shopId: number
-  customImageUrls: string
   customTextList: string | null
-  productImgUrl: string
-  categoryId: string
-  effectiveImgUrl: string
-  oldTypeUrl: string | null
-  complianceUrl: string | null
+  expressImageUrl: string | null
+  expressOutsideImageUrl: string | null
   complianceImageUrl: string | null
   complianceGoodsMergedUrl: string | null
-  isCompleteDrawTask: number,
-  isCompleteProducerTask: number,
-  packageCount: number,
-  productCount: number,
-  packageTag: string | undefined,
+  shopName: string | null
+  trackingNumber: string
+  createTime: number | null
+  updateTime: number | null
+  isCompleteDrawTask: number | null
+  isCompleteProducerTask: number | null
+  packageCount: number | null
+  productCount: number | null
+  packageTag: string | null
+  uniqueId: string
+  productImgUrl: string | null
+  customImageUrls: string | null
+  effectiveImgUrl: string | null
+  shopId: number | null
+  categoryId: string | null
+  oldTypeUrl: string | null
+  complianceUrl: string | null
 }
 
 interface OrderNoGroup {
@@ -651,7 +658,7 @@ interface ShippingOrder {
   complianceGoodsMergedUrl: string | null
 }
 
-type ExtendedOrderVO = Omit<ShippingOrder, 'orderNoList'> & OrderItem & { uniqueId: string }
+type ExtendedOrderVO = OrderItem
 
 /** 订单 列表 */
 defineOptions({ name: 'TemuOrderIndex' })
@@ -1852,7 +1859,7 @@ const handlerPrintPickList = () => {
             <td style="vertical-align: top;">
               <div style="margin-bottom: 4px;"><strong>SKC：</strong>${item.skc || '--'}</div>
               <div style="margin-bottom: 4px;"><strong>SKU：</strong>${item.sku || '--'}</div>
-              <div><strong>创建时间：</strong>${formatDate(new Date(item.createTime), 'YYYY-MM-DD HH:mm:ss')}</div>
+              <div><strong>创建时间：</strong>${formatDateSafe(item.createTime, 'YYYY-MM-DD HH:mm:ss')}</div>
             </td>
             <td style="vertical-align: top; text-align: left;">
               <div style="margin-bottom: 8px; font-weight: bold; font-size: 14px;">${item.customSku || '--'}</div>
@@ -1928,7 +1935,7 @@ const handlerPrintPickList = () => {
                   <strong style="font-size: 16px;">物流单号：${trackingNumber}</strong>
                   <span style="margin-left: 15px;">第 ${currentPage} 页 / 共 ${totalPages} 页</span>
                 </div>
-                <div>打印时间：${formatDate(new Date(), 'YYYY-MM-DD HH:mm:ss')}</div>
+                <div>打印时间：${formatDateSafe(Date.now(), 'YYYY-MM-DD HH:mm:ss')}</div>
               </div>
             </div>
           </div>
@@ -2112,6 +2119,13 @@ const handlerPrintBatchAll = async () => {
     return
   }
 
+  // 创建加载实例
+  const loading = ElLoading.service({
+    lock: true,
+    text: '正在处理打印文件，请稍候...',
+    background: 'rgba(0, 0, 0, 0.7)'
+  })
+
   try {
     // 按照页面显示顺序获取所有选中的订单
     const allOrders: ExtendedOrderVO[] = []
@@ -2120,7 +2134,7 @@ const handlerPrintBatchAll = async () => {
       if (selectedRows.value.some(selected => selected.uniqueId === row.uniqueId)) {
         const sameTrackingOrders = list.value.filter(item =>
           item.trackingNumber === row.trackingNumber
-        )
+        ) as ExtendedOrderVO[]
         // 确保不重复添加同一物流单号的订单
         if (!allOrders.some(order => order.trackingNumber === row.trackingNumber)) {
           allOrders.push(...sameTrackingOrders)
@@ -2133,6 +2147,7 @@ const handlerPrintBatchAll = async () => {
       (order) => !order.expressOutsideImageUrl || !order.expressImageUrl || !order.complianceGoodsMergedUrl
     )
     if (ordersWithoutFiles.length > 0) {
+      loading.close() // 关闭加载
       // 按店铺分组并去重SKC
       const groupedByShop = ordersWithoutFiles.reduce((acc, order) => {
         const shopName = order.shopName || '未知店铺'
@@ -2180,6 +2195,9 @@ const handlerPrintBatchAll = async () => {
       return
     }
 
+    // 更新加载提示
+    loading.setText('正在合并PDF文件...')
+
     // 创建一个新的PDF文档
     const mergedPdf = await PDFDocument.create()
     let successCount = 0
@@ -2194,8 +2212,15 @@ const handlerPrintBatchAll = async () => {
       ordersByTracking.get(order.trackingNumber)?.push(order)
     })
 
+    // 更新总数用于进度显示
+    const totalTrackingNumbers = ordersByTracking.size
+    let currentTrackingNumber = 0
+
     // 按照页面显示顺序处理每个物流单号
     for (const [trackingNumber, orders] of ordersByTracking) {
+      currentTrackingNumber++
+      loading.setText(`正在处理第 ${currentTrackingNumber}/${totalTrackingNumbers} 个物流单号...`)
+
       try {
         // 1. 首先添加加急面单（每个物流单号只需要一次）
         const urgentUrl = orders[0].expressOutsideImageUrl
@@ -2269,9 +2294,13 @@ const handlerPrintBatchAll = async () => {
     }
 
     if (mergedPdf.getPageCount() === 0) {
+      loading.close() // 关闭加载
       ElMessage.error('没有可打印的文件')
       return
     }
+
+    // 更新加载提示
+    loading.setText('正在准备打印...')
 
     // 保存合并后的PDF
     const mergedPdfBytes = await mergedPdf.save()
@@ -2286,6 +2315,7 @@ const handlerPrintBatchAll = async () => {
       onLoadingEnd: () => {
         // 清理资源
         URL.revokeObjectURL(mergedPdfUrl)
+        loading.close() // 关闭加载
       }
     })
 
@@ -2296,12 +2326,23 @@ const handlerPrintBatchAll = async () => {
       ElMessage.success(`成功处理${successCount}个物流单号`)
     }
   } catch (error) {
+    loading.close() // 关闭加载
     console.error('批量打印失败:', error)
     ElMessage.error(
       '批量打印失败：' + (error instanceof Error ? error.message : '未知错误')
     )
   }
 }
+
+// 修改formatDate的调用
+const formatDateSafe = (timestamp: number | null | undefined, format: string) => {
+  if (!timestamp) return '-'
+  return formatDate(new Date(timestamp), format)
+}
+
+// 在使用formatDate的地方替换为formatDateSafe
+// 例如：
+// ${formatDateSafe(item.createTime, 'YYYY-MM-DD HH:mm:ss')}
 </script>
 <style lang="scss">
 $predefined-colors: (
