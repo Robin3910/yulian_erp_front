@@ -37,7 +37,7 @@
             <el-button  plain @click="handlePrint(formData.orders[0].expressOutsideImageUrl)">
               打印加急单
             </el-button>
-            <el-button  plain @click="handlePrint(formData.orders[0].expressImageUrl)">
+            <el-button  plain @click="handlerPrintBatchExpress">
               打印物流面单
             </el-button>
           </div>
@@ -207,6 +207,7 @@ import { formatDate } from '@/utils/formatTime'
 import { Printer, Document } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import printJS from 'print-js'
+import { PDFDocument } from 'pdf-lib'
 
 const emit = defineEmits(['confirm'])
 defineOptions({
@@ -300,6 +301,144 @@ const getTotalPackageCount = () => {
 // 获取总产品数量
 const getTotalProductCount = () => {
   return formData.orders.reduce((sum, item) => sum + (item.originalQuantity || 0), 0)
+}
+
+
+/** 批量打印面单 */
+const handlerPrintBatchExpress = async () => {
+
+  try {
+    // 获取所有选中的物流单号下的订单
+    const allOrders = formData.orders as any[];
+
+    // 检查是否有订单的面单为空
+    const ordersWithoutExpress = allOrders.filter(
+      (order) => !order.expressImageUrl
+    )
+    if (ordersWithoutExpress.length > 0) {
+      // 按店铺分组并去重SKC
+      const groupedByShop = ordersWithoutExpress.reduce((acc, order) => {
+        const shopName = order.shopName || '未知店铺'
+        if (!acc[shopName]) {
+          acc[shopName] = new Set()
+        }
+        if (order.skc) {
+          acc[shopName].add(order.skc)
+        }
+        return acc
+      }, {} as Record<string, Set<string>>)
+
+      const missingInfo = Object.entries(groupedByShop)
+        .map(
+          ([shopName, skcs]) => `
+          <div style="margin-bottom: 16px;">
+            <div style="color: #606266; font-weight: bold; margin-bottom: 8px;">${shopName}</div>
+            <div style="padding-left: 16px;">
+              ${Array.from(skcs)
+                .map(
+                  (skc) => `
+                <div style="color: #409EFF; margin-bottom: 4px;">
+                  ${skc}
+                </div>
+              `
+                )
+                .join('')}
+            </div>
+          </div>
+        `
+        )
+        .join('')
+
+      ElNotification({
+        title: '无法批量打印',
+        message: `
+          <div style="margin-bottom: 10px; color: #303133;">以下SKC缺少面单，请联系相关人员及时补充：</div>
+          <div style="max-height: 300px; overflow-y: auto; padding-right: 10px;">${missingInfo}</div>
+        `,
+        type: 'warning',
+        duration: 0,
+        dangerouslyUseHTMLString: true,
+        offset: 60
+      })
+      return
+    }
+
+    // 创建一个新的PDF文档
+    const mergedPdf = await PDFDocument.create()
+    let successCount = 0
+    let failCount = 0
+
+    // 获取唯一的订单号及其对应的面单URL
+    const uniqueOrderNos = new Map<string, string>()
+    allOrders.forEach(order => {
+      if (order.orderNo && order.expressImageUrl && !uniqueOrderNos.has(order.orderNo)) {
+        uniqueOrderNos.set(order.orderNo, order.expressImageUrl)
+      }
+    })
+
+    // 加载并合并所有PDF文件
+    for (const [_, url] of uniqueOrderNos) {
+      const printUrl = url.startsWith('@') ? url.substring(1) : url
+      try {
+        if (printUrl.toLowerCase().endsWith('.pdf')) {
+          const response = await fetch(printUrl)
+          if (!response.ok) {
+            console.error(`加载PDF失败: ${printUrl}`)
+            failCount++
+            continue
+          }
+          const pdfBytes = await response.arrayBuffer()
+          const pdf = await PDFDocument.load(pdfBytes)
+          const copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices())
+          copiedPages.forEach((page) => {
+            mergedPdf.addPage(page)
+          })
+          successCount++
+        } else {
+          // 如果是图片，直接使用print-js打印
+          printJS({
+            printable: printUrl,
+            type: 'image',
+            showModal: true
+          })
+          successCount++
+        }
+      } catch (error) {
+        console.error(`加载文件失败: ${printUrl}`, error)
+        failCount++
+      }
+    }
+
+    // 如果有PDF文件，打印合并后的PDF
+    if (mergedPdf.getPageCount() > 0) {
+      const mergedPdfBytes = await mergedPdf.save()
+      const mergedPdfBlob = new Blob([mergedPdfBytes], { type: 'application/pdf' })
+      const mergedPdfUrl = URL.createObjectURL(mergedPdfBlob)
+
+      printJS({
+        printable: mergedPdfUrl,
+        type: 'pdf',
+        showModal: true
+      })
+
+      // 清理资源
+      setTimeout(() => {
+        URL.revokeObjectURL(mergedPdfUrl)
+      }, 10000)
+    }
+
+    // 显示处理结果
+    if (failCount > 0) {
+      ElMessage.warning(`成功处理${successCount}个订单，${failCount}个订单处理失败`)
+    } else {
+      ElMessage.success(`成功处理${successCount}个订单`)
+    }
+  } catch (error) {
+    console.error('批量打印面单失败:', error)
+    ElMessage.error(
+      '批量打印面单失败：' + (error instanceof Error ? error.message : '未知错误')
+    )
+  }
 }
 
 // 打印条码+合规单
