@@ -34,9 +34,13 @@
             <span class="value" style="font-weight: bold; color: #67C23A; font-size: 23px;">{{ getTotalProductCount() }}件</span>
           </div>
           <div class="info-item">
+            <el-button  plain @click="handlePrintAll">
+              打印全部
+            </el-button>
             <el-button  plain @click="handlePrint(formData.orders[0].expressOutsideImageUrl)">
               打印加急单
             </el-button>
+            
             <el-button  plain @click="handlerPrintBatchExpress">
               打印物流面单
             </el-button>
@@ -480,6 +484,123 @@ const handlePrint = async (url: string) => {
     ElMessage.error('打印失败：' + (error instanceof Error ? error.message : '未知错误'))
   }
 }
+
+// 添加打印全部功能
+const handlePrintAll = async () => {
+  try {
+    // 获取所有订单
+    const allOrders = formData.orders as any[];
+    
+    // 按订单号分组
+    const orderGroups = new Map<string, any[]>();
+    allOrders.forEach(order => {
+      if (!orderGroups.has(order.orderNo)) {
+        orderGroups.set(order.orderNo, []);
+      }
+      orderGroups.get(order.orderNo)?.push(order);
+    });
+
+    // 创建一个新的PDF文档
+    const mergedPdf = await PDFDocument.create();
+    let successCount = 0;
+    let failCount = 0;
+
+    // 首先处理加急单（只打印一次）
+    if (allOrders[0]?.expressOutsideImageUrl) {
+      const urgentUrl = allOrders[0].expressOutsideImageUrl.startsWith('@') 
+        ? allOrders[0].expressOutsideImageUrl.substring(1) 
+        : allOrders[0].expressOutsideImageUrl;
+      await addPdfToMerged(mergedPdf, urgentUrl);
+    }
+
+    // 遍历每个订单组
+    for (const [orderNo, orders] of orderGroups) {
+      try {
+        // 打印物流面单（如果存在）
+        if (orders[0].expressImageUrl) {
+          const expressUrl = orders[0].expressImageUrl.startsWith('@')
+            ? orders[0].expressImageUrl.substring(1)
+            : orders[0].expressImageUrl;
+          await addPdfToMerged(mergedPdf, expressUrl);
+        }
+
+        // 打印条码+合规单（根据官网数量打印）
+        for (const order of orders) {
+          if (order.complianceGoodsMergedUrl) {
+            const mergedUrl = order.complianceGoodsMergedUrl.startsWith('@')
+              ? order.complianceGoodsMergedUrl.substring(1)
+              : order.complianceGoodsMergedUrl;
+            
+            // 根据官网数量复制对应份数
+            const copies = order.originalQuantity || 1;
+            for (let i = 0; i < copies; i++) {
+              await addPdfToMerged(mergedPdf, mergedUrl);
+            }
+          }
+        }
+        successCount++;
+      } catch (error) {
+        console.error(`处理订单 ${orderNo} 失败:`, error);
+        failCount++;
+      }
+    }
+
+    // 如果有成功合并的PDF，则打印
+    if (mergedPdf.getPageCount() > 0) {
+      const mergedPdfBytes = await mergedPdf.save();
+      const mergedPdfBlob = new Blob([mergedPdfBytes], { type: 'application/pdf' });
+      const mergedPdfUrl = URL.createObjectURL(mergedPdfBlob);
+
+      printJS({
+        printable: mergedPdfUrl,
+        type: 'pdf',
+        showModal: true
+      });
+
+      // 清理资源
+      setTimeout(() => {
+        URL.revokeObjectURL(mergedPdfUrl);
+      }, 10000);
+    }
+
+    // 显示处理结果
+    if (failCount > 0) {
+      ElMessage.warning(`成功处理${successCount}个订单，${failCount}个订单处理失败`);
+    } else {
+      ElMessage.success(`成功处理${successCount}个订单`);
+    }
+  } catch (error) {
+    console.error('打印全部失败:', error);
+    ElMessage.error('打印全部失败：' + (error instanceof Error ? error.message : '未知错误'));
+  }
+};
+
+// 添加辅助函数用于将PDF添加到合并文档中
+const addPdfToMerged = async (mergedPdf: PDFDocument, url: string) => {
+  try {
+    if (url.toLowerCase().endsWith('.pdf')) {
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`加载PDF失败: ${url}`);
+      }
+      const pdfBytes = await response.arrayBuffer();
+      const pdf = await PDFDocument.load(pdfBytes);
+      const copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
+      copiedPages.forEach((page) => {
+        mergedPdf.addPage(page);
+      });
+    } else {
+      // 如果是图片，直接使用print-js打印
+      printJS({
+        printable: url,
+        type: 'image',
+        showModal: true
+      });
+    }
+  } catch (error) {
+    throw new Error(`处理文件失败: ${url}`);
+  }
+};
 
 // 添加批量打印条码+合规单功能
 const handlerPrintBatchMerged = async () => {
