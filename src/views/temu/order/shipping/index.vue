@@ -515,7 +515,7 @@
                   plain
                   class="action-button"
                   :disabled="!row.complianceImageUrl"
-                  @click.stop="handlePrint(row.complianceImageUrl)"
+                  @click.stop="handlePrint(row.complianceImageUrl, row.originalQuantity)"
                 >
                   <el-icon><Printer /></el-icon>
                   打印合规单
@@ -538,7 +538,7 @@
                   plain
                   class="action-button"
                   :disabled="!row.complianceGoodsMergedUrl"
-                  @click.stop="handlePrint(row.complianceGoodsMergedUrl)"
+                  @click.stop="handlePrint(row.complianceGoodsMergedUrl, row.originalQuantity)"
                 >
                   <el-icon><Printer /></el-icon>
                   打印条码+合规单
@@ -566,7 +566,7 @@
 import { ref, reactive, onMounted, onUnmounted, nextTick } from 'vue'
 import { OrderApi, OrderVO } from '@/api/temu/order'
 import { TemuCommonApi } from '@/api/temu/common'
-import { ElMessage, ElMessageBox, ElNotification, ElTable } from 'element-plus'
+import { ElMessage, ElMessageBox, ElNotification, ElTable, ElLoading } from 'element-plus'
 import { Aim, Printer, Van } from '@element-plus/icons-vue'
 import { formatDate } from '@/utils/formatTime'
 import { COLOR_ARRAYS } from '@/utils/color'
@@ -1106,7 +1106,7 @@ const handleShip = async (row: ExtendedOrderVO) => {
 }
 
 /** 打印处理函数 */
-const handlePrint = async (url: string) => {
+const handlePrint = async (url: string, quantity?: number) => {
   // 检查URL是否存在
   if (!url) {
     ElMessage.error('打印失败：未找到打印文件')
@@ -1115,31 +1115,106 @@ const handlePrint = async (url: string) => {
 
   // 处理URL中的@前缀
   const printUrl = url.startsWith('@') ? url.substring(1) : url
+  
+  // 计算打印份数
+  const printCount = quantity && quantity > 1 ? quantity : 1
+  
+  // 添加loading
+  const loading = ElLoading.service({
+    lock: true,
+    text: '正在准备打印...',
+    background: 'rgba(0, 0, 0, 0.7)'
+  })
 
   try {
     // 判断是否为PDF文件
     const isPDF = printUrl.toLowerCase().endsWith('.pdf')
 
     if (isPDF) {
-      // PDF文件直接使用print-js打印
-      printJS({
-        printable: printUrl,
-        type: 'pdf',
-        showModal: true
-      })
+      // 先尝试获取PDF文件
+      const response = await fetch(printUrl)
+      if (!response.ok) {
+        throw new Error(`获取PDF文件失败: ${response.statusText}`)
+      }
+      
+      const pdfBytes = await response.arrayBuffer()
+      
+      try {
+        // 创建新的PDF文档
+        const pdfDoc = await PDFDocument.load(pdfBytes)
+        const mergedPdf = await PDFDocument.create()
+        
+        // 获取原PDF的所有页面
+        const pages = await mergedPdf.copyPages(pdfDoc, pdfDoc.getPageIndices())
+        
+        // 根据打印份数添加页面
+        for (let i = 0; i < printCount; i++) {
+          pages.forEach(page => mergedPdf.addPage(page))
+        }
+        
+        // 生成最终的PDF
+        const mergedPdfBytes = await mergedPdf.save()
+        const mergedPdfBlob = new Blob([mergedPdfBytes], { type: 'application/pdf' })
+        const mergedPdfUrl = URL.createObjectURL(mergedPdfBlob)
+        
+        loading.close()
+        
+        // 打印合并后的PDF
+        await new Promise<void>((resolve, reject) => {
+          printJS({
+            printable: mergedPdfUrl,
+            type: 'pdf',
+            showModal: true,
+            onLoadingEnd: () => {
+              URL.revokeObjectURL(mergedPdfUrl)
+              resolve()
+            },
+            onError: (error) => {
+              URL.revokeObjectURL(mergedPdfUrl)
+              reject(error)
+            }
+          })
+        })
+        
+        ElMessage.success('打印完成')
+      } catch (error) {
+        console.error('处理PDF文件失败:', error)
+        throw new Error('处理PDF文件失败，请稍后重试')
+      }
     } else {
-      // 图片文件使用print-js的image类型打印
+      // 如果是图片，创建一个包含多份图片的HTML
+      const printContent = Array(printCount).fill(`
+        <div style="page-break-after: always;">
+          <img src="${printUrl}" style="max-width: 100%; height: auto;">
+        </div>
+      `).join('')
+      
+      loading.close()
+      
+      // 使用HTML方式打印图片
       printJS({
-        printable: printUrl,
-        type: 'image',
-        showModal: true
+        printable: printContent,
+        type: 'raw-html',
+        showModal: true,
+        targetStyles: ['*'],
+        style: `
+          @media print {
+            body { margin: 0; }
+            img { max-width: 100%; height: auto; }
+            div { page-break-after: always; }
+          }
+        `
       })
+      
+      ElMessage.success('打印完成')
     }
-  } catch (error) {
+  } catch (error: any) {
+    loading.close()
     console.error('打印错误:', error)
-    ElMessage.error('打印失败：' + (error instanceof Error ? error.message : '未知错误'))
+    ElMessage.error('打印失败：' + (error?.message || '未知错误'))
   }
 }
+
 const colorMap = new Map<string,string>();
 
 // 添加行类名处理函数
@@ -1206,16 +1281,15 @@ const handlerPrintBatchMerged = async () => {
   }
 
   try {
-    // 获取所有选中的物流单号下的订单
-    const allOrders: ExtendedOrderVO[] = []
-    selectedRows.value.forEach(selectedRow => {
-      if (selectedRow.trackingNumber) {
-        const relatedOrders = list.value.filter(row => 
-          row.trackingNumber === selectedRow.trackingNumber
-        )
-        allOrders.push(...relatedOrders)
-      }
-    })
+    // 获取所有选中的物流单号
+    const selectedTrackingNumbers = new Set(
+      selectedRows.value.map(row => row.trackingNumber)
+    )
+
+    // 从list中按页面顺序获取选中的订单
+    const allOrders: ExtendedOrderVO[] = list.value.filter(
+      row => selectedTrackingNumbers.has(row.trackingNumber)
+    )
 
     // 检查是否有订单的合并文件为空
     const ordersWithoutMerged = allOrders.filter(
@@ -1232,7 +1306,7 @@ const handlerPrintBatchMerged = async () => {
           acc[shopName].add(order.skc)
         }
         return acc
-      }, {})
+      }, {} as Record<string, Set<string>>)
 
       const missingInfo = Object.entries(groupedByShop)
         .map(
@@ -1240,7 +1314,7 @@ const handlerPrintBatchMerged = async () => {
           <div style="margin-bottom: 16px;">
             <div style="color: #606266; font-weight: bold; margin-bottom: 8px;">${shopName}</div>
             <div style="padding-left: 16px;">
-              ${Array.from(skcs as any)
+              ${Array.from(skcs)
                 .map(
                   (skc) => `
                 <div style="color: #409EFF; margin-bottom: 4px;">
@@ -1274,29 +1348,46 @@ const handlerPrintBatchMerged = async () => {
     let successCount = 0
     let failCount = 0
 
+    // 按物流单号分组订单
+    const ordersByTracking = new Map<string, ExtendedOrderVO[]>()
+    allOrders.forEach(order => {
+      if (!ordersByTracking.has(order.trackingNumber)) {
+        ordersByTracking.set(order.trackingNumber, [])
+      }
+      ordersByTracking.get(order.trackingNumber)?.push(order)
+    })
+
     // 加载并合并所有PDF文件
-    for (const order of allOrders) {
-      if (!order.complianceGoodsMergedUrl) continue
-      const url = order.complianceGoodsMergedUrl.startsWith('@')
-        ? order.complianceGoodsMergedUrl.substring(1)
-        : order.complianceGoodsMergedUrl
-      try {
-        const response = await fetch(url)
-        if (!response.ok) {
-          console.error(`加载PDF失败: ${url}`)
+    for (const [trackingNumber, orders] of ordersByTracking) {
+      // 对每个物流单号下的订单按页面顺序处理
+      for (const order of orders) {
+        if (!order.complianceGoodsMergedUrl) continue
+        const url = order.complianceGoodsMergedUrl.startsWith('@')
+          ? order.complianceGoodsMergedUrl.substring(1)
+          : order.complianceGoodsMergedUrl
+        try {
+          const response = await fetch(url)
+          if (!response.ok) {
+            console.error(`加载PDF失败: ${url}`)
+            failCount++
+            continue
+          }
+          const pdfBytes = await response.arrayBuffer()
+          const pdf = await PDFDocument.load(pdfBytes)
+          const copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices())
+          
+          // 根据官网数量复制对应份数
+          const copies = order.originalQuantity || 1
+          for (let i = 0; i < copies; i++) {
+            copiedPages.forEach((page) => {
+              mergedPdf.addPage(page)
+            })
+          }
+          successCount++
+        } catch (error) {
+          console.error(`加载PDF失败: ${url}`, error)
           failCount++
-          continue
         }
-        const pdfBytes = await response.arrayBuffer()
-        const pdf = await PDFDocument.load(pdfBytes)
-        const copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices())
-        copiedPages.forEach((page) => {
-          mergedPdf.addPage(page)
-        })
-        successCount++
-      } catch (error) {
-        console.error(`加载PDF失败: ${url}`, error)
-        failCount++
       }
     }
 
@@ -1314,7 +1405,11 @@ const handlerPrintBatchMerged = async () => {
     printJS({
       printable: mergedPdfUrl,
       type: 'pdf',
-      showModal: true
+      showModal: true,
+      onLoadingEnd: () => {
+        // 清理资源
+        URL.revokeObjectURL(mergedPdfUrl)
+      }
     })
 
     // 显示处理结果
@@ -1323,11 +1418,6 @@ const handlerPrintBatchMerged = async () => {
     } else {
       ElMessage.success(`成功处理${successCount}个订单`)
     }
-
-    // 清理资源
-    setTimeout(() => {
-      URL.revokeObjectURL(mergedPdfUrl)
-    }, 10000)
   } catch (error) {
     console.error('批量打印合并文件失败:', error)
     ElMessage.error(
