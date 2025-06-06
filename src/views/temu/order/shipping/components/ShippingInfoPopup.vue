@@ -40,6 +40,9 @@
             <el-button  plain @click="handlerPrintBatchExpress">
               打印物流面单
             </el-button>
+            <el-button  plain @click="handlerPrintBatchMerged">
+              批量打印条码+合规单
+            </el-button>
           </div>
         </div>
       </div>
@@ -477,27 +480,135 @@ const handlePrint = async (url: string) => {
     ElMessage.error('打印失败：' + (error instanceof Error ? error.message : '未知错误'))
   }
 }
-// const handlePrintMerged = async (order: any) => {
-//   if (!order.complianceGoodsMergedUrl) {
-//     ElMessage.warning('当前合并文件尚未上传，请联系相关人员及时上传！')
-//     return
-//   }
 
-//   try {
-//     const printUrl = order.complianceGoodsMergedUrl.startsWith('@') 
-//       ? order.complianceGoodsMergedUrl.substring(1) 
-//       : order.complianceGoodsMergedUrl
+// 添加批量打印条码+合规单功能
+const handlerPrintBatchMerged = async () => {
+  try {
+    // 获取所有订单
+    const allOrders = formData.orders as any[]
 
-//     printJS({
-//       printable: printUrl,
-//       type: 'image',
-//       showModal: true
-//     })
-//   } catch (error) {
-//     console.error('打印错误:', error)
-//     ElMessage.error('打印失败：' + (error instanceof Error ? error.message : '未知错误'))
-//   }
-// }
+    // 检查是否有订单的合并文件为空
+    const ordersWithoutMerged = allOrders.filter(
+      (order) => !order.complianceGoodsMergedUrl
+    )
+    if (ordersWithoutMerged.length > 0) {
+      // 按店铺分组并去重SKC
+      const groupedByShop = ordersWithoutMerged.reduce((acc, order) => {
+        const shopName = order.shopName || '未知店铺'
+        if (!acc[shopName]) {
+          acc[shopName] = new Set()
+        }
+        if (order.skc) {
+          acc[shopName].add(order.skc)
+        }
+        return acc
+      }, {} as Record<string, Set<string>>)
+
+      const missingInfo = Object.entries(groupedByShop)
+        .map(
+          ([shopName, skcs]) => `
+          <div style="margin-bottom: 16px;">
+            <div style="color: #606266; font-weight: bold; margin-bottom: 8px;">${shopName}</div>
+            <div style="padding-left: 16px;">
+              ${Array.from(skcs)
+                .map(
+                  (skc) => `
+                <div style="color: #409EFF; margin-bottom: 4px;">
+                  ${skc}
+                </div>
+              `
+                )
+                .join('')}
+            </div>
+          </div>
+        `
+        )
+        .join('')
+
+      ElNotification({
+        title: '无法批量打印',
+        message: `
+          <div style="margin-bottom: 10px; color: #303133;">以下SKC缺少合并文件，请联系相关人员及时补充：</div>
+          <div style="max-height: 300px; overflow-y: auto; padding-right: 10px;">${missingInfo}</div>
+        `,
+        type: 'warning',
+        duration: 0,
+        dangerouslyUseHTMLString: true,
+        offset: 60
+      })
+      return
+    }
+
+    // 创建一个新的PDF文档
+    const mergedPdf = await PDFDocument.create()
+    let successCount = 0
+    let failCount = 0
+
+    // 加载并合并所有PDF文件
+    for (const order of allOrders) {
+      if (!order.complianceGoodsMergedUrl) continue
+      const url = order.complianceGoodsMergedUrl.startsWith('@')
+        ? order.complianceGoodsMergedUrl.substring(1)
+        : order.complianceGoodsMergedUrl
+      try {
+        const response = await fetch(url)
+        if (!response.ok) {
+          console.error(`加载PDF失败: ${url}`)
+          failCount++
+          continue
+        }
+        const pdfBytes = await response.arrayBuffer()
+        const pdf = await PDFDocument.load(pdfBytes)
+        const copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices())
+        
+        // 根据官网数量复制对应份数
+        const copies = order.originalQuantity || 1
+        for (let i = 0; i < copies; i++) {
+          copiedPages.forEach((page) => {
+            mergedPdf.addPage(page)
+          })
+        }
+        successCount++
+      } catch (error) {
+        console.error(`加载PDF失败: ${url}`, error)
+        failCount++
+      }
+    }
+
+    if (mergedPdf.getPageCount() === 0) {
+      ElMessage.error('没有可打印的合并文件PDF')
+      return
+    }
+
+    // 保存合并后的PDF
+    const mergedPdfBytes = await mergedPdf.save()
+    const mergedPdfBlob = new Blob([mergedPdfBytes], { type: 'application/pdf' })
+    const mergedPdfUrl = URL.createObjectURL(mergedPdfBlob)
+
+    // 使用print-js打印PDF
+    printJS({
+      printable: mergedPdfUrl,
+      type: 'pdf',
+      showModal: true,
+      onLoadingEnd: () => {
+        // 清理资源
+        URL.revokeObjectURL(mergedPdfUrl)
+      }
+    })
+
+    // 显示处理结果
+    if (failCount > 0) {
+      ElMessage.warning(`成功处理${successCount}个订单，${failCount}个订单处理失败`)
+    } else {
+      ElMessage.success(`成功处理${successCount}个订单`)
+    }
+  } catch (error) {
+    console.error('批量打印合并文件失败:', error)
+    ElMessage.error(
+      '批量打印合并文件失败：' + (error instanceof Error ? error.message : '未知错误')
+    )
+  }
+}
 </script>
 
 <style lang="scss" scoped>
