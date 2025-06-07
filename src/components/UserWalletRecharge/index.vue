@@ -45,14 +45,15 @@ const handleClose = () => {
   }, 3000)
 }
 onMounted(() => {
+  // 每分钟执行一次钱包余额的拉取
   let cb = () => {
     setTimeout(() => {
       fetchMyWallet()
       cb()
-    }, 3000)
+    }, 60000)
   }
   fetchMyWallet()
-  // cb()
+  cb()
 })
 </script>
 <style scoped lang="scss"></style>
