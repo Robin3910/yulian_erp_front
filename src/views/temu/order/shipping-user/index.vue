@@ -553,6 +553,7 @@ interface OrderItem {
   complianceUrl: string | null
   complianceImageUrl: string | null
   complianceGoodsMergedUrl: string | null
+  isCompleteProducerTask?: number  // 添加生产任务完成状态
 }
 
 interface OrderNoGroup {
@@ -1829,19 +1830,21 @@ const handlerPrintBatchExpress = async () => {
   }
 }
 
-// 添加判断是否生产完成的方法
+// 改进判断是否生产完成的方法
 const isProductionComplete = (row: ExtendedOrderVO) => {
   // 获取同一物流单号下的所有订单
   const sameTrackingOrders = list.value.filter(
     (item) => item.trackingNumber === row.trackingNumber
   )
   
-  // 检查是否所有订单都已生产完成 (isCompleteProducerTask为1表示已完成)
+  // 如果没有订单，返回false
   if (sameTrackingOrders.length === 0) return false
   
-  // 使用可选链和类型守卫检查isCompleteProducerTask属性
+  // 检查是否每个订单都已完成生产任务
+  // 只有当所有订单的isCompleteProducerTask都为1时，才返回true
   return sameTrackingOrders.every((order) => {
-    return order && typeof order === 'object' && 'isCompleteProducerTask' in order && order.isCompleteProducerTask === 1
+    // 严格检查isCompleteProducerTask是否为1
+    return order.isCompleteProducerTask === 1
   })
 }
 </script>

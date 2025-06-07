@@ -2102,13 +2102,14 @@ const isProductionComplete = (row: ExtendedOrderVO) => {
   const sameTrackingOrders = list.value.filter(
     (item) => item.trackingNumber === row.trackingNumber
   )
-
-  // 检查是否所有订单都已生产完成 (isCompleteProducerTask为1表示已完成)
+  
+  // 如果没有订单，返回false
   if (sameTrackingOrders.length === 0) return false
   
-  // 使用可选链和类型守卫检查isCompleteProducerTask属性
+  // 检查是否每个订单都已完成生产任务
   return sameTrackingOrders.every((order) => {
-    return order && typeof order === 'object' && 'isCompleteProducerTask' in order && order.isCompleteProducerTask === 1
+    // 严格检查isCompleteProducerTask是否为1，考虑可能为null的情况
+    return order.isCompleteProducerTask === 1
   })
 }
 
