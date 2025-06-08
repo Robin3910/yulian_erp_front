@@ -692,10 +692,18 @@
       <el-table-column label="任务负责人" align="left" min-width="80">
         <template #default="{ row }">
           <div v-if="row.isDispatchTask === 1">
-            <div v-for="(item, index) in row.userList" :key="index">
-              <span>{{ item.type == 1 ? '作图' : '生产' }}:</span>
-              <span>{{ item.nickName }}</span>
-            </div>
+            <template v-if="row.userList && row.userList.length > 0">
+              <!-- 先显示作图人员 -->
+              <div v-if="row.userList.find(item => item.type === 1)">
+                <span>作图:</span>
+                <span>{{ row.userList.find(item => item.type === 1)?.nickName }}</span>
+              </div>
+              <!-- 再显示生产人员 -->
+              <div v-if="row.userList.find(item => item.type === 2)">
+                <span>生产:</span>
+                <span>{{ row.userList.find(item => item.type === 2)?.nickName }}</span>
+              </div>
+            </template>
           </div>
         </template>
       </el-table-column>
