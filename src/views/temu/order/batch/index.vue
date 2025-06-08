@@ -623,11 +623,12 @@
           </div>
         </template>
       </el-table-column>
-      <el-table-column label="打印文件地址" align="center" prop="fileUrl" min-width="200">
+    
+      <el-table-column label="打印文件地址" align="center" prop="fileUrl" min-width="140">
         <template #default="{ row }">
           <div class="font-bold flex item-center justify-center flex-wrap" v-if="row.fileUrl">
             <a :href="row.fileUrl" :download="row.fileUrl" class="mb-2">
-              <el-button type="success" plain class="action-button">
+              <el-button type="success" plain size="small" class="action-button">
                 <Icon icon="ep:download" class="mr-5px" />
                 下载作图文件
               </el-button>
@@ -637,6 +638,7 @@
               v-if="row.status === 0"
               type="primary"
               plain
+              size="small"
               @click="handlerHandleUpload(row)"
               class="action-button ml-2"
             >
@@ -645,19 +647,20 @@
             </el-button>
           </div>
           <div class="font-bold" v-else>
-            <el-button type="primary" plain @click="handlerHandleUpload(row)" class="action-button">
+            <el-button type="primary" plain size="small" @click="handlerHandleUpload(row)" class="action-button">
               <Icon icon="ep:upload" class="mr-5px" />
               上传作图文件
             </el-button>
           </div>
         </template>
       </el-table-column>
-      <el-table-column label="定制图片（一键下载）" align="center" min-width="130">
+      <el-table-column label="定制图片（一键下载）" align="center" min-width="140">
         <template #default="{ row }">
           <div class="flex justify-center mt-2">
             <el-button
               type="success"
               plain
+              size="small"
               @click="handleDownloadCustomImages(row)"
               class="action-button"
             >
@@ -667,7 +670,7 @@
           </div>
         </template>
       </el-table-column>
-      <el-table-column label="订单状态" align="center" prop="orderStatus" min-width="100">
+      <el-table-column label="订单状态" align="center" prop="orderStatus" min-width="90">
         <template #default="{ row }">
           <dict-tag
             :type="DICT_TYPE.TEMU_ORDER_BATCH_STATUS"
@@ -676,7 +679,7 @@
           />
         </template>
       </el-table-column>
-      <el-table-column label="任务分配状态" align="center" min-width="100">
+      <el-table-column label="任务分配状态" align="center" min-width="90">
         <template #default="{ row }">
           <dict-tag
             :type="DICT_TYPE.TEMU_ORDER_BATCH_DISPATCH_STATUS"
@@ -685,7 +688,8 @@
           />
         </template>
       </el-table-column>
-      <el-table-column label="任务负责人" align="left" min-width="100">
+      
+      <el-table-column label="任务负责人" align="left" min-width="80">
         <template #default="{ row }">
           <div v-if="row.isDispatchTask === 1">
             <div v-for="(item, index) in row.userList" :key="index">
@@ -695,11 +699,42 @@
           </div>
         </template>
       </el-table-column>
+      <!-- 任务进度列 -->
+      <el-table-column label="任务进度" align="center" min-width="250">
+        <template #default="{ row }">
+          <div class="progress-bars">
+            <div class="progress-item">
+              <div class="flex justify-between mb-1">
+                <span class="text-sm">作图进度</span>
+                <span class="text-sm">{{ row.orderList?.filter(order => order.isCompleteDrawTask === 1).length || 0 }}/{{ row.orderList?.length || 0 }}</span>
+              </div>
+              <el-progress 
+                :percentage="calculateProgress(row.orderList, 'draw')"
+                :stroke-width="8"
+                :color="progressColor(calculateProgress(row.orderList, 'draw'))"
+                :show-text="false"
+              />
+            </div>
+            <div class="progress-item mt-2">
+              <div class="flex justify-between mb-1">
+                <span class="text-sm">生产进度</span>
+                <span class="text-sm">{{ row.orderList?.filter(order => order.isCompleteProducerTask === 1).length || 0 }}/{{ row.orderList?.length || 0 }}</span>
+              </div>
+              <el-progress 
+                :percentage="calculateProgress(row.orderList, 'production')"
+                :stroke-width="8"
+                :color="progressColor(calculateProgress(row.orderList, 'production'))"
+                :show-text="false"
+              />
+            </div>
+          </div>
+        </template>
+      </el-table-column>
       <el-table-column
         label="备注"
         align="center"
         prop="remark"
-        width="150"
+        width="120"
         :show-overflow-tooltip="true"
       />
       <el-table-column label="操作" align="center" width="120px" fixed="right">
@@ -721,6 +756,7 @@
           <el-button type="text" @click="handlerRemark(scope.row)">备注</el-button>
         </template>
       </el-table-column>
+      
     </el-table>
     <!-- 分页 -->
     <Pagination
@@ -775,6 +811,35 @@ const batchSelections = ref<Map<string, OrderVO[]>>(new Map()) // 每个批次�
 const tableRefs = ref<Map<string, any>>(new Map()) // 存储表格引用
 const expandedRows = ref<string[]>([]) // 存储展开的行
 const isAllExpanded = ref(false) // 是否全部展开
+
+// 计算进度条颜色
+const progressColor = (percentage: number) => {
+  if (percentage === 0) {
+    return '#909399'  // 灰色
+  } else if (percentage === 100) {
+    return '#67c23a'  // 绿色
+  } else {
+    return '#e6a23c'  // 橙色
+  }
+}
+
+// 计算进度
+const calculateProgress = (orderList: any[], type: 'draw' | 'production') => {
+  if (!orderList || orderList.length === 0) {
+    return 0
+  }
+  
+  const total = orderList.length
+  let completed = 0
+  
+  if (type === 'draw') {
+    completed = orderList.filter(order => order.isCompleteDrawTask === 1).length
+  } else {
+    completed = orderList.filter(order => order.isCompleteProducerTask === 1).length
+  }
+  
+  return Math.round((completed / total) * 100)
+}
 
 // 查询参数
 const queryParams = reactive({
@@ -2503,6 +2568,39 @@ const handleImagePreview = (url: string) => {
     font-size: 14px;
     color: var(--el-text-color-secondary);
   }
+
+  // 进度条样式
+  .progress-bars {
+    padding: 8px;
+    
+    .progress-item {
+      .text-sm {
+        color: var(--el-text-color-secondary);
+        font-size: 13px;
+        min-width: 60px;
+      }
+      
+      :deep(.el-progress) {
+        width: 100%;
+        margin-left: 4px;
+      }
+      
+      :deep(.el-progress-bar__outer) {
+        border-radius: 4px;
+        background-color: var(--el-fill-color-dark);
+      }
+      
+      :deep(.el-progress-bar__inner) {
+        border-radius: 4px;
+        transition: all 0.3s ease;
+      }
+      
+      :deep(.el-progress__text) {
+        font-size: 12px !important;
+        min-width: 35px;
+      }
+    }
+  }
 }
 
 .order-count-tag {
@@ -2675,6 +2773,30 @@ const handleImagePreview = (url: string) => {
   }
   &::-webkit-scrollbar-track {
     background: #f5f7fa;
+  }
+}
+
+.progress-bars {
+  padding: 12px;
+  background-color: var(--el-fill-color-lighter);
+  border-radius: 6px;
+  border: 1px solid var(--el-border-color-lighter);
+
+  .progress-item {
+    .text-sm {
+      color: var(--el-text-color-regular);
+      font-size: 13px;
+    }
+
+    :deep(.el-progress-bar__outer) {
+      border-radius: 4px;
+      background-color: var(--el-fill-color-darker);
+    }
+
+    :deep(.el-progress-bar__inner) {
+      border-radius: 4px;
+      transition: all 0.3s ease;
+    }
   }
 }
 </style>
