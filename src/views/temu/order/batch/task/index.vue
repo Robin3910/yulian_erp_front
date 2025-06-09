@@ -603,10 +603,11 @@ const handlerHandleUpload = async (row: any) => {
 }
 const handleUpdateBathchStatus = async (row: any) => {
   try {
-    if (!row.fileUrl) {
-      message.warning('请先上传文件!')
-      return
-    }
+    // 移除对文件上传的检查，允许在没有上传作图文件的情况下也能完成批次任务
+    // if (!row.fileUrl) {
+    //   message.warning('请先上传文件!')
+    //   return
+    // }
     if (row.status == 1) {
       message.warning('该订单已完成生产!')
       return
