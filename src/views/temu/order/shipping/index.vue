@@ -68,6 +68,9 @@
                 clearable
                 multiple
                 filterable
+                @input="handleCategorySearch"
+                remote
+                :remote-method="handleCategorySearch"
               >
                 <el-option
                   v-for="(item, index) in categoryList"
@@ -165,6 +168,7 @@
         <span class="info-item">{{ selectedStats.total }}个订单</span>
       </div>
       <el-table
+        ref="tableRef"
         v-loading="loading"
         :data="list"
         :stripe="true"
@@ -918,12 +922,24 @@ const getShopList = async () => {
 /** 搜索按钮操作 */
 const handleQuery = () => {
   queryParams.pageNo = 1
+  // 清空选中记录
+  selectedRows.value = []
+  // 如果表格实例存在，清空表格的选中状态
+  if (tableRef.value) {
+    tableRef.value.clearSelection()
+  }
   getList()
 }
 
 /** 重置按钮操作 */
 const resetQuery = () => {
   queryFormRef.value.resetFields()
+  // 清空选中记录
+  selectedRows.value = []
+  // 如果表格实例存在，清空表格的选中状态
+  if (tableRef.value) {
+    tableRef.value.clearSelection()
+  }
   handleQuery()
 }
 
@@ -2363,6 +2379,25 @@ const formatDateSafe = (timestamp: number | null | undefined, format: string) =>
 // 在使用formatDate的地方替换为formatDateSafe
 // 例如：
 // ${formatDateSafe(item.createTime, 'YYYY-MM-DD HH:mm:ss')}
+
+// 在 script 部分添加处理函数
+const handleCategorySearch = (query: string) => {
+  if (!query) return;
+  
+  // 找到所有匹配的类目
+  const matchedCategories = categoryList.value.filter(item => 
+    item.categoryName.toLowerCase().includes(query.toLowerCase())
+  );
+  
+  // 获取匹配类目的 ID 列表
+  const matchedIds = matchedCategories.map(item => item.categoryId);
+  
+  // 将匹配的类目 ID 添加到已选中的列表中
+  queryParams.categoryIds = Array.from(new Set([...queryParams.categoryIds, ...matchedIds]));
+}
+
+// 添加表格引用
+const tableRef = ref()
 </script>
 <style lang="scss">
 $predefined-colors: (
