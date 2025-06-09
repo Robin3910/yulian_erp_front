@@ -74,6 +74,24 @@
             </el-form-item>
           </el-col>
           <el-col :span="24" :lg="6">
+            <el-form-item label="类目" prop="categoryIds" class="w-full">
+              <el-select
+                v-model="queryParams.categoryIds"
+                placeholder="请选择类目"
+                clearable
+                multiple
+                filterable
+              >
+                <el-option
+                  v-for="(item, index) in categoryList"
+                  :key="index"
+                  :label="item.categoryName"
+                  :value="item.categoryId"
+                />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="24" :lg="6">
             <el-form-item>
               <el-button @click="handleQuery">
                 <Icon icon="ep:search" class="mr-5px" />
@@ -680,7 +698,8 @@ const queryParams = reactive({
   shopId: undefined,
   createTime: [],
   orderStatus: undefined,
-  customSku: undefined
+  customSku: undefined,
+  categoryIds: [] as number[] // 添加类目查询字段
 })
 const queryFormRef = ref() // 搜索的表单
 
