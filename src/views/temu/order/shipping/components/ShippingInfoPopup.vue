@@ -209,7 +209,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
+import { ref, reactive, nextTick } from 'vue'
 import { formatDate } from '@/utils/formatTime'
 import { Printer, Document } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
@@ -233,6 +233,15 @@ const packageTagMap = new Map<string, string>()
 
 const setVisible = (visible: boolean) => {
   dialogVisible.value = visible
+  // 当对话框显示时，重置滚动条位置
+  if (visible) {
+    nextTick(() => {
+      const container = document.querySelector('.shipping-info-container')
+      if (container) {
+        container.scrollTop = 0
+      }
+    })
+  }
 }
 
 defineExpose({

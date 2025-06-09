@@ -23,20 +23,20 @@
             </el-form-item>
           </el-col>
           <el-col :span="24" :lg="6">
-            <el-form-item label="订单编号" prop="orderNo" class="w-full">
+            <el-form-item label="物流单号" prop="trackingNumber" class="w-full">
               <el-input
-                v-model="queryParams.orderNo"
-                placeholder="请输入订单编号"
+                v-model="queryParams.trackingNumber"
+                placeholder="请输入物流单号"
                 clearable
                 @keyup.enter="handleQuery"
               />
             </el-form-item>
           </el-col>
           <el-col :span="24" :lg="6">
-            <el-form-item label="物流单号" prop="trackingNumber" class="w-full">
+            <el-form-item label="订单编号" prop="orderNo" class="w-full">
               <el-input
-                v-model="queryParams.trackingNumber"
-                placeholder="请输入物流单号"
+                v-model="queryParams.orderNo"
+                placeholder="请输入订单编号"
                 clearable
                 @keyup.enter="handleQuery"
               />
@@ -49,19 +49,6 @@
                 placeholder="请输入物流单号"
                 clearable
                 @keyup.enter="handleQuery"
-              />
-            </el-form-item>
-          </el-col>
-          <el-col :span="24" :lg="6">
-            <el-form-item label="订单创建时间" prop="createTime">
-              <el-date-picker
-                v-model="queryParams.createTime"
-                type="daterange"
-                range-separator="至"
-                start-placeholder="开始日期"
-                end-placeholder="结束日期"
-                value-format="YYYY-MM-DD"
-                :default-time="[new Date(2000, 1, 1, 0, 0, 0), new Date(2000, 1, 1, 23, 59, 59)]"
               />
             </el-form-item>
           </el-col>
@@ -89,6 +76,19 @@
                   :value="item.categoryId"
                 />
               </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="24" :lg="6">
+            <el-form-item label="订单创建时间" prop="createTime">
+              <el-date-picker
+                v-model="queryParams.createTime"
+                type="daterange"
+                range-separator="至"
+                start-placeholder="开始日期"
+                end-placeholder="结束日期"
+                value-format="YYYY-MM-DD"
+                :default-time="[new Date(2000, 1, 1, 0, 0, 0), new Date(2000, 1, 1, 23, 59, 59)]"
+              />
             </el-form-item>
           </el-col>
           <el-col :span="24" :lg="6">
