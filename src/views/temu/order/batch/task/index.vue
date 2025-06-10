@@ -247,6 +247,7 @@
                 <template #default="{ row }">
                   <div>
                     <div>
+                      <div>官网数量：{{ row.originalQuantity || '--' }}</div>
                       <div>数量：{{ row.quantity || '--' }}</div>
                       <div>单价：{{ row.unitPrice ? '￥' + row.unitPrice.toFixed(2) : '--' }}</div>
                       <div
