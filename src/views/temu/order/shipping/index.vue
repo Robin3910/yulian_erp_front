@@ -237,7 +237,7 @@
                     <el-icon>
                       <Aim />
                     </el-icon>
-                    产看详情
+                    查看详情
                   </el-button>
                 </el-tooltip>
 
@@ -1115,8 +1115,16 @@ const getOrderStatusText = (status: number) => {
 
 // 添加判断是否可以发货的方法
 const canShip = (row: ExtendedOrderVO) => {
-  // 修改为始终返回true，使所有物流单号都显示发货按钮
-  return true;
+  // 获取同一物流单号下的所有订单
+  const sameTrackingOrders = list.value.filter(
+    (item) => item.trackingNumber === row.trackingNumber
+  );
+  
+  // 检查是否所有订单都已经是已发货状态(4)
+  const allShipped = sameTrackingOrders.every((item) => item.orderStatus === 4);
+  
+  // 如果所有订单都已发货，则不显示发货按钮
+  return !allShipped;
 }
 
 // 修改发货处理方法
@@ -2138,7 +2146,11 @@ const isProductionComplete = (row: ExtendedOrderVO) => {
   // 如果没有订单，返回false
   if (sameTrackingOrders.length === 0) return false
   
-  // 检查是否每个订单都已完成生产任务
+  // 检查是否所有订单都已发货（状态为4）
+  const allShipped = sameTrackingOrders.every((order) => order.orderStatus === 4)
+  if (allShipped) return true
+  
+  // 如果不是所有订单都已发货，则检查是否每个订单都已完成生产任务
   return sameTrackingOrders.every((order) => {
     // 严格检查isCompleteProducerTask是否为1，考虑可能为null的情况
     return order.isCompleteProducerTask === 1
