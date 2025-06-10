@@ -1115,19 +1115,16 @@ const getOrderStatusText = (status: number) => {
 
 // 添加判断是否可以发货的方法
 const canShip = (row: ExtendedOrderVO) => {
-  // 检查当前物流单号下是否有状态为3的订单
-  const sameTrackingOrders = list.value.filter(
-    (item) => item.trackingNumber === row.trackingNumber && item.orderStatus === 3
-  )
-  return sameTrackingOrders.length > 0
+  // 修改为始终返回true，使所有物流单号都显示发货按钮
+  return true;
 }
 
 // 修改发货处理方法
 const handleShip = async (row: ExtendedOrderVO) => {
   try {
-    // 获取同一物流单号下的所有可发货订单
+    // 获取同一物流单号下的所有订单，不再限制状态为3
     const sameTrackingOrders = list.value.filter(
-      (item) => item.trackingNumber === row.trackingNumber && item.orderStatus === 3
+      (item) => item.trackingNumber === row.trackingNumber
     )
 
     const orderIds = sameTrackingOrders.map((item) => item.id)
