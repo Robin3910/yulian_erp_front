@@ -354,14 +354,30 @@ const filterOrderQuantity = (list: any[]) => {
     }
 
     // 针对LeZdz店铺的特殊处理逻辑
-    if (shopName.includes("LeZdz") && (properties.match(/\d+g jar label/i) || properties.match(/\d+kg jar label/i))) {
+    if (shopName.includes("LeZdz")) {
+      // 匹配标题中形如"DIY 3件"的格式
+      const diyMatch = productTitle.match(/diy\s*(\d+)\s*件/i);
+      if (diyMatch) {
+        const diyQuantity = parseInt(diyMatch[1], 10);
+        item.quantity = diyQuantity * originalQuantity;
+        return;
+      }
+      
       // 当LeZdz店铺的属性描述包含"g Jar Label"或"kg Jar Label"格式时，使用官网数量
-      item.quantity = originalQuantity;
-      return;
+      if (properties.match(/\d+g jar label/i) || properties.match(/\d+kg jar label/i)) {
+        item.quantity = originalQuantity;
+        return;
+      }
     }
 
     // 针对SJDZ店铺的特殊处理逻辑
     if (shopName.includes("SJDZ")) {
+      // 当类目名称包含"五件套"时，使用官网数量
+      if (item.categoryName && item.categoryName.includes("五件套")) {
+        item.quantity = originalQuantity;
+        return;
+      }
+      
       // 从产品名称中提取数量信息，如"【定制】200pcs/set"中的200
       const titlePcsMatch = productTitle.match(/(\d+)pcs\/set/i);
       if (titlePcsMatch) {
@@ -372,10 +388,18 @@ const filterOrderQuantity = (list: any[]) => {
     }
 
     // 针对LECODZ店铺的特殊处理逻辑
-    if (shopName.includes("LECODZ") && properties.match(/style\s*\d+/i)) {
+    if (shopName.includes("LECODZ")) {
+      // 当属性描述为"7 piece set"时，使用官网数量
+      if (properties.trim() === "7 piece set") {
+        item.quantity = originalQuantity;
+        return;
+      }
+      
       // 当LECODZ店铺的属性描述为"style 数字"格式时，使用官网数量
-      item.quantity = originalQuantity;
-      return;
+      if (properties.match(/style\s*\d+/i)) {
+        item.quantity = originalQuantity;
+        return;
+      }
     }
 
     // 针对BLDDZ店铺的特殊处理逻辑
@@ -438,6 +462,20 @@ const filterOrderQuantity = (list: any[]) => {
 
     // 针对QTLK店铺的特殊处理逻辑
     if (shopName.includes("QTLK")) {
+      // 当属性描述为"19.7"时，使用官网数量
+      if (properties.trim() === "19.7") {
+        item.quantity = originalQuantity;
+        return;
+      }
+      
+      // 匹配形如"style 数字"的格式
+      const styleMatch = properties.match(/style\s*(\d+)/i);
+      if (styleMatch) {
+        // 当属性描述为"style 数字"格式时，使用官网数量
+        item.quantity = originalQuantity;
+        return;
+      }
+      
       // 匹配形如"pink-10pcs"或"green-20pcs"这样的格式
       const colorPcsMatch = properties.match(/[a-z]+-(\d+)pcs/i);
       if (colorPcsMatch) {
