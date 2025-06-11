@@ -119,6 +119,17 @@
                 />
               </el-form-item>
             </el-col>
+            <el-col :span="24" :lg="6">
+          <el-form-item label="订单编号" prop="orderNo" class="w-full">
+            <el-input
+              v-model="queryParams.orderNo"
+              placeholder="请输入订单编号"
+              clearable
+              @keyup.enter="handleQuery"
+
+            />
+          </el-form-item>
+        </el-col>
             <el-col :span="24" :lg="24">
               <el-form-item>
                 <el-button @click="handleQuery">
