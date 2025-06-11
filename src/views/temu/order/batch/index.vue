@@ -1090,7 +1090,11 @@ const handleDownloadCustomImages = async (row: any) => {
             // 使用订单号和图片索引构建文件名，保留原始扩展名
             const urlParts = url.split('.')
             const extension = urlParts[urlParts.length - 1] || 'png'
-            const fileName = `订单${orderIndex + 1}_${order.orderNo}_图片${imgIndex + 1}.${extension}`
+            // 添加品类信息、制作数量和官网数量到文件名
+            const categoryInfo = order.categoryName ? `_${order.categoryName}` : ''
+            const makeQuantity = order.quantity ? `_制作：${order.quantity}` : ''
+            const originalQuantity = order.originalQuantity ? `_官网：${order.originalQuantity}` : ''
+            const fileName = `订单${orderIndex + 1}_${order.orderNo}_图片${imgIndex + 1}${categoryInfo}${makeQuantity}${originalQuantity}.${extension}`
             zip.file(fileName, blob)
           })
           .catch((error) => {
