@@ -200,6 +200,10 @@
         </div>
       </div>
       <div class="flex gap-2">
+        <el-button type="success" @click="handleDownloadSelectedImages" plain :disabled="selectedInnerOrders.length === 0">
+          <Icon icon="ep:picture" class="mr-5px" />
+          下载选中订单图片
+        </el-button>
         <el-button type="primary" @click="handlePrintBatch" plain>
           <Icon icon="ep:printer" class="mr-5px" />
           打印所有批次箱贴
@@ -2088,6 +2092,96 @@ const handleImagePreview = (url: string) => {
       }
     })
   }
+}
+
+/** 下载选中订单的定制图片 */
+const handleDownloadSelectedImages = async () => {
+  if (!selectedInnerOrders.value || selectedInnerOrders.value.length === 0) {
+    ElMessage.warning('请先选择要下载图片的订单')
+    return
+  }
+
+  try {
+    loading.value = true
+    const zip = new JSZip()
+    const promises: Promise<void>[] = []
+    let hasImages = false
+
+    // 遍历所有选中的订单
+    selectedInnerOrders.value.forEach((order: any, orderIndex: number) => {
+      if (!order.customImageUrls) return
+
+      const urls = order.customImageUrls.split(',')
+      urls.forEach((url: string, imgIndex: number) => {
+        if (!url) return
+
+        hasImages = true
+        const promise = fetch(url)
+          .then((response) => {
+            if (!response.ok) throw new Error(`Network response was not ok for image: ${url}`)
+            return response.blob()
+          })
+          .then((blob) => {
+            // 使用订单号和图片索引构建文件名，保留原始扩展名
+            const urlParts = url.split('.')
+            const extension = urlParts[urlParts.length - 1] || 'png'
+            // 添加品类信息、制作数量和官网数量到文件名
+            const categoryInfo = order.categoryName ? `_${order.categoryName}` : ''
+            const makeQuantity = order.quantity ? `_制作：${order.quantity}` : ''
+            const originalQuantity = order.originalQuantity ? `_官网：${order.originalQuantity}` : ''
+            const fileName = `订单${orderIndex + 1}_${order.orderNo}_图片${imgIndex + 1}${categoryInfo}${makeQuantity}${originalQuantity}.${extension}`
+            zip.file(fileName, blob)
+          })
+          .catch((error) => {
+            console.error(`Error processing image ${url}:`, error)
+          })
+
+        promises.push(promise)
+      })
+    })
+
+    if (!hasImages) {
+      message.warning('没有找到可下载的定制图片！')
+      loading.value = false
+      return
+    }
+
+    // 等待所有图片加载完成
+    await Promise.all(promises)
+
+    // 生成zip文件并下载
+    const content = await zip.generateAsync({ type: 'blob' })
+    const link = document.createElement('a')
+    link.href = URL.createObjectURL(content)
+    link.download = `选中订单定制图片_${dayjs().format('YYYYMMDDHHmmss')}.zip`
+    link.click()
+
+    // 释放URL对象
+    URL.revokeObjectURL(link.href)
+    message.success('选中订单定制图片打包下载成功！')
+    
+    // 清除选中状态
+    clearSelectedInnerOrders()
+  } catch (error) {
+    console.error('下载定制图片失败:', error)
+    message.error('下载定制图片失败，请重试！')
+  } finally {
+    loading.value = false
+  }
+}
+
+/** 清除内部选中的订单 */
+const clearSelectedInnerOrders = () => {
+  // 遍历所有表格引用，清除选择
+  tableRefs.value.forEach((tableRef) => {
+    if (tableRef && tableRef.clearSelection) {
+      tableRef.clearSelection()
+    }
+  })
+  
+  // 清空选中记录
+  batchSelections.value.clear()
+  selectedInnerOrders.value = []
 }
 
 </script>
