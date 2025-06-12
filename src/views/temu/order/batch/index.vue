@@ -223,6 +223,7 @@
       v-infinite-scroll="loadMore"
       infinite-scroll-disabled="loading"
       infinite-scroll-distance="10"
+      ref="mainTableRef"
     >
       <!--选择-->
       <el-table-column reserve-selection type="selection" width="30" align="center" />
@@ -788,7 +789,7 @@
       v-model:limit="queryParams.pageSize"
       :page-sizes="[1, 3, 5, 10, 20]"
       :default-page-size="5"
-      @pagination="getList"
+      @pagination="handlePaginationChange"
     />
   </ContentWrap>
   <!--修改备注-->
@@ -834,6 +835,7 @@ const batchSelections = ref<Map<string, OrderVO[]>>(new Map()) // 每个批次�
 const tableRefs = ref<Map<string, any>>(new Map()) // 存储表格引用
 const expandedRows = ref<string[]>([]) // 存储展开的行
 const isAllExpanded = ref(false) // 是否全部展开
+const mainTableRef = ref() // 主表格引用
 
 // 计算进度条颜色
 const progressColor = (percentage: number) => {
@@ -938,7 +940,27 @@ const clearAllSelections = () => {
   // 清除选择记录
   selectedOrders.value = []
   selectedRows.value = []
+  
+  // 使用表格ref清除选择
+  if (mainTableRef.value) {
+    mainTableRef.value.clearSelection()
+  }
 }
+
+/** 清除内部选中的订单 */
+const clearSelectedInnerOrders = () => {
+  // 遍历所有表格引用，清除选择
+  tableRefs.value.forEach((tableRef) => {
+    if (tableRef && tableRef.clearSelection) {
+      tableRef.clearSelection()
+    }
+  })
+  
+  // 清空选中记录
+  batchSelections.value.clear()
+  selectedInnerOrders.value = []
+}
+
 const handlerCompleteOrderTask = async (scope, row, taskType) => {
   try {
     await OrderBatchApi.completeOrderTaskByAdmin({
@@ -981,6 +1003,16 @@ const getList = async () => {
     // 默认不展开任何行
     expandedRows.value = []
     isAllExpanded.value = false
+    
+    // 清除选中状态（在数据重新加载后）
+    nextTick(() => {
+      // 清除主表格选择
+      clearAllSelections()
+      // 清除内部选中的订单
+      clearSelectedInnerOrders()
+      // 清除选择记录
+      batchSelections.value.clear()
+    })
   } finally {
     loading.value = false
   }
@@ -2170,18 +2202,11 @@ const handleDownloadSelectedImages = async () => {
   }
 }
 
-/** 清除内部选中的订单 */
-const clearSelectedInnerOrders = () => {
-  // 遍历所有表格引用，清除选择
-  tableRefs.value.forEach((tableRef) => {
-    if (tableRef && tableRef.clearSelection) {
-      tableRef.clearSelection()
-    }
-  })
-  
-  // 清空选中记录
-  batchSelections.value.clear()
-  selectedInnerOrders.value = []
+/** 分页改变 */
+const handlePaginationChange = () => {
+  // 清除主表格选择
+  clearAllSelections()
+  getList()
 }
 
 </script>
