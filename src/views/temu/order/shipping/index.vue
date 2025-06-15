@@ -2,54 +2,29 @@
   <div class="shipping-container">
     <!-- 搜索工作栏 -->
     <ContentWrap>
-      <el-form
-        class="-mb-15px"
-        :model="queryParams"
-        ref="queryFormRef"
-        :inline="true"
-        label-width="100px"
-      >
+      <el-form class="-mb-15px" :model="queryParams" ref="queryFormRef" :inline="true" label-width="100px">
         <el-row :gutter="20">
           <el-col :span="24" :lg="6">
             <el-form-item label="店铺" prop="shopId" class="w-full">
               <el-select filterable v-model="queryParams.shopId" placeholder="请选择店铺" clearable>
-                <el-option
-                  v-for="(item, index) in shopList"
-                  :key="index"
-                  :label="item.shopName"
-                  :value="item.shopId"
-                />
+                <el-option v-for="(item, index) in shopList" :key="index" :label="item.shopName" :value="item.shopId" />
               </el-select>
             </el-form-item>
           </el-col>
           <el-col :span="24" :lg="6">
             <el-form-item label="物流单号" prop="trackingNumber" class="w-full">
-              <el-input
-                v-model="queryParams.trackingNumber"
-                placeholder="请输入物流单号"
-                clearable
-                @keyup.enter="handleQuery"
-              />
+              <el-input v-model="queryParams.trackingNumber" placeholder="请输入物流单号" clearable
+                @keyup.enter="handleQuery" />
             </el-form-item>
           </el-col>
           <el-col :span="24" :lg="6">
             <el-form-item label="订单编号" prop="orderNo" class="w-full">
-              <el-input
-                v-model="queryParams.orderNo"
-                placeholder="请输入订单编号"
-                clearable
-                @keyup.enter="handleQuery"
-              />
+              <el-input v-model="queryParams.orderNo" placeholder="请输入订单编号" clearable @keyup.enter="handleQuery" />
             </el-form-item>
           </el-col>
           <el-col :span="24" :lg="6">
             <el-form-item label="定制SKU" prop="customSku" class="w-full">
-              <el-input
-                v-model="queryParams.customSku"
-                placeholder="请输入物流单号"
-                clearable
-                @keyup.enter="handleQuery"
-              />
+              <el-input v-model="queryParams.customSku" placeholder="请输入物流单号" clearable @keyup.enter="handleQuery" />
             </el-form-item>
           </el-col>
           <el-col :span="24" :lg="6">
@@ -61,37 +36,27 @@
             </el-form-item>
           </el-col>
           <el-col :span="24" :lg="6">
+            <el-form-item label="加急状态" prop="isUrgent" class="w-full">
+              <el-select v-model="queryParams.isUrgent" placeholder="请选择加急状态" clearable>
+                <el-option label="加急" :value="1" />
+                <el-option label="非加急" :value="0" />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="24" :lg="6">
             <el-form-item label="类目" prop="categoryIds" class="w-full">
-              <el-select
-                v-model="queryParams.categoryIds"
-                placeholder="请选择类目"
-                clearable
-                multiple
-                filterable
-                @input="handleCategorySearch"
-                remote
-                :remote-method="handleCategorySearch"
-              >
-                <el-option
-                  v-for="(item, index) in categoryList"
-                  :key="index"
-                  :label="item.categoryName"
-                  :value="item.categoryId"
-                />
+              <el-select v-model="queryParams.categoryIds" placeholder="请选择类目" clearable multiple filterable
+                @input="handleCategorySearch" remote :remote-method="handleCategorySearch">
+                <el-option v-for="(item, index) in categoryList" :key="index" :label="item.categoryName"
+                  :value="item.categoryId" />
               </el-select>
             </el-form-item>
           </el-col>
           <el-col :span="24" :lg="6">
             <el-form-item label="订单创建时间" prop="createTime">
-              <el-date-picker
-                v-model="queryParams.createTime"
-                type="daterange"
-                range-separator="至"
-                start-placeholder="开始日期"
-                end-placeholder="结束日期"
-                value-format="YYYY-MM-DD"
-                :default-time="[new Date(2000, 1, 1, 0, 0, 0), new Date(2000, 1, 1, 23, 59, 59)]"
-              />
+              <el-date-picker v-model="queryParams.createTime" type="daterange" range-separator="至"
+                start-placeholder="开始日期" end-placeholder="结束日期" value-format="YYYY-MM-DD"
+                :default-time="[new Date(2000, 1, 1, 0, 0, 0), new Date(2000, 1, 1, 23, 59, 59)]" />
             </el-form-item>
           </el-col>
           <el-col :span="24" :lg="6">
@@ -114,48 +79,23 @@
     <ContentWrap>
       <div class="mb-10px flex justify-between">
         <div class="flex gap-2">
-          <el-button
-            type="success"
-            @click="handlerPrintBatchAll"
-            plain
-            :disabled="selectedStats.total === 0"
-          >
+          <el-button type="success" @click="handlerPrintBatchAll" plain :disabled="selectedStats.total === 0">
             <Icon icon="ep:printer" class="mr-5px" />
             打印全部
           </el-button>
-          <el-button
-            type="danger"
-            @click="handlerPrintBatchUrgent"
-            plain
-            :disabled="selectedStats.total === 0"
-          >
+          <el-button type="danger" @click="handlerPrintBatchUrgent" plain :disabled="selectedStats.total === 0">
             <Icon icon="ep:printer" class="mr-5px" />
             批量打印加急面单
           </el-button>
-          <el-button
-            type="primary"
-            @click="handlerPrintBatchExpress"
-            plain
-            :disabled="selectedStats.total === 0"
-          >
+          <el-button type="primary" @click="handlerPrintBatchExpress" plain :disabled="selectedStats.total === 0">
             <Icon icon="ep:printer" class="mr-5px" />
             批量打印面单
           </el-button>
-          <el-button
-            type="warning"
-            @click="handlerPrintBatchMerged"
-            plain
-            :disabled="selectedStats.total === 0"
-          >
+          <el-button type="warning" @click="handlerPrintBatchMerged" plain :disabled="selectedStats.total === 0">
             <Icon icon="ep:printer" class="mr-5px" />
             批量打印条码+合规单
           </el-button>
-          <el-button
-            type="info"
-            @click="handlerPrintPickList"
-            plain
-            :disabled="selectedStats.total === 0"
-          >
+          <el-button type="info" @click="handlerPrintPickList" plain :disabled="selectedStats.total === 0">
             <Icon icon="ep:printer" class="mr-5px" />
             打印拣货单
           </el-button>
@@ -167,49 +107,21 @@
         <span class="info-item">{{ selectedStats.orderNos }}个订单编号</span>
         <span class="info-item">{{ selectedStats.total }}个订单</span>
       </div>
-      <el-table
-        ref="tableRef"
-        v-loading="loading"
-        :data="list"
-        :stripe="true"
-        :show-overflow-tooltip="true"
-        @selection-change="handleSelectionChange"
-        :span-method="handleSpanMethod"
-        class="custom-table shipping-table"
-        height="calc(100vh - 280px)"
-        :header-cell-style="{ background: 'var(--el-bg-color)' }"
-        :row-class-name="tableRowClassName"
-        row-key="uniqueId"
-        :virtual-scrolling="true"
-        :scrollbar-always-on="true"
-        :max-height="800"
-      >
+      <el-table ref="tableRef" v-loading="loading" :data="list" :stripe="true" :show-overflow-tooltip="true"
+        @selection-change="handleSelectionChange" :span-method="handleSpanMethod" class="custom-table shipping-table"
+        height="calc(100vh - 280px)" :header-cell-style="{ background: 'var(--el-bg-color)' }"
+        :row-class-name="tableRowClassName" row-key="uniqueId" :virtual-scrolling="true" :scrollbar-always-on="true"
+        :max-height="800">
         <!-- 复选框列 -->
-        <el-table-column
-          type="selection"
-          width="55"
-          align="center"
-          fixed="left"
-          :selectable="(row, index) => isSelectable(row, index)"
-          :reserve-selection="true"
-        />
+        <el-table-column type="selection" width="55" align="center" fixed="left"
+          :selectable="(row, index) => isSelectable(row, index)" :reserve-selection="true" />
         <!-- 物流单号列 -->
-        <el-table-column
-          label="物流单号"
-          align="center"
-          min-width="170"
-          fixed="left"
-          class-name="tracking-column"
-        >
+        <el-table-column label="物流单号" align="center" min-width="170" fixed="left" class-name="tracking-column">
           <template #default="{ row, $index }">
             <template v-if="spanArr.trackingSpans[$index] !== 0">
               <div class="tracking-number-cell">
                 <!-- 添加"货已备齐"状态标签 -->
-                <el-tag
-                  :type="isProductionComplete(row) ? 'success' : 'warning'"
-                  class="stock-status-tag"
-                  size="small"
-                >
+                <el-tag :type="isProductionComplete(row) ? 'success' : 'warning'" class="stock-status-tag" size="small">
                   {{ isProductionComplete(row) ? '货已备齐' : '货未备齐' }}
                 </el-tag>
                 <div class="tracking-number-wrapper">
@@ -217,23 +129,10 @@
                     (row as any).trackingNumber || '-'
                   }}</span>
                 </div>
-                <el-tooltip
-                  effect="dark"
-                  content="进入专注模式"
-                  placement="top"
-                  popper-class="custom-tooltip"
-                  :show-after="100"
-                  :hide-after="200"
-                  :enterable="false"
-                  :offset="20"
-                >
-                  <el-button
-                    size="small"
-                    type="primary"
-                    plain
-                    class="action-button urgent-print-button"
-                    @click.stop="handleFocus(row)"
-                  >
+                <el-tooltip effect="dark" content="进入专注模式" placement="top" popper-class="custom-tooltip"
+                  :show-after="100" :hide-after="200" :enterable="false" :offset="20">
+                  <el-button size="small" type="primary" plain class="action-button urgent-print-button"
+                    @click.stop="handleFocus(row)">
                     <el-icon>
                       <Aim />
                     </el-icon>
@@ -241,38 +140,19 @@
                   </el-button>
                 </el-tooltip>
 
-                <el-tooltip
-                  effect="dark"
-                  content="当前加急面单尚未上传，请联系相关人员及时上传！"
-                  placement="top"
-                  :disabled="!!row.expressOutsideImageUrl"
-                  popper-class="custom-tooltip"
-                  :show-after="100"
-                  :hide-after="200"
-                  :enterable="false"
-                  :offset="20"
-                >
-                  <el-button
-                    size="small"
-                    type="primary"
-                    plain
-                    class="action-button urgent-print-button"
-                    :disabled="!row.expressOutsideImageUrl"
-                    @click.stop="handlePrint(row.expressOutsideImageUrl)"
-                  >
+                <el-tooltip effect="dark" content="当前加急面单尚未上传，请联系相关人员及时上传！" placement="top"
+                  :disabled="!!row.expressOutsideImageUrl" popper-class="custom-tooltip" :show-after="100"
+                  :hide-after="200" :enterable="false" :offset="20">
+                  <el-button size="small" type="primary" plain class="action-button urgent-print-button"
+                    :disabled="!row.expressOutsideImageUrl" @click.stop="handlePrint(row.expressOutsideImageUrl)">
                     <el-icon>
                       <Printer />
                     </el-icon>
                     打印加急面单
                   </el-button>
                 </el-tooltip>
-                <el-button
-                  v-if="canShip(row)"
-                  size="small"
-                  type="success"
-                  class="action-button ship-button"
-                  @click.stop="handleShip(row)"
-                >
+                <el-button v-if="canShip(row)" size="small" type="success" class="action-button ship-button"
+                  @click.stop="handleShip(row)">
                   <el-icon>
                     <Van />
                   </el-icon>
@@ -284,12 +164,7 @@
         </el-table-column>
 
         <!-- 订单信息列 -->
-        <el-table-column
-          label="订单信息"
-          align="center"
-          min-width="275"
-          class-name="order-info-column"
-        >
+        <el-table-column label="订单信息" align="center" min-width="275" class-name="order-info-column">
           <template #default="{ row, $index }">
             <div class="order-info">
               <div class="order-number">
@@ -313,50 +188,22 @@
                   </div>
                 </div>
                 <div class="mt-2 flex justify-center gap-2">
-                  <el-tooltip
-                    effect="dark"
-                    content="当前面单尚未上传，请联系相关人员及时上传！"
-                    placement="top"
-                    :disabled="!!row.expressImageUrl"
-                    popper-class="custom-tooltip"
-                    :show-after="100"
-                    :hide-after="200"
-                    :enterable="false"
-                    :offset="20"
-                  >
-                    <el-button
-                      size="small"
-                      type="primary"
-                      plain
-                      class="action-button urgent-print-button"
-                      :disabled="!row.expressImageUrl"
-                      @click.stop="handlePrint(row.expressImageUrl)"
-                    >
+                  <el-tooltip effect="dark" content="当前面单尚未上传，请联系相关人员及时上传！" placement="top"
+                    :disabled="!!row.expressImageUrl" popper-class="custom-tooltip" :show-after="100" :hide-after="200"
+                    :enterable="false" :offset="20">
+                    <el-button size="small" type="primary" plain class="action-button urgent-print-button"
+                      :disabled="!row.expressImageUrl" @click.stop="handlePrint(row.expressImageUrl)">
                       <el-icon>
                         <Printer />
                       </el-icon>
                       打印面单
                     </el-button>
                   </el-tooltip>
-                  <el-tooltip
-                    effect="dark"
-                    content="当前商品条码尚未上传，请联系相关人员及时上传！"
-                    placement="top"
-                    :disabled="!!row.expressSkuImageUrl"
-                    popper-class="custom-tooltip"
-                    :show-after="100"
-                    :hide-after="200"
-                    :enterable="false"
-                    :offset="20"
-                  >
-                    <el-button
-                      size="small"
-                      type="info"
-                      plain
-                      class="action-button urgent-print-button"
-                      :disabled="!row.expressSkuImageUrl"
-                      @click.stop="handlePrint(row.expressSkuImageUrl)"
-                    >
+                  <el-tooltip effect="dark" content="当前商品条码尚未上传，请联系相关人员及时上传！" placement="top"
+                    :disabled="!!row.expressSkuImageUrl" popper-class="custom-tooltip" :show-after="100"
+                    :hide-after="200" :enterable="false" :offset="20">
+                    <el-button size="small" type="info" plain class="action-button urgent-print-button"
+                      :disabled="!row.expressSkuImageUrl" @click.stop="handlePrint(row.expressSkuImageUrl)">
                       <el-icon>
                         <Printer />
                       </el-icon>
@@ -372,37 +219,26 @@
         <!-- 订单状态 -->
         <el-table-column label="订单状态" prop="orderStatus" align="center" min-width="135">
           <template #default="{ row }">
-            <el-tag :type="getOrderStatusType(row.orderStatus)" class="status-tag" size="large">
-              {{ getOrderStatusText(row.orderStatus) }}
-            </el-tag>
+            <div class="status-wrapper">
+              <el-tag v-if="row.isUrgent" type="danger" class="urgent-status-tag" size="large">加急</el-tag>
+              <el-tag :type="getOrderStatusType(row.orderStatus)" class="status-tag" size="large">
+                {{ getOrderStatusText(row.orderStatus) }}
+              </el-tag>
+            </div>
           </template>
         </el-table-column>
 
         <!-- 产品图片 -->
         <el-table-column label="产品图片" align="center" prop="productImgUrl" min-width="110">
           <template #default="{ row }">
-            <el-image
-              :hide-on-click-modal="true"
-              :preview-teleported="true"
-              :src="row.productImgUrl"
-              :preview-src-list="[row.productImgUrl]"
-              style="width: 80px; height: 80px"
-              loading="lazy"
-              :initial-index="0"
-              fit="contain"
-              :z-index="3000"
-              :preview="false"
-            />
+            <el-image :hide-on-click-modal="true" :preview-teleported="true" :src="row.productImgUrl"
+              :preview-src-list="[row.productImgUrl]" style="width: 80px; height: 80px" loading="lazy"
+              :initial-index="0" fit="contain" :z-index="3000" :preview="false" />
           </template>
         </el-table-column>
 
         <!-- 商品信息 -->
-        <el-table-column
-          label="商品信息"
-          min-width="175"
-          class-name="text-left-column"
-          header-align="center"
-        >
+        <el-table-column label="商品信息" min-width="175" class-name="text-left-column" header-align="center">
           <template #default="{ row }">
             <div class="product-info">
               <div class="product-title">
@@ -426,13 +262,8 @@
         </el-table-column>
 
         <!-- SKU信息 -->
-        <el-table-column
-          label="SKU信息"
-          align="center"
-          min-width="275"
-          class-name="text-left-column"
-          header-align="center"
-        >
+        <el-table-column label="SKU信息" align="center" min-width="275" class-name="text-left-column"
+          header-align="center">
           <template #default="{ row }">
             <div class="sku-info">
               <div class="sku-item">
@@ -455,13 +286,7 @@
         </el-table-column>
 
         <!-- 定制文字列表 -->
-        <el-table-column
-          label="定制文字列表"
-          prop="customTextList"
-          align="center"
-          min-width="110"
-          show-overflow-tooltip
-        >
+        <el-table-column label="定制文字列表" prop="customTextList" align="center" min-width="110" show-overflow-tooltip>
           <template #default="{ row }">
             <div v-if="row.customTextList">{{ row.customTextList }}</div>
             <span v-else></span>
@@ -472,22 +297,9 @@
         <el-table-column label="定制图片列表" align="center" prop="customImageUrls" min-width="150">
           <template #default="{ row }">
             <div class="custom-images-container" v-if="row.customImageUrls">
-              <div
-                v-for="(item, index) in row.customImageUrls.split(',')"
-                :key="index"
-                class="image-item"
-              >
-                <el-image
-                  :hide-on-click-modal="true"
-                  :preview-teleported="true"
-                  :src="item"
-                  :preview-src-list="[item]"
-                  style="width: 60px; height: 60px"
-                  fit="cover"
-                  loading="lazy"
-                  :initial-index="0"
-                  :preview="false"
-                />
+              <div v-for="(item, index) in row.customImageUrls.split(',')" :key="index" class="image-item">
+                <el-image :hide-on-click-modal="true" :preview-teleported="true" :src="item" :preview-src-list="[item]"
+                  style="width: 60px; height: 60px" fit="cover" loading="lazy" :initial-index="0" :preview="false" />
               </div>
             </div>
             <span v-else>-</span>
@@ -506,18 +318,9 @@
         <!-- 合成预览图 -->
         <el-table-column label="合成预览图" prop="effectiveImgUrl" align="center" min-width="110">
           <template #default="{ row }">
-            <el-image
-              v-if="row.effectiveImgUrl"
-              :hide-on-click-modal="true"
-              :preview-teleported="true"
-              :src="row.effectiveImgUrl"
-              :preview-src-list="[row.effectiveImgUrl]"
-              style="width: 80px; height: 80px"
-              fit="cover"
-              loading="lazy"
-              :initial-index="0"
-              :preview="false"
-            />
+            <el-image v-if="row.effectiveImgUrl" :hide-on-click-modal="true" :preview-teleported="true"
+              :src="row.effectiveImgUrl" :preview-src-list="[row.effectiveImgUrl]" style="width: 80px; height: 80px"
+              fit="cover" loading="lazy" :initial-index="0" :preview="false" />
             <span v-else>-</span>
           </template>
         </el-table-column>
@@ -537,49 +340,26 @@
         <el-table-column label="操作" fixed="right" align="center" min-width="160">
           <template #default="{ row }">
             <div class="action-buttons">
-              <el-tooltip
-                effect="dark"
-                content="当前合规单尚未上传，请联系相关人员及时上传！"
-                placement="left-start"
-                :disabled="!!row.complianceImageUrl"
-                popper-class="custom-tooltip custom-tooltip-left"
-                :show-after="100"
-                :hide-after="200"
-                :enterable="false"
-                :offset="20"
-              >
-                <el-button
-                  size="small"
-                  type="warning"
-                  plain
-                  class="action-button"
-                  :disabled="!row.complianceImageUrl"
-                  @click.stop="handlePrint(row.complianceImageUrl, row.originalQuantity)"
-                >
-                  <el-icon><Printer /></el-icon>
+              <el-tooltip effect="dark" content="当前合规单尚未上传，请联系相关人员及时上传！" placement="left-start"
+                :disabled="!!row.complianceImageUrl" popper-class="custom-tooltip custom-tooltip-left" :show-after="100"
+                :hide-after="200" :enterable="false" :offset="20">
+                <el-button size="small" type="warning" plain class="action-button" :disabled="!row.complianceImageUrl"
+                  @click.stop="handlePrint(row.complianceImageUrl, row.originalQuantity)">
+                  <el-icon>
+                    <Printer />
+                  </el-icon>
                   打印合规单
                 </el-button>
               </el-tooltip>
-              <el-tooltip
-                effect="dark"
-                content="当前合并文件尚未上传，请联系相关人员及时上传！"
-                placement="left-start"
-                :disabled="!!row.complianceGoodsMergedUrl"
-                popper-class="custom-tooltip custom-tooltip-left"
-                :show-after="100"
-                :hide-after="200"
-                :enterable="false"
-                :offset="20"
-              >
-                <el-button
-                  size="small"
-                  type="warning"
-                  plain
-                  class="action-button"
+              <el-tooltip effect="dark" content="当前合并文件尚未上传，请联系相关人员及时上传！" placement="left-start"
+                :disabled="!!row.complianceGoodsMergedUrl" popper-class="custom-tooltip custom-tooltip-left"
+                :show-after="100" :hide-after="200" :enterable="false" :offset="20">
+                <el-button size="small" type="warning" plain class="action-button"
                   :disabled="!row.complianceGoodsMergedUrl"
-                  @click.stop="handlePrint(row.complianceGoodsMergedUrl, row.originalQuantity)"
-                >
-                  <el-icon><Printer /></el-icon>
+                  @click.stop="handlePrint(row.complianceGoodsMergedUrl, row.originalQuantity)">
+                  <el-icon>
+                    <Printer />
+                  </el-icon>
                   打印条码+合规单
                 </el-button>
               </el-tooltip>
@@ -588,12 +368,8 @@
         </el-table-column>
       </el-table>
       <!-- 分页 -->
-      <Pagination
-        :total="total"
-        v-model:page="queryParams.pageNo"
-        v-model:limit="queryParams.pageSize"
-        @pagination="getList"
-      />
+      <Pagination :total="total" v-model:page="queryParams.pageNo" v-model:limit="queryParams.pageSize"
+        @pagination="getList" />
     </ContentWrap>
 
     <ShippingInfoPopup @confirm="handlerRemarkConfirm" ref="shippingInfoPopup" />
@@ -655,6 +431,7 @@ interface OrderItem {
   categoryId: string | null
   oldTypeUrl: string | null
   complianceUrl: string | null
+  isUrgent: boolean | null  // 添加加急状态字段
 }
 
 interface OrderNoGroup {
@@ -703,7 +480,8 @@ const queryParams = reactive({
   createTime: [],
   orderStatus: undefined,
   customSku: undefined,
-  categoryIds: [] as number[] // 添加类目查询字段
+  categoryIds: [] as number[], // 添加类目查询字段
+  isUrgent: undefined // 添加加急状态查询参数
 })
 const queryFormRef = ref() // 搜索的表单
 
@@ -741,17 +519,17 @@ const handleFocus = async (row: any) => {
   // 设置包裹数量和产品总数
   const packageCount = getPackageCount(row)
   const productCount = getProductCount(row)
-  
+
   // 设置包裹标签
   const packageTag = getPackageTag(row)
-  
+
   // 更新订单信息
   sameTrackingOrders.forEach(order => {
     order.packageCount = packageCount
     order.productCount = productCount
     order.packageTag = packageTag
   })
-  
+
   if (shippingInfoPopup.value) {
     shippingInfoPopup.value.setVisible(true)
     shippingInfoPopup.value.formData.orderId = String(row.id)
@@ -877,7 +655,7 @@ const getList = async () => {
       if (shippingOrder.expressImageUrl) imageUrls.push(shippingOrder.expressImageUrl)
       if (shippingOrder.expressOutsideImageUrl) imageUrls.push(shippingOrder.expressOutsideImageUrl)
       if (shippingOrder.expressSkuImageUrl) imageUrls.push(shippingOrder.expressSkuImageUrl)
-      
+
       shippingOrder.orderNoList.forEach((orderNoGroup) => {
         if (orderNoGroup.orderList && orderNoGroup.orderList.length > 0) {
           orderNoGroup.orderList.forEach((orderItem) => {
@@ -952,10 +730,10 @@ const isSelectable = (row: ExtendedOrderVO, index: number) => {
 // 修改选择处理函数
 const handleSelectionChange = (selection: ExtendedOrderVO[]) => {
   // 过滤掉重复的物流单号，只保留每个物流单号的第一条记录
-  const uniqueSelection = selection.filter((row, index, self) => 
+  const uniqueSelection = selection.filter((row, index, self) =>
     index === self.findIndex(r => r.trackingNumber === row.trackingNumber)
   )
-  
+
   selectedRows.value = uniqueSelection
 
   // 统计选中的物流单号和订单编号数量
@@ -967,12 +745,12 @@ const handleSelectionChange = (selection: ExtendedOrderVO[]) => {
   uniqueSelection.forEach(selectedRow => {
     if (selectedRow.trackingNumber) {
       trackingNumbersSet.add(selectedRow.trackingNumber)
-      
+
       // 找出该物流单号下的所有订单
-      const relatedOrders = list.value.filter(row => 
+      const relatedOrders = list.value.filter(row =>
         row.trackingNumber === selectedRow.trackingNumber
       )
-      
+
       relatedOrders.forEach(order => {
         if (order.orderNo) {
           orderNosSet.add(order.orderNo)
@@ -1119,10 +897,10 @@ const canShip = (row: ExtendedOrderVO) => {
   const sameTrackingOrders = list.value.filter(
     (item) => item.trackingNumber === row.trackingNumber
   );
-  
+
   // 检查是否所有订单都已经是已发货状态(4)
   const allShipped = sameTrackingOrders.every((item) => item.orderStatus === 4);
-  
+
   // 如果所有订单都已发货，则不显示发货按钮
   return !allShipped;
 }
@@ -1179,10 +957,10 @@ const handlePrint = async (url: string, quantity?: number) => {
 
   // 处理URL中的@前缀
   const printUrl = url.startsWith('@') ? url.substring(1) : url
-  
+
   // 计算打印份数
   const printCount = quantity && quantity > 1 ? quantity : 1
-  
+
   // 添加loading
   const loading = ElLoading.service({
     lock: true,
@@ -1200,29 +978,29 @@ const handlePrint = async (url: string, quantity?: number) => {
       if (!response.ok) {
         throw new Error(`获取PDF文件失败: ${response.statusText}`)
       }
-      
+
       const pdfBytes = await response.arrayBuffer()
-      
+
       try {
         // 创建新的PDF文档
         const pdfDoc = await PDFDocument.load(pdfBytes)
         const mergedPdf = await PDFDocument.create()
-        
+
         // 获取原PDF的所有页面
         const pages = await mergedPdf.copyPages(pdfDoc, pdfDoc.getPageIndices())
-        
+
         // 根据打印份数添加页面
         for (let i = 0; i < printCount; i++) {
           pages.forEach(page => mergedPdf.addPage(page))
         }
-        
+
         // 生成最终的PDF
         const mergedPdfBytes = await mergedPdf.save()
         const mergedPdfBlob = new Blob([mergedPdfBytes], { type: 'application/pdf' })
         const mergedPdfUrl = URL.createObjectURL(mergedPdfBlob)
-        
+
         loading.close()
-        
+
         // 打印合并后的PDF
         await new Promise<void>((resolve, reject) => {
           printJS({
@@ -1239,7 +1017,7 @@ const handlePrint = async (url: string, quantity?: number) => {
             }
           })
         })
-        
+
         ElMessage.success('打印完成')
       } catch (error) {
         console.error('处理PDF文件失败:', error)
@@ -1252,9 +1030,9 @@ const handlePrint = async (url: string, quantity?: number) => {
           <img src="${printUrl}" style="max-width: 100%; height: auto;">
         </div>
       `).join('')
-      
+
       loading.close()
-      
+
       // 使用HTML方式打印图片
       printJS({
         printable: printContent,
@@ -1269,7 +1047,7 @@ const handlePrint = async (url: string, quantity?: number) => {
           }
         `
       })
-      
+
       ElMessage.success('打印完成')
     }
   } catch (error: any) {
@@ -1279,7 +1057,7 @@ const handlePrint = async (url: string, quantity?: number) => {
   }
 }
 
-const colorMap = new Map<string,string>();
+const colorMap = new Map<string, string>();
 
 // 添加行类名处理函数
 const tableRowClassName = ({ row, rowIndex }: { row: any; rowIndex: number }) => {
@@ -1306,15 +1084,15 @@ const tableRowClassName = ({ row, rowIndex }: { row: any; rowIndex: number }) =>
   let func2 = ({ row, rowIndex }: { row: any; rowIndex: number }) => {
     if (colorMap.has(row.trackingNumber)) {
       return colorMap.get(row.trackingNumber)
-    }else{
-      colorMap.set(row.trackingNumber,`color-${rowIndex%10}-bg`)
+    } else {
+      colorMap.set(row.trackingNumber, `color-${rowIndex % 10}-bg`)
       return colorMap.get(row.trackingNumber)
     }
 
   }
   func1({ row, rowIndex })
   func2({ row, rowIndex })
-  return func1({ row, rowIndex }) +" "+ func2({ row, rowIndex })
+  return func1({ row, rowIndex }) + " " + func2({ row, rowIndex })
 }
 
 // 复制功能
@@ -1379,14 +1157,14 @@ const handlerPrintBatchMerged = async () => {
             <div style="color: #606266; font-weight: bold; margin-bottom: 8px;">${shopName}</div>
             <div style="padding-left: 16px;">
               ${Array.from(skcs)
-                .map(
-                  (skc) => `
+              .map(
+                (skc) => `
                 <div style="color: #409EFF; margin-bottom: 4px;">
                   ${skc}
                 </div>
               `
-                )
-                .join('')}
+              )
+              .join('')}
             </div>
           </div>
         `
@@ -1439,7 +1217,7 @@ const handlerPrintBatchMerged = async () => {
           const pdfBytes = await response.arrayBuffer()
           const pdf = await PDFDocument.load(pdfBytes)
           const copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices())
-          
+
           // 根据官网数量复制对应份数
           const copies = order.originalQuantity || 1
           for (let i = 0; i < copies; i++) {
@@ -1502,7 +1280,7 @@ const handlerPrintBatchUrgent = async () => {
     const allOrders: ExtendedOrderVO[] = []
     selectedRows.value.forEach(selectedRow => {
       if (selectedRow.trackingNumber) {
-        const relatedOrders = list.value.filter(row => 
+        const relatedOrders = list.value.filter(row =>
           row.trackingNumber === selectedRow.trackingNumber
         )
         allOrders.push(...relatedOrders)
@@ -1533,14 +1311,14 @@ const handlerPrintBatchUrgent = async () => {
             <div style="color: #606266; font-weight: bold; margin-bottom: 8px;">${shopName}</div>
             <div style="padding-left: 16px;">
               ${Array.from(skcs)
-                .map(
-                  (skc) => `
+              .map(
+                (skc) => `
                 <div style="color: #409EFF; margin-bottom: 4px;">
                   ${skc}
                 </div>
               `
-                )
-                .join('')}
+              )
+              .join('')}
             </div>
           </div>
         `
@@ -1651,7 +1429,7 @@ const handlerPrintBatchExpress = async () => {
     const allOrders: ExtendedOrderVO[] = []
     selectedRows.value.forEach(selectedRow => {
       if (selectedRow.trackingNumber) {
-        const relatedOrders = list.value.filter(row => 
+        const relatedOrders = list.value.filter(row =>
           row.trackingNumber === selectedRow.trackingNumber
         )
         allOrders.push(...relatedOrders)
@@ -1682,14 +1460,14 @@ const handlerPrintBatchExpress = async () => {
             <div style="color: #606266; font-weight: bold; margin-bottom: 8px;">${shopName}</div>
             <div style="padding-left: 16px;">
               ${Array.from(skcs)
-                .map(
-                  (skc) => `
+              .map(
+                (skc) => `
                 <div style="color: #409EFF; margin-bottom: 4px;">
                   ${skc}
                 </div>
               `
-                )
-                .join('')}
+              )
+              .join('')}
             </div>
           </div>
         `
@@ -1801,7 +1579,7 @@ const handlerPrintPickList = () => {
   // 先按物流单号分组，确保每个选中的物流单号都被处理
   const selectedTrackingNumbers = new Set(selectedRows.value.map(row => row.trackingNumber))
   const grouped = {} as Record<string, ExtendedOrderVO[]>
-  
+
   // 遍历所有订单，将选中的物流单号下的订单分组
   list.value.forEach(item => {
     if (selectedTrackingNumbers.has(item.trackingNumber)) {
@@ -1814,15 +1592,15 @@ const handlerPrintPickList = () => {
 
   // 生成所有物流单号的打印内容
   let printContent = ''
-  
+
   // 遍历每个物流单号，独立生成其拣货单
   Object.entries(grouped).forEach(([trackingNumber, items], groupIndex) => {
     // 每个物流单号独立计算页数
     const totalPages = Math.ceil(items.length / ITEMS_PER_PAGE)
-    
+
     // 计算该物流单号下所有订单的总数量
     const totalQuantity = items.reduce((sum, item) => sum + (item.originalQuantity || 0), 0)
-    
+
     // 按订单编号分组，计算每个订单的总数量和序号
     const orderGroups = new Map<string, { items: ExtendedOrderVO[], totalQuantity: number, lastPage: number }>()
     items.forEach(item => {
@@ -1843,11 +1621,11 @@ const handlerPrintPickList = () => {
       const startIdx = page * ITEMS_PER_PAGE
       const endIdx = Math.min(startIdx + ITEMS_PER_PAGE, items.length)
       const pageItems = items.slice(startIdx, endIdx)
-      
+
       // 记录当前页每个订单的起始序号
       const orderStartIndices = new Map<string, number>()
       let currentIndex = 1
-      
+
       // 计算每个订单在当前页的起始序号
       pageItems.forEach(item => {
         if (!orderStartIndices.has(item.orderNo)) {
@@ -1868,19 +1646,19 @@ const handlerPrintPickList = () => {
       const itemsHtml = pageItems.map((item, index) => {
         const isFirstItemOfOrder = index === 0 || pageItems[index - 1]?.orderNo !== item.orderNo
         const isLastItemOfOrder = index === pageItems.length - 1 || pageItems[index + 1]?.orderNo !== item.orderNo
-        
+
         // 获取当前订单在当前页的序号
         const orderStartIndex = orderStartIndices.get(item.orderNo) || 1
         const currentItemIndex = orderStartIndex + pageItems
           .slice(0, index)
           .filter(prevItem => prevItem.orderNo === item.orderNo)
           .length
-        
+
         // 获取当前订单的总数量和最后一页
         const orderGroup = orderGroups.get(item.orderNo)
         const orderTotalQuantity = orderGroup?.totalQuantity || 0
         const isLastPageOfOrder = orderGroup?.lastPage === currentPage
-        
+
         return `
           ${isFirstItemOfOrder ? `
           <tr class="order-header">
@@ -1914,34 +1692,31 @@ const handlerPrintPickList = () => {
                 <div style="white-space: pre-wrap; font-size: 12px;">${item.customTextList || '--'}</div>
               </div>
               <div style="display: flex; gap: 8px; align-items: flex-start; flex-wrap: wrap;">
-                ${
-                  item.customImageUrls
-                    ? `
+                ${item.customImageUrls
+            ? `
                 <div style="max-width: 120px;">
                   <strong>定制图片：</strong>
                   <div style="display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px;">
                     ${item.customImageUrls
-                      .split(',')
-                      .slice(0, 4)
-                      .map(
-                        (url) => `
+              .split(',')
+              .slice(0, 4)
+              .map(
+                (url) => `
                       <img src="${url}" style="width: 35px; height: 35px; object-fit: contain; border: 1px solid #ddd;">
                     `
-                      )
-                      .join('')}
-                    ${
-                      item.customImageUrls.split(',').length > 4
-                        ? '<div style="font-size: 12px; color: #666;">...</div>'
-                        : ''
-                    }
+              )
+              .join('')}
+                    ${item.customImageUrls.split(',').length > 4
+              ? '<div style="font-size: 12px; color: #666;">...</div>'
+              : ''
+            }
                   </div>
                 </div>
                 `
-                    : ''
-                }
-                ${
-                  item.effectiveImgUrl
-                    ? `
+            : ''
+          }
+                ${item.effectiveImgUrl
+            ? `
                 <div>
                   <strong>合成预览：</strong>
                   <div style="margin-top: 4px;">
@@ -1949,8 +1724,8 @@ const handlerPrintPickList = () => {
                   </div>
                 </div>
                 `
-                    : ''
-                }
+            : ''
+          }
               </div>
             </td>
             <td style="text-align: center; vertical-align: middle;">${item.originalQuantity || 0}</td>
@@ -2142,14 +1917,14 @@ const isProductionComplete = (row: ExtendedOrderVO) => {
   const sameTrackingOrders = list.value.filter(
     (item) => item.trackingNumber === row.trackingNumber
   )
-  
+
   // 如果没有订单，返回false
   if (sameTrackingOrders.length === 0) return false
-  
+
   // 检查是否所有订单都已发货（状态为4）
   const allShipped = sameTrackingOrders.every((order) => order.orderStatus === 4)
   if (allShipped) return true
-  
+
   // 如果不是所有订单都已发货，则检查是否每个订单都已完成生产任务
   return sameTrackingOrders.every((order) => {
     // 严格检查isCompleteProducerTask是否为1，考虑可能为null的情况
@@ -2212,14 +1987,14 @@ const handlerPrintBatchAll = async () => {
             <div style="color: #606266; font-weight: bold; margin-bottom: 8px;">${shopName}</div>
             <div style="padding-left: 16px;">
               ${Array.from(skcs)
-            .map(
-              (skc) => `
+              .map(
+                (skc) => `
                 <div style="color: #409EFF; margin-bottom: 4px;">
                   ${skc}
                 </div>
               `
-            )
-            .join('')}
+              )
+              .join('')}
             </div>
           </div>
         `
@@ -2392,15 +2167,15 @@ const formatDateSafe = (timestamp: number | null | undefined, format: string) =>
 // 在 script 部分添加处理函数
 const handleCategorySearch = (query: string) => {
   if (!query) return;
-  
+
   // 找到所有匹配的类目
-  const matchedCategories = categoryList.value.filter(item => 
+  const matchedCategories = categoryList.value.filter(item =>
     item.categoryName.toLowerCase().includes(query.toLowerCase())
   );
-  
+
   // 获取匹配类目的 ID 列表
   const matchedIds = matchedCategories.map(item => item.categoryId);
-  
+
   // 将匹配的类目 ID 添加到已选中的列表中
   queryParams.categoryIds = Array.from(new Set([...queryParams.categoryIds, ...matchedIds]));
 }
@@ -2411,28 +2186,39 @@ const tableRef = ref()
 <style lang="scss">
 $predefined-colors: (
   // 红色系
-  color-0: rgba(228, 193, 249, 0.5),  // 鲜红色
-  color-1: rgba(255, 209, 102, 0.5),  // 亮红色
-  color-2: rgba(6, 214, 160, 0.5),  // 橙红色
-  color-3: rgba(17, 138, 178, 0.5),  // 番茄红
+  color-0: rgba(228, 193, 249, 0.5),
+  // 鲜红色
+  color-1: rgba(255, 209, 102, 0.5),
+  // 亮红色
+  color-2: rgba(6, 214, 160, 0.5),
+  // 橙红色
+  color-3: rgba(17, 138, 178, 0.5),
+  // 番茄红
 
   // 橙色系
-  color-4: rgba(150, 224, 114, 0.5),  // 深橙色
-  color-5: rgba(112, 214, 255, 0.5),  // 橙色
-  color-6: rgba(236, 243, 158, 0.5),  // 琥珀色
-  color-7: rgba(255, 214, 112, 0.5),  // 金橙色
+  color-4: rgba(150, 224, 114, 0.5),
+  // 深橙色
+  color-5: rgba(112, 214, 255, 0.5),
+  // 橙色
+  color-6: rgba(236, 243, 158, 0.5),
+  // 琥珀色
+  color-7: rgba(255, 214, 112, 0.5),
+  // 金橙色
 
   // 黄色系
-  color-8: rgba(241, 192, 232, 0.5),  // 金色
-  color-9: rgba(152, 193, 217, 0.5),  // 黄色
-  color-10: rgba(72, 149, 239, 0.5), // 亮黄色
+  color-8: rgba(241, 192, 232, 0.5),
+  // 金色
+  color-9: rgba(152, 193, 217, 0.5),
+  // 黄色
+  color-10: rgba(72, 149, 239, 0.5),
+  // 亮黄色
 
 );
 
 // 生成类
 @each $name, $color in $predefined-colors {
   .#{$name}-bg {
-    background-color: $color!important;
+    background-color: $color !important;
   }
 }
 </style>
@@ -2443,13 +2229,13 @@ $predefined-colors: (
     transform: translateZ(0);
     will-change: transform;
     backface-visibility: hidden;
-    
+
     // 优化滚动性能
     :deep(.el-table__body-wrapper) {
       overflow-y: auto;
       -webkit-overflow-scrolling: touch;
       scroll-behavior: smooth;
-      
+
       // 优化图片渲染
       img {
         will-change: transform;
@@ -2466,7 +2252,7 @@ $predefined-colors: (
     transform: translateZ(0);
     will-change: transform;
     backface-visibility: hidden;
-    
+
     img {
       will-change: transform;
       transform: translateZ(0);
@@ -2519,11 +2305,11 @@ $predefined-colors: (
   }
 
   :deep(.el-table__body) {
-    tr.hover-row > td.el-table__cell {
+    tr.hover-row>td.el-table__cell {
       background-color: inherit !important;
     }
 
-    tr:hover > td.el-table__cell {
+    tr:hover>td.el-table__cell {
       background-color: inherit !important;
     }
 
@@ -2728,6 +2514,7 @@ $predefined-colors: (
   }
 
   .shop-info {
+
     .shop-name,
     .shop-id {
       font-size: 14px;
@@ -2964,10 +2751,12 @@ $predefined-colors: (
     opacity: 1;
     transform: scale(1);
   }
+
   50% {
     opacity: 0.5;
     transform: scale(1.2);
   }
+
   100% {
     opacity: 1;
     transform: scale(1);
@@ -3030,6 +2819,7 @@ $predefined-colors: (
 }
 
 .shipping-table {
+
   // 移除表格默认边框
   :deep(.el-table__inner-wrapper) {
     border: none !important;
@@ -3045,6 +2835,7 @@ $predefined-colors: (
   // 表格内容边框
   :deep(.el-table__body-wrapper) {
     tr {
+
       // 统一所有行的边框
       td {
         border-bottom: 1px solid var(--el-border-color) !important;
@@ -3069,6 +2860,7 @@ $predefined-colors: (
 
   // 垂直分隔线
   :deep(.el-table__body) {
+
     .tracking-column,
     .order-info-column {
       position: relative;
@@ -3088,6 +2880,7 @@ $predefined-colors: (
 
   // 夜间模式边框颜色适配
   :deep(.dark) {
+
     // 表头边框
     .el-table__header-wrapper th {
       border-bottom: 1px solid var(--el-border-color-darker) !important;
@@ -3299,6 +3092,35 @@ $predefined-colors: (
     background-color: #e6a23c;
     border-color: #e6a23c;
     color: #fff;
+  }
+}
+
+.status-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+
+  .urgent-status-tag {
+    margin: 0;
+    padding: 2px 12px;
+    height: 24px;
+    line-height: 20px;
+    background-color: #f56c6c;
+    color: white;
+    border: 1px solid #f56c6c;
+    font-weight: bold;
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(245, 108, 108, 0.2);
+
+    &:hover {
+      background-color: #f78989;
+      border-color: #f78989;
+    }
+  }
+
+  .status-tag {
+    margin: 0;
   }
 }
 </style>
