@@ -9,6 +9,7 @@ export interface PayWalletUserReqVO {
 export interface WalletVO {
   id: number
   userId: number
+  nickname: string
   userType: number
   balance: number
   totalExpense: number

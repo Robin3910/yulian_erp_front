@@ -71,3 +71,4 @@ components.d.ts
 !.yarn/sdks
 !.yarn/versions
 .pnp.*
+src/types/auto-components.d.ts
