@@ -23,12 +23,26 @@
             <span class="value">{{ shippingData.createTime ? formatDate(shippingData.createTime, 'YYYY-MM-DD HH:mm:ss') : '-' }}</span>
           </div>
           <div class="info-item">
-            <span class="label">订单数量</span>
-            <span class="value" style="font-weight: bold; color: #409EFF;font-size: 23px;">{{ totalOrders }}个</span>
+            <span class="label">包裹数量</span>
+            <span class="value" style="font-weight: bold; color: #409EFF;font-size: 23px;">{{ totalPackages }}个</span>
           </div>
           <div class="info-item">
             <span class="label">商品总数</span>
             <span class="value" style="font-weight: bold; color: #67C23A; font-size: 23px;">{{ totalQuantity }}件</span>
+            <div class="progress-info">
+              <el-progress 
+                :percentage="shippedPercentage" 
+                :format="progressFormat"
+                :stroke-width="20"
+                :color="progressColor"
+              />
+            </div>
+          </div>
+          <div class="info-item">
+            <el-button type="primary" plain @click="handlePrintAll">
+              <el-icon><Printer /></el-icon>
+              打印全部
+            </el-button>
           </div>
         </div>
       </div>
@@ -40,10 +54,7 @@
             <!-- 订单头部 -->
             <div class="order-header">
               <div class="order-basic-info">
-                <div class="shop-info">
-                  <span class="label">店铺：</span>
-                  <span class="value">{{ shippingData.shopName }}</span>
-                </div>
+                
                 <div class="order-number">
                   <span class="label">订单号：</span>
                   <span class="value">{{ orderGroup.orderNo }}</span>
@@ -63,21 +74,18 @@
                 <div class="info-section">
                   <!-- 重要信息 -->
                   <div class="important-info">
-                    <div class="info-item">
-                      <span class="label">图片ID：</span>
-                      <span class="value">{{ order.productId }}</span>
+                    
+                    <div class="info-item custom-sku">
+                      <span class="label">定制SKU：</span>
+                      <span class="value" style="font-size: 30px;font-weight: bold; color: var(--el-color-primary);">
+                        {{ order.customSku }}
+                      </span>
                     </div>
                     <div class="info-item sku-info">
                       <span class="label">SKU：</span>
                       <span class="value">{{ order.sku }}</span>
                       <span class="label">SKC：</span>
                       <span class="value">{{ order.skc }}</span>
-                    </div>
-                    <div class="info-item custom-sku">
-                      <span class="label">定制SKU：</span>
-                      <span class="value" style="font-size: 30px;font-weight: bold; color: var(--el-color-primary);">
-                        {{ order.customSku }}
-                      </span>
                     </div>
                     <div class="info-item quantity-info">
                       <div class="quantity-group">
@@ -109,6 +117,19 @@
                       <span class="label">定制文字：</span>
                       <span class="value">{{ order.customTextList }}</span>
                     </div>
+                  </div>
+
+                  <!-- 打印按钮 -->
+                  <div class="print-buttons">
+                    <el-button 
+                      type="primary" 
+                      plain 
+                      :disabled="!order.complianceGoodsMergedUrl"
+                      @click="handlePrint(order.complianceGoodsMergedUrl)"
+                    >
+                      <el-icon><Printer /></el-icon>
+                      打印条码+合规单
+                    </el-button>
                   </div>
                 </div>
 
@@ -155,9 +176,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, nextTick } from 'vue'
 import { formatDate } from '@/utils/formatTime'
-import type { ShippingOrder, OrderResult } from '@/api/temu/order/types'
+import { Printer } from '@element-plus/icons-vue'
+import { ElMessage, ElNotification } from 'element-plus'
+import printJS from 'print-js'
+import { PDFDocument } from 'pdf-lib'
+import type { ShippingOrder } from '@/api/temu/order/types'
 
 const props = defineProps<{
   modelValue: boolean
@@ -171,6 +196,15 @@ const visible = ref(props.modelValue)
 // 监听 modelValue 的变化
 watch(() => props.modelValue, (newVal) => {
   visible.value = newVal
+  // 当抽屉显示时，重置滚动条位置
+  if (newVal) {
+    nextTick(() => {
+      const container = document.querySelector('.shipping-info-container')
+      if (container) {
+        container.scrollTop = 0
+      }
+    })
+  }
 })
 
 // 监听 visible 的变化
@@ -206,19 +240,247 @@ const handleClose = () => {
   emit('update:modelValue', false)
 }
 
-// 计算物流单号下的总订单数
-const totalOrders = computed(() => {
-  if (!props.shippingData.orderNoList) return 0
-  return props.shippingData.orderNoList.length
+// 打印全部功能
+const handlePrintAll = async () => {
+  try {
+    // 获取所有订单
+    const allOrders = props.shippingData.orderNoList?.flatMap(group => group.orderList) || [];
+
+    // 按订单号分组（orderNoList 已经是分组结构）
+    const orderGroups = props.shippingData.orderNoList || [];
+
+    // 创建一个新的PDF文档
+    const mergedPdf = await PDFDocument.create();
+    let successCount = 0;
+    let failCount = 0;
+
+    // 首先处理加急单（只打印一次）
+    const urgentUrl = props.shippingData.orderNoList?.[0]?.expressOutsideImageUrl;
+    if (urgentUrl) {
+      const processedUrgentUrl = urgentUrl.startsWith('@') 
+        ? urgentUrl.substring(1) 
+        : urgentUrl;
+      try {
+        await addPdfToMerged(mergedPdf, processedUrgentUrl);
+      } catch (error) {
+        console.error('加急单打印失败:', error);
+        failCount++;
+      }
+    }
+
+    // 检查是否有订单的合并文件为空
+    const ordersWithoutMerged = allOrders.filter(
+      (order) => !order.complianceGoodsMergedUrl
+    );
+    if (ordersWithoutMerged.length > 0) {
+      // 按店铺分组并去重SKC
+      const groupedByShop = ordersWithoutMerged.reduce((acc, order) => {
+        const shopName = props.shippingData.shopName || '未知店铺';
+        if (!acc[shopName]) {
+          acc[shopName] = new Set();
+        }
+        if (order.skc) {
+          acc[shopName].add(order.skc);
+        }
+        return acc;
+      }, {} as Record<string, Set<string>>);
+
+      const missingInfo = Object.entries(groupedByShop)
+        .map(
+          ([shopName, skcs]) => `
+          <div style="margin-bottom: 16px;">
+            <div style="color: #606266; font-weight: bold; margin-bottom: 8px;">${shopName}</div>
+            <div style="padding-left: 16px;">
+              ${Array.from(skcs)
+                .map(
+                  (skc) => `
+                <div style="color: #409EFF; margin-bottom: 4px;">
+                  ${skc}
+                </div>
+              `
+                )
+                .join('')}
+            </div>
+          </div>
+        `
+        )
+        .join('');
+
+      ElNotification({
+        title: '无法批量打印',
+        message: `
+          <div style="margin-bottom: 10px; color: #303133;">以下SKC缺少合并文件，请联系相关人员及时补充：</div>
+          <div style="max-height: 300px; overflow-y: auto; padding-right: 10px;">${missingInfo}</div>
+        `,
+        type: 'warning',
+        duration: 0,
+        dangerouslyUseHTMLString: true,
+        offset: 60
+      });
+      return;
+    }
+
+    // 按顺序处理每个订单组：先物流面单，再条码+合规单
+    for (const orderGroup of orderGroups) {
+      try {
+        // 1. 打印物流面单（只打印一次）
+        if (orderGroup.expressImageUrl) {
+          const expressUrl = orderGroup.expressImageUrl.startsWith('@')
+            ? orderGroup.expressImageUrl.substring(1)
+            : orderGroup.expressImageUrl;
+          await addPdfToMerged(mergedPdf, expressUrl);
+        }
+
+        // 2. 打印该组所有订单的条码+合规单（根据官网数量 originalQuantity 打印）
+        for (const order of orderGroup.orderList) {
+          if (order.complianceGoodsMergedUrl) {
+            const mergedUrl = order.complianceGoodsMergedUrl.startsWith('@')
+              ? order.complianceGoodsMergedUrl.substring(1)
+              : order.complianceGoodsMergedUrl;
+            const copies = order.originalQuantity || 1;
+            for (let i = 0; i < copies; i++) {
+              await addPdfToMerged(mergedPdf, mergedUrl);
+            }
+          }
+        }
+        successCount++;
+      } catch (error) {
+        console.error(`处理订单组 ${orderGroup.orderNo} 失败:`, error);
+        failCount++;
+      }
+    }
+
+    // 如果有成功合并的PDF，则打印
+    if (mergedPdf.getPageCount() > 0) {
+      const mergedPdfBytes = await mergedPdf.save();
+      const mergedPdfBlob = new Blob([mergedPdfBytes], { type: 'application/pdf' });
+      const mergedPdfUrl = URL.createObjectURL(mergedPdfBlob);
+
+      printJS({
+        printable: mergedPdfUrl,
+        type: 'pdf',
+        showModal: true
+      });
+
+      // 清理资源
+      setTimeout(() => {
+        URL.revokeObjectURL(mergedPdfUrl);
+      }, 10000);
+    }
+
+    // 显示处理结果
+    if (failCount > 0) {
+      ElMessage.warning(`成功处理${successCount}个订单组，${failCount}个订单组处理失败`);
+    } else {
+      ElMessage.success(`成功处理${successCount}个订单组`);
+    }
+  } catch (error) {
+    console.error('打印全部失败:', error);
+    ElMessage.error('打印全部失败：' + (error instanceof Error ? error.message : '未知错误'));
+  }
+};
+
+// 添加辅助函数用于将PDF添加到合并文档中
+const addPdfToMerged = async (mergedPdf: PDFDocument, url: string) => {
+  try {
+    if (url.toLowerCase().endsWith('.pdf')) {
+      const response = await fetch(url)
+      if (!response.ok) {
+        throw new Error(`加载PDF失败: ${url}`)
+      }
+      const pdfBytes = await response.arrayBuffer()
+      const pdf = await PDFDocument.load(pdfBytes)
+      const copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices())
+      copiedPages.forEach((page) => {
+        mergedPdf.addPage(page)
+      })
+    } else {
+      // 如果是图片，直接使用print-js打印
+      printJS({
+        printable: url,
+        type: 'image',
+        showModal: true
+      })
+    }
+  } catch (error) {
+    throw new Error(`处理文件失败: ${url}`)
+  }
+}
+
+// 计算总包裹数
+const totalPackages = computed(() => {
+  const uniquePackages = new Set(
+    props.shippingData.orderNoList?.flatMap(group => 
+      group.orderList.map(order => `${order.skc}_${order.sku}`)
+    ) || []
+  )
+  return uniquePackages.size
 })
 
-// 计算物流单号下的总商品数量
+// 计算总商品数
 const totalQuantity = computed(() => {
-  if (!props.shippingData.orderNoList) return 0
-  return props.shippingData.orderNoList.reduce((total, group) => {
-    return total + (group.orderList?.length || 0)
-  }, 0)
+  return props.shippingData.orderNoList?.reduce((total, group) => {
+    return total + group.orderList.reduce((groupTotal, order) => groupTotal + (order.originalQuantity || 0), 0)
+  }, 0) || 0
 })
+
+// 计算已发货订单数
+const shippedOrders = computed(() => {
+  return props.shippingData.orderNoList?.reduce((total, group) => {
+    return total + group.orderList.reduce((groupTotal, order) => {
+      // 如果订单状态为4（已发货），则加上该订单的官网数量
+      return groupTotal + (order.orderStatus === 4 ? (order.originalQuantity || 0) : 0)
+    }, 0)
+  }, 0) || 0
+})
+
+// 计算发货进度百分比
+const shippedPercentage = computed(() => {
+  if (totalQuantity.value === 0) return 0
+  return Math.round((shippedOrders.value / totalQuantity.value) * 100)
+})
+
+// 进度条格式化
+const progressFormat = (percentage: number) => {
+  return `${shippedOrders.value}/${totalQuantity.value}`
+}
+
+// 进度条颜色
+const progressColor = (percentage: number) => {
+  if (percentage < 30) return '#F56C6C'
+  if (percentage < 70) return '#E6A23C'
+  return '#67C23A'
+}
+
+// 打印条码+合规单
+const handlePrint = async (url: string) => {
+  if (!url) {
+    ElMessage.error('打印失败：未找到打印文件')
+    return
+  }
+
+  try {
+    const printUrl = url.startsWith('@') ? url.substring(1) : url
+    const isPDF = printUrl.toLowerCase().endsWith('.pdf')
+
+    if (isPDF) {
+      printJS({
+        printable: printUrl,
+        type: 'pdf',
+        showModal: true
+      })
+    } else {
+      printJS({
+        printable: printUrl,
+        type: 'image',
+        showModal: true
+      })
+    }
+  } catch (error) {
+    console.error('打印错误:', error)
+    ElMessage.error('打印失败：' + (error instanceof Error ? error.message : '未知错误'))
+  }
+}
 </script>
 
 <style lang="scss" scoped>
@@ -228,6 +490,29 @@ const totalQuantity = computed(() => {
   height: 100%;
   overflow-y: auto;
   position: relative;
+
+  .print-buttons {
+    margin-top: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+
+    .el-button {
+      width: 100%;
+      justify-content: center;
+      border-radius: 8px;
+      transition: all 0.3s ease;
+      
+      &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      }
+      
+      .el-icon {
+        margin-right: 8px;
+      }
+    }
+  }
 
   .package-info-panel {
     position: fixed;
@@ -274,6 +559,48 @@ const totalQuantity = computed(() => {
           font-size: 16px;
           color: var(--el-text-color-primary);
           font-weight: 600;
+        }
+
+        &:last-child {
+          margin-left: auto;
+          background: none;
+          padding: 0;
+
+          &:hover {
+            background: none;
+            transform: none;
+            box-shadow: none;
+          }
+
+          .el-button {
+            font-size: 15px;
+            padding: 12px 24px;
+            height: auto;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            
+            &:hover {
+              transform: translateY(-2px);
+              box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            }
+            
+            .el-icon {
+              margin-right: 8px;
+            }
+          }
+        }
+
+        .progress-info {
+          margin-left: 16px;
+          width: 200px;
+          
+          :deep(.el-progress-bar__outer) {
+            border-radius: 10px;
+          }
+          
+          :deep(.el-progress-bar__inner) {
+            border-radius: 10px;
+          }
         }
       }
     }
@@ -420,6 +747,29 @@ const totalQuantity = computed(() => {
             }
           }
         }
+      }
+    }
+  }
+
+  .print-buttons {
+    margin-top: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+
+    .el-button {
+      width: 100%;
+      justify-content: center;
+      border-radius: 8px;
+      transition: all 0.3s ease;
+      
+      &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      }
+      
+      .el-icon {
+        margin-right: 8px;
       }
     }
   }

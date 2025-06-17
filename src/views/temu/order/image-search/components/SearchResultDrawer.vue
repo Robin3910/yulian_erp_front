@@ -168,10 +168,11 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, computed, watch } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ref, computed, watch, nextTick } from 'vue'
+import { ElMessage, ElNotification } from 'element-plus'
 import { Printer } from '@element-plus/icons-vue'
 import printJS from 'print-js'
+import { PDFDocument } from 'pdf-lib'
 
 interface OrderResult {
   orderNo: string
@@ -206,6 +207,15 @@ const dialogVisible = ref(props.modelValue)
 
 watch(() => props.modelValue, (newVal) => {
   dialogVisible.value = newVal
+  // 当抽屉显示时，重置滚动条位置
+  if (newVal) {
+    nextTick(() => {
+      const container = document.querySelector('.search-results-container')
+      if (container) {
+        container.scrollTop = 0
+      }
+    })
+  }
 })
 
 watch(() => dialogVisible.value, (newVal) => {
@@ -241,7 +251,7 @@ const getOrderStatusText = (status: number): string => {
   }
 }
 
-// 打印功能
+// 打印条码+合规单
 const handlePrint = async (url: string) => {
   if (!url) {
     ElMessage.error('打印失败：未找到打印文件')
@@ -475,6 +485,9 @@ const handleViewShipping = (row: any) => {
 
             .print-buttons {
               margin-top: 24px;
+              display: flex;
+              flex-direction: column;
+              gap: 12px;
 
               .el-button {
                 width: 100%;

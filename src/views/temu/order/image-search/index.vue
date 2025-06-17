@@ -47,17 +47,17 @@
 import { ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import type { UploadFile } from 'element-plus'
-import { searchByImage, type ImageSearchResult } from '@/api/temu/image-search'
+import { searchByImage } from '@/api/temu/image-search'
 import SearchResultDrawer from './components/SearchResultDrawer.vue'
 import ShippingDetailsDrawer from './components/ShippingDetailsDrawer.vue'
 import { OrderApi } from '@/api/temu/order'
-import type { OrderResult } from '@/api/temu/order/types'
+import type { OrderResult, ShippingOrder } from '@/api/temu/order/types'
 
 const imageUrl = ref<string>('')
-const searchResults = ref<ImageSearchResult[]>([])
+const searchResults = ref<OrderResult[]>([])
 const drawerVisible = ref(false)
 const shippingDrawerVisible = ref(false)
-const shippingData = ref<any>(null)
+const shippingData = ref<ShippingOrder | null>(null)
 
 const handleFileChange = async (uploadFile: UploadFile) => {
   if (!uploadFile.raw) {
@@ -107,22 +107,9 @@ const handleViewShipping = async (row: any) => {
     })
     
     if (response.list && response.list.length > 0) {
-      // 获取第一条物流记录
-      const shippingOrder = response.list[0]
-      // 如果有订单列表，获取第一个订单的第一条记录
-      if (shippingOrder.orderNoList && shippingOrder.orderNoList.length > 0) {
-        const firstOrderGroup = shippingOrder.orderNoList[0]
-        if (firstOrderGroup.orderList && firstOrderGroup.orderList.length > 0) {
-          const orderData = firstOrderGroup.orderList[0]
-          // 合并物流单和订单数据
-          shippingData.value = {
-            ...shippingOrder,
-            ...orderData,
-            orderNo: firstOrderGroup.orderNo
-          }
-          shippingDrawerVisible.value = true
-        }
-      }
+      // 直接使用完整的物流订单数据
+      shippingData.value = response.list[0]
+      shippingDrawerVisible.value = true
     }
   } catch (error) {
     console.error('获取物流详情失败:', error)
