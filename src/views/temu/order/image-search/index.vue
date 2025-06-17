@@ -32,6 +32,13 @@
     <SearchResultDrawer
       v-model="drawerVisible"
       :search-results="searchResults"
+      @view-shipping="handleViewShipping"
+    />
+
+    <!-- 物流详情抽屉 -->
+    <ShippingDetailsDrawer
+      v-model="shippingDrawerVisible"
+      :shipping-data="shippingData"
     />
   </div>
 </template>
@@ -42,10 +49,15 @@ import { ElMessage } from 'element-plus'
 import type { UploadFile } from 'element-plus'
 import { searchByImage, type ImageSearchResult } from '@/api/temu/image-search'
 import SearchResultDrawer from './components/SearchResultDrawer.vue'
+import ShippingDetailsDrawer from './components/ShippingDetailsDrawer.vue'
+import { OrderApi } from '@/api/temu/order'
+import type { OrderResult } from '@/api/temu/order/types'
 
 const imageUrl = ref<string>('')
 const searchResults = ref<ImageSearchResult[]>([])
 const drawerVisible = ref(false)
+const shippingDrawerVisible = ref(false)
+const shippingData = ref<any>(null)
 
 const handleFileChange = async (uploadFile: UploadFile) => {
   if (!uploadFile.raw) {
@@ -82,6 +94,39 @@ const handleFileChange = async (uploadFile: UploadFile) => {
   } catch (error) {
     ElMessage.error('搜索失败，请重试')
     console.error('Image search error:', error)
+  }
+}
+
+const handleViewShipping = async (row: any) => {
+  try {
+    // 调用接口获取物流详情
+    const response = await OrderApi.getShippingOrderPage({
+      trackingNumber: row.trackingNumber,
+      pageNo: 1,
+      pageSize: 10
+    })
+    
+    if (response.list && response.list.length > 0) {
+      // 获取第一条物流记录
+      const shippingOrder = response.list[0]
+      // 如果有订单列表，获取第一个订单的第一条记录
+      if (shippingOrder.orderNoList && shippingOrder.orderNoList.length > 0) {
+        const firstOrderGroup = shippingOrder.orderNoList[0]
+        if (firstOrderGroup.orderList && firstOrderGroup.orderList.length > 0) {
+          const orderData = firstOrderGroup.orderList[0]
+          // 合并物流单和订单数据
+          shippingData.value = {
+            ...shippingOrder,
+            ...orderData,
+            orderNo: firstOrderGroup.orderNo
+          }
+          shippingDrawerVisible.value = true
+        }
+      }
+    }
+  } catch (error) {
+    console.error('获取物流详情失败:', error)
+    ElMessage.error('获取物流详情失败')
   }
 }
 </script>

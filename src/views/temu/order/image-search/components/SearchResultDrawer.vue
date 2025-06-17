@@ -4,6 +4,7 @@
     title="搜索结果"
     direction="rtl"
     size="80%"
+    :before-close="handleClose"
   >
     <div class="search-results-container">
       <!-- 包裹信息面板 -->
@@ -24,6 +25,16 @@
           <!-- 订单头部 -->
           <div class="order-header">
             <div class="order-basic-info">
+              <div class="similarity-score">
+                <span class="label">相似度：</span>
+                <div class="score-cell">
+                  <span class="score-value">{{ (order.score * 100).toFixed(2) }}%</span>
+                </div>
+              </div>
+              <div class="tracking-info" v-if="order.trackingNumber">
+                <span class="label">物流单号：</span>
+                <span class="value">{{ order.trackingNumber }}</span>
+              </div>
               <div class="shop-info">
                 <span class="label">店铺：</span>
                 <span class="value">{{ order.shopName }} ({{ order.aliasName }})</span>
@@ -37,10 +48,16 @@
                   {{ getOrderStatusText(order.orderStatus) }}
                 </el-tag>
               </div>
-              <div class="similarity-score">
-                <span class="label">相似度：</span>
-                <el-tag type="success">{{ (order.score * 100).toFixed(2) }}%</el-tag>
-              </div>
+              
+              <el-button
+                    v-if="order.trackingNumber"
+                    type="primary"
+                    size="small"
+                    @click="handleViewShipping(order)"
+                    class="view-shipping-btn"
+                  >
+                    查看物流详情
+                  </el-button>
             </div>
           </div>
 
@@ -51,21 +68,17 @@
               <div class="info-section">
                 <!-- 重要信息 -->
                 <div class="important-info">
-                  <div class="info-item">
-                    <span class="label">图片ID：</span>
-                    <span class="value">{{ order.productId }}</span>
+                  <div class="info-item custom-sku">
+                    <span class="label">定制SKU：</span>
+                    <span class="value" style="font-size: 30px;font-weight: bold; color: var(--el-color-primary);">
+                      {{ order.customSku }}
+                    </span>
                   </div>
                   <div class="info-item sku-info">
                     <span class="label">SKU：</span>
                     <span class="value">{{ order.sku }}</span>
                     <span class="label">SKC：</span>
                     <span class="value">{{ order.skc }}</span>
-                  </div>
-                  <div class="info-item custom-sku">
-                    <span class="label">定制SKU：</span>
-                    <span class="value" style="font-size: 30px;font-weight: bold; color: var(--el-color-primary);">
-                      {{ order.customSku }}
-                    </span>
                   </div>
                   <div class="info-item quantity-info">
                     <div class="quantity-group">
@@ -155,7 +168,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Printer } from '@element-plus/icons-vue'
 import printJS from 'print-js'
@@ -179,22 +192,24 @@ interface OrderResult {
   shopName: string
   aliasName: string
   complianceGoodsMergedUrl: string
+  trackingNumber: string
 }
-
-defineOptions({
-  name: 'SearchResultDrawer'
-})
 
 const props = defineProps<{
   modelValue: boolean
   searchResults: OrderResult[]
 }>()
 
-const emit = defineEmits(['update:modelValue'])
+const emit = defineEmits(['update:modelValue', 'view-shipping'])
 
-const dialogVisible = computed({
-  get: () => props.modelValue,
-  set: (value) => emit('update:modelValue', value)
+const dialogVisible = ref(props.modelValue)
+
+watch(() => props.modelValue, (newVal) => {
+  dialogVisible.value = newVal
+})
+
+watch(() => dialogVisible.value, (newVal) => {
+  emit('update:modelValue', newVal)
 })
 
 // 按相似度排序的结果
@@ -254,6 +269,14 @@ const handlePrint = async (url: string) => {
     console.error('打印错误:', error)
     ElMessage.error('打印失败：' + (error instanceof Error ? error.message : '未知错误'))
   }
+}
+
+const handleClose = () => {
+  emit('update:modelValue', false)
+}
+
+const handleViewShipping = (row: any) => {
+  emit('view-shipping', row)
 }
 </script>
 
@@ -341,6 +364,20 @@ const handlePrint = async (url: string) => {
           align-items: center;
           gap: 32px;
           font-size: 14px;
+
+          .tracking-info {
+            .label {
+              color: var(--el-text-color-secondary);
+              margin-right: 8px;
+              font-size: 16px;
+            }
+
+            .value {
+              color: var(--el-color-primary);
+              font-weight: 600;
+              font-size: 20px;
+            }
+          }
 
           .shop-info, .order-number {
             .label {
@@ -485,6 +522,22 @@ const handlePrint = async (url: string) => {
           }
         }
       }
+    }
+  }
+
+  .score-cell {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+
+    .score-value {
+      font-size: 16px;
+      font-weight: 500;
+      color: var(--el-color-primary);
+    }
+
+    .view-shipping-btn {
+      margin-left: 8px;
     }
   }
 }
