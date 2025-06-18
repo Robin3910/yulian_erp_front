@@ -46,7 +46,7 @@
 <script lang="ts" setup>
 import { ref } from 'vue'
 import { ElMessage } from 'element-plus'
-import type { UploadFile } from 'element-plus'
+import type { UploadFile, UploadRawFile } from 'element-plus'
 import { searchByImage } from '@/api/temu/image-search'
 import SearchResultDrawer from './components/SearchResultDrawer.vue'
 import ShippingDetailsDrawer from './components/ShippingDetailsDrawer.vue'
@@ -71,19 +71,26 @@ const handleFileChange = async (uploadFile: UploadFile) => {
     return false
   }
 
-  // 验证文件大小（4MB = 4 * 1024 * 1024 bytes）
-  const isLessThan4M = uploadFile.raw.size / 1024 / 1024 < 4
-  if (!isLessThan4M) {
-    ElMessage.error('图片必须小于 4MB！')
-    return false
-  }
-
   try {
+    let file = uploadFile.raw
+    // 如果文件大于200KB，进行压缩
+    if (file.size / 1024 / 1024 > 0.2) {
+      const originalSize = (file.size / 1024 / 1024).toFixed(2)
+      console.log(`原始文件大小: ${originalSize}MB`)
+      ElMessage.info('图片较大，正在压缩...')
+      const compressedFile = await compressImage(file)
+      const compressedSize = (compressedFile.size / 1024 / 1024).toFixed(2)
+      console.log(`压缩后文件大小: ${compressedSize}MB`)
+      ElMessage.success(`压缩完成：${originalSize}MB -> ${compressedSize}MB`)
+      // 创建新的UploadFile对象
+      file = Object.assign(compressedFile, { uid: uploadFile.uid })
+    }
+
     // 显示预览图
-    imageUrl.value = URL.createObjectURL(uploadFile.raw)
+    imageUrl.value = URL.createObjectURL(file)
     
     // 调用搜索接口
-    const response = await searchByImage(uploadFile.raw)
+    const response = await searchByImage(file)
     searchResults.value = response
     
     if (searchResults.value.length === 0) {
@@ -95,6 +102,65 @@ const handleFileChange = async (uploadFile: UploadFile) => {
     ElMessage.error('搜索失败，请重试')
     console.error('Image search error:', error)
   }
+}
+
+// 图片压缩函数
+async function compressImage(file: File): Promise<File> {
+  return new Promise((resolve) => {
+    const img = new window.Image()
+    const url = URL.createObjectURL(file)
+    img.onload = () => {
+      const canvas = document.createElement('canvas')
+      const ctx = canvas.getContext('2d')!
+      
+      // 计算压缩后的尺寸，保持宽高比
+      let { width, height } = img
+      // 降低最大尺寸限制
+      const maxWidth = 1280
+      const maxHeight = 1280
+      
+      if (width > maxWidth || height > maxHeight) {
+        const ratio = Math.min(maxWidth / width, maxHeight / height)
+        width = width * ratio
+        height = height * ratio
+        console.log(`图片尺寸调整: ${img.width}x${img.height} -> ${width}x${height}`)
+      }
+      
+      canvas.width = width
+      canvas.height = height
+      ctx.drawImage(img, 0, 0, width, height)
+      
+      // 根据原始文件大小动态设置初始压缩质量
+      const originalSizeMB = file.size / 1024 / 1024
+      let quality = originalSizeMB > 5 ? 0.5 : 0.6
+      
+      const compress = (currentQuality: number) => {
+        canvas.toBlob(
+          (blob) => {
+            if (!blob) return
+            const currentSizeMB = blob.size / 1024 / 1024
+            console.log(`当前压缩质量: ${currentQuality}, 大小: ${currentSizeMB.toFixed(2)}MB`)
+            
+            // 如果文件仍然大于200KB且质量还可以继续降低，则继续压缩
+            if (currentSizeMB > 0.2 && currentQuality > 0.1) {
+              console.log(`文件仍然过大，继续压缩，质量降低至: ${(currentQuality - 0.1).toFixed(1)}`)
+              compress(currentQuality - 0.1)
+            } else {
+              console.log(`压缩完成，最终大小: ${currentSizeMB.toFixed(2)}MB，质量: ${currentQuality.toFixed(1)}`)
+              resolve(new File([blob], file.name, { type: 'image/jpeg' }))
+              URL.revokeObjectURL(url)
+            }
+          },
+          'image/jpeg',
+          currentQuality
+        )
+      }
+      
+      // 开始压缩
+      compress(quality)
+    }
+    img.src = url
+  })
 }
 
 const handleViewShipping = async (row: any) => {

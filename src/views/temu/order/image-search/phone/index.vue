@@ -220,44 +220,60 @@ const selectedFile = ref<File | null>(null)
 const shippingDrawerVisible = ref(false)
 const shippingData = ref<ShippingOrder | null>(null)
 
-// 自动压缩图片到4MB以下
-async function compressImage(file: File, maxSizeMB = 4): Promise<File> {
+// 图片压缩函数
+async function compressImage(file: File): Promise<File> {
   return new Promise((resolve) => {
     const img = new window.Image()
     const url = URL.createObjectURL(file)
     img.onload = () => {
       const canvas = document.createElement('canvas')
       const ctx = canvas.getContext('2d')!
-      // 限制最大宽高，防止超大图片
-      const maxW = 2000, maxH = 2000
+      
+      // 计算压缩后的尺寸，保持宽高比
       let { width, height } = img
-      if (width > maxW || height > maxH) {
-        const ratio = Math.min(maxW / width, maxH / height)
+      // 降低最大尺寸限制
+      const maxWidth = 1280
+      const maxHeight = 1280
+      
+      if (width > maxWidth || height > maxHeight) {
+        const ratio = Math.min(maxWidth / width, maxHeight / height)
         width = width * ratio
         height = height * ratio
+        console.log(`图片尺寸调整: ${img.width}x${img.height} -> ${width}x${height}`)
       }
+      
       canvas.width = width
       canvas.height = height
       ctx.drawImage(img, 0, 0, width, height)
-      let quality = 0.92
-      let blob: Blob | null = null
-      function tryCompress() {
-        canvas.toBlob((b) => {
-          if (!b) return
-          if (b.size / 1024 / 1024 > maxSizeMB && quality > 0.1) {
-            quality -= 0.05
-            canvas.toBlob((b2) => {
-              blob = b2
-              tryCompress()
-            }, 'image/jpeg', quality)
-          } else {
-            blob = b
-            resolve(new File([blob!], file.name, { type: 'image/jpeg' }))
-            URL.revokeObjectURL(url)
-          }
-        }, 'image/jpeg', quality)
+      
+      // 根据原始文件大小动态设置初始压缩质量
+      const originalSizeMB = file.size / 1024 / 1024
+      let quality = originalSizeMB > 5 ? 0.5 : 0.6
+      
+      const compress = (currentQuality: number) => {
+        canvas.toBlob(
+          (blob) => {
+            if (!blob) return
+            const currentSizeMB = blob.size / 1024 / 1024
+            console.log(`当前压缩质量: ${currentQuality}, 大小: ${currentSizeMB.toFixed(2)}MB`)
+            
+            // 如果文件仍然大于200KB且质量还可以继续降低，则继续压缩
+            if (currentSizeMB > 0.2 && currentQuality > 0.1) {
+              console.log(`文件仍然过大，继续压缩，质量降低至: ${(currentQuality - 0.1).toFixed(1)}`)
+              compress(currentQuality - 0.1)
+            } else {
+              console.log(`压缩完成，最终大小: ${currentSizeMB.toFixed(2)}MB，质量: ${currentQuality.toFixed(1)}`)
+              resolve(new File([blob], file.name, { type: 'image/jpeg' }))
+              URL.revokeObjectURL(url)
+            }
+          },
+          'image/jpeg',
+          currentQuality
+        )
       }
-      tryCompress()
+      
+      // 开始压缩
+      compress(quality)
     }
     img.src = url
   })
@@ -297,14 +313,15 @@ const handleFileSelect = async (event: Event) => {
     return
   }
 
-  // 自动压缩大于4MB的图片
-  if (file.size / 1024 / 1024 > 4) {
+  // 如果文件大于200KB，进行压缩
+  if (file.size / 1024 / 1024 > 0.2) {
+    const originalSize = (file.size / 1024 / 1024).toFixed(2)
+    console.log(`原始文件大小: ${originalSize}MB`)
     ElMessage.info('图片较大，正在压缩...')
-    file = await compressImage(file, 4)
-    if (file.size / 1024 / 1024 > 4) {
-      ElMessage.error('图片压缩后仍大于4MB，请选择更小的图片')
-      return
-    }
+    file = await compressImage(file)
+    const compressedSize = (file.size / 1024 / 1024).toFixed(2)
+    console.log(`压缩后文件大小: ${compressedSize}MB`)
+    ElMessage.success(`压缩完成：${originalSize}MB -> ${compressedSize}MB`)
   }
 
   // 显示预览图
