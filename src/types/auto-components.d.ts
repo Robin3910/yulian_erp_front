@@ -7,6 +7,7 @@ export {}
 
 declare module 'vue' {
   export interface GlobalComponents {
+    All: typeof import('./../views/temu/order/shipping/all/index.vue')['default']
     AppLinkInput: typeof import('./../components/AppLinkInput/index.vue')['default']
     AppLinkSelectDialog: typeof import('./../components/AppLinkInput/AppLinkSelectDialog.vue')['default']
     Backtop: typeof import('./../components/Backtop/src/Backtop.vue')['default']
@@ -149,7 +150,9 @@ declare module 'vue' {
     SearchResultDrawer: typeof import('./../views/temu/order/image-search/components/SearchResultDrawer.vue')['default']
     SelectShopDialog: typeof import('./../components/SelectShopDialog/index.vue')['default']
     ServiceTask: typeof import('./../components/bpmnProcessDesigner/package/penal/task/task-components/ServiceTask.vue')['default']
+    Shipped: typeof import('./../views/temu/order/shipping/shipped/index.vue')['default']
     ShippingDetailsDrawer: typeof import('./../views/temu/order/image-search/phone/components/ShippingDetailsDrawer.vue')['default']
+    ShippingInfoPopup: typeof import('./../views/temu/order/shipping/urgent/components/ShippingInfoPopup.vue')['default']
     ShortcutDateRangePicker: typeof import('./../components/ShortcutDateRangePicker/index.vue')['default']
     SignalAndMessage: typeof import('./../components/bpmnProcessDesigner/package/penal/signal-message/SignalAndMessage.vue')['default']
     SimpleProcessDesigner: typeof import('./../components/SimpleProcessDesignerV2/src/SimpleProcessDesigner.vue')['default']
@@ -162,12 +165,14 @@ declare module 'vue' {
     Table: typeof import('./../components/Table/src/Table.vue')['default']
     TableSelectForm: typeof import('./../components/Table/src/TableSelectForm.vue')['default']
     Tooltip: typeof import('./../components/Tooltip/src/Tooltip.vue')['default']
+    Toshipped: typeof import('./../views/temu/order/shipping/toshipped/index.vue')['default']
     TriggerNode: typeof import('./../components/SimpleProcessDesignerV2/src/nodes/TriggerNode.vue')['default']
     TriggerNodeConfig: typeof import('./../components/SimpleProcessDesignerV2/src/nodes-config/TriggerNodeConfig.vue')['default']
     Types: typeof import('./../api/temu/order/types.ts')['default']
     UploadFile: typeof import('./../components/UploadFile/src/UploadFile.vue')['default']
     UploadImg: typeof import('./../components/UploadFile/src/UploadImg.vue')['default']
     UploadImgs: typeof import('./../components/UploadFile/src/UploadImgs.vue')['default']
+    Urgent: typeof import('./../views/temu/order/shipping/urgent/index.vue')['default']
     UserSelectForm: typeof import('./../components/UserSelectForm/index.vue')['default']
     UserTask: typeof import('./../components/bpmnProcessDesigner/package/penal/task/task-components/UserTask.vue')['default']
     UserTaskCustomConfig: typeof import('./../components/bpmnProcessDesigner/package/penal/custom-config/components/UserTaskCustomConfig.vue')['default']
