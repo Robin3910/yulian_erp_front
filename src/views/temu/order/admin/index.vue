@@ -527,7 +527,7 @@ const queryParams = reactive({
   sku: undefined,
   skc: undefined,
   salePrice: undefined,
-  customSku: undefined,
+  customSku: undefined as string | undefined,
   quantity: undefined,
   productProperties: undefined,
   bookingTime: [],
@@ -551,8 +551,24 @@ const getList = async () => {
   tableRef && tableRef.value && tableRef.value.clearSelection()
   loading.value = true
   try {
-    const data = await OrderApi.getOrderPageByAdmin(queryParams)
-    const { totalPrice } = await OrderApi.getAdminOrderAmountStatistics(queryParams)
+    // 新增：处理定制SKU多关键词
+    let customSkuList: string[] | undefined = undefined;
+    if (queryParams.customSku && typeof queryParams.customSku === 'string') {
+      const trimmed = queryParams.customSku.trim();
+      if (trimmed) {
+        customSkuList = trimmed.split(/\s+/);
+      }
+    }
+    const data = await OrderApi.getOrderPageByAdmin({
+      ...queryParams,
+      customSkuList,
+      customSku: undefined // 避免传递原有的单个 customSku 字段
+    })
+    const { totalPrice } = await OrderApi.getAdminOrderAmountStatistics({
+      ...queryParams,
+      customSkuList,
+      customSku: undefined
+    })
     orderTotalPrice.value = totalPrice
     list.value = data.list
     total.value = data.total
