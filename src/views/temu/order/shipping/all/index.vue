@@ -169,7 +169,7 @@ v-if="canShip(row)" size="small" type="success" class="action-button ship-button
           </template>
         </el-table-column>
         <!-- 物流序号列 -->
-        <el-table-column label="物流序号" align="center" width="120" fixed="left">
+        <el-table-column label="物流序号" align="center" width="120" fixed="left" class-name="with-divider">
           <template #default="{ row, $index }">
             <div style="display: flex; flex-direction: column; align-items: center; gap: 4px; background-color: var(--el-fill-color-light); padding: 8px; border-radius: 6px;">
               <span
@@ -2914,9 +2914,9 @@ $predefined-colors: (
 
   // 垂直分隔线
   :deep(.el-table__body) {
-
     .tracking-column,
-    .order-info-column {
+    .order-info-column,
+    .with-divider {
       position: relative;
 
       &::after {
@@ -2961,7 +2961,8 @@ $predefined-colors: (
 
     // 垂直分隔线
     .tracking-column::after,
-    .order-info-column::after {
+    .order-info-column::after,
+    .with-divider::after {
       background-color: var(--el-border-color-darker) !important;
       opacity: 0.8;
     }
