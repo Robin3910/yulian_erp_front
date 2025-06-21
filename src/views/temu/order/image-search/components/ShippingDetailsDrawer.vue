@@ -3,17 +3,28 @@
     v-model="visible"
     title="物流单详情"
     direction="rtl"
-    size="80%"
+    size="90%"
     :before-close="handleClose"
   >
     <div class="shipping-info-container">
       <!-- 物流单基本信息 -->
       <div class="package-info-panel">
         <div class="panel-content">
+          <div class="close-button" @click="handleClose">
+            <el-icon><Close /></el-icon>
+          </div>
+          <div class="info-item" v-if="shippingData.dailySequence">
+            <span class="label">物流序号</span>
+            <div style="display: flex; align-items: center;">
+              <span style="color: var(--el-color-primary); font-weight: 600; font-size: 45px; line-height: 45px;">{{ shippingData.dailySequence }}</span>
+              <span v-if="shippingData.createTime" style="color: var(--el-color-primary); font-size: 22px; font-weight: normal; opacity: 0.9; margin-left: 4px; line-height: 45px;">({{ formatDate(shippingData.createTime, 'MM-DD') }})</span>
+            </div>
+          </div>
           <div class="info-item">
             <span class="label">物流单号</span>
             <span class="value">{{ shippingData.trackingNumber || '-' }}</span>
           </div>
+          
           <div class="info-item">
             <span class="label">店铺名称</span>
             <span class="value">{{ shippingData.shopName }}</span>
@@ -178,7 +189,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, nextTick } from 'vue'
 import { formatDate } from '@/utils/formatTime'
-import { Printer } from '@element-plus/icons-vue'
+import { Printer, Close } from '@element-plus/icons-vue'
 import { ElMessage, ElNotification } from 'element-plus'
 import printJS from 'print-js'
 import { PDFDocument } from 'pdf-lib'
@@ -491,38 +502,15 @@ const handlePrint = async (url: string) => {
   overflow-y: auto;
   position: relative;
 
-  .print-buttons {
-    margin-top: 24px;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-
-    .el-button {
-      width: 100%;
-      justify-content: center;
-      border-radius: 8px;
-      transition: all 0.3s ease;
-      
-      &:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-      }
-      
-      .el-icon {
-        margin-right: 8px;
-      }
-    }
-  }
-
   .package-info-panel {
     position: fixed;
-    bottom: 0;
+    top: 0;
     right: 0;
     width: 100%;
     background-color: var(--el-bg-color-overlay);
-    box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
     z-index: 100;
-    border-top: 1px solid var(--el-border-color-lighter);
+    border-bottom: 1px solid var(--el-border-color-lighter);
 
     .panel-content {
       padding: 20px 40px;
@@ -532,6 +520,32 @@ const handlePrint = async (url: string) => {
       width: 100%;
       margin: 0;
       gap: 32px;
+      position: relative;
+
+      .close-button {
+        position: absolute;
+        right: 12px;
+        top: 4px;
+        padding: 8px;
+        border-radius: 4px;
+        transition: all 0.3s ease;
+        background: transparent;
+        color: var(--el-text-color-secondary);
+        border: none;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        .el-icon {
+          font-size: 20px;
+        }
+
+        &:hover {
+          color: var(--el-text-color-primary);
+          background-color: var(--el-fill-color-light);
+        }
+      }
 
       .info-item {
         margin: 0;
@@ -607,7 +621,8 @@ const handlePrint = async (url: string) => {
   }
 
   .order-list {
-    margin-bottom: 120px;
+    margin-top: 10px;
+    margin-bottom: 24px;
 
     .order-item {
       background-color: var(--el-bg-color-overlay);

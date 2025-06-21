@@ -3,7 +3,7 @@
     v-model="dialogVisible"
     title="搜索结果"
     direction="rtl"
-    size="80%"
+    size="90%"
     :before-close="handleClose"
   >
     <div class="search-results-container">
@@ -382,6 +382,7 @@ const getScoreColor = (score: number) => {
   }
 
   .order-list {
+    margin-top: -30px;
     margin-bottom: 120px;
 
     .order-item {

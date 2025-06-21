@@ -42,4 +42,6 @@ export interface ShippingOrder {
   createTime: number
   updateTime: number
   complianceGoodsMergedUrl: string | null
+  dailySequence?: number
+  shippingTime?: number
 } 
