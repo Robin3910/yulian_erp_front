@@ -27,6 +27,10 @@
         <el-input v-model="queryParams.methodName" placeholder="请输入方法名" clearable @keyup.enter="handleQuery"
           class="!w-240px" />
       </el-form-item>
+      <el-form-item label="请求参数" prop="requestParams">
+        <el-input v-model="queryParams.requestParams" placeholder="请输入请求参数" clearable @keyup.enter="handleQuery"
+          class="!w-240px" />
+      </el-form-item>
       <el-form-item>
         <el-button @click="handleQuery">
           <Icon icon="ep:search" class="mr-5px" /> 搜索
@@ -57,9 +61,12 @@
       <el-table-column label="方法名" align="center" prop="methodName" />
       <el-table-column label="操作" align="center" min-width="120px">
         <template #default="scope">
-          <el-button link type="primary" @click="openForm('update', scope.row.id)"
+          <!-- <el-button link type="primary" @click="openForm('update', scope.row.id)"
             v-hasPermi="['temu:operation-log:update']">
             编辑
+          </el-button> -->
+          <el-button link type="primary" @click="handleViewParams(scope.row)" v-hasPermi="['temu:operation-log:query']">
+            查看参数
           </el-button>
           <el-button link type="danger" @click="handleDelete(scope.row.id)" v-hasPermi="['temu:operation-log:delete']">
             删除
@@ -74,6 +81,17 @@
 
   <!-- 表单弹窗：添加/修改 -->
   <OperationLogForm ref="formRef" @success="getList" />
+
+  <!-- 查看参数弹窗 -->
+  <el-dialog v-model="paramsDialogVisible" title="请求参数详情" width="800px" destroy-on-close>
+    <div class="params-content">
+      <pre v-if="currentParams" class="params-text">{{ formatParams(currentParams) }}</pre>
+      <div v-else class="no-params">暂无请求参数</div>
+    </div>
+    <template #footer>
+      <el-button @click="paramsDialogVisible = false">关闭</el-button>
+    </template>
+  </el-dialog>
 </template>
 
 <script setup lang="ts">
@@ -100,9 +118,14 @@ const queryParams = reactive({
   ipAddress: undefined,
   className: undefined,
   methodName: undefined,
+  requestParams: undefined,
 })
 const queryFormRef = ref() // 搜索的表单
 const exportLoading = ref(false) // 导出的加载中
+
+// 查看参数相关
+const paramsDialogVisible = ref(false)
+const currentParams = ref<string>('')
 
 /** 查询列表 */
 const getList = async () => {
@@ -162,8 +185,69 @@ const handleExport = async () => {
   }
 }
 
+/** 查看参数按钮操作 */
+const handleViewParams = (row: any) => {
+  currentParams.value = row.requestParams || ''
+  paramsDialogVisible.value = true
+}
+
+/** 格式化参数显示 */
+const formatParams = (params: string) => {
+  try {
+    // 尝试解析JSON并格式化
+    const parsed = JSON.parse(params)
+    return JSON.stringify(parsed, null, 2)
+  } catch {
+    // 如果不是JSON，直接返回原内容
+    return params
+  }
+}
+
 /** 初始化 **/
 onMounted(() => {
   getList()
 })
 </script>
+
+<style lang="scss" scoped>
+.params-content {
+  max-height: 500px;
+  overflow-y: auto;
+
+  .params-text {
+    background-color: #f5f5f5;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 16px;
+    margin: 0;
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    color: #333;
+  }
+
+  .no-params {
+    text-align: center;
+    color: #999;
+    padding: 40px;
+    font-size: 16px;
+  }
+}
+
+// 暗黑模式适配
+:deep(.dark) {
+  .params-content {
+    .params-text {
+      background-color: #2b2b2b;
+      border-color: #444;
+      color: #e0e0e0;
+    }
+
+    .no-params {
+      color: #666;
+    }
+  }
+}
+</style>
