@@ -3,7 +3,7 @@
     v-model="dialogVisible"
     title="搜索结果"
     direction="rtl"
-    size="80%"
+    size="90%"
     :before-close="handleClose"
   >
     <div class="search-results-container">
@@ -28,7 +28,24 @@
               <div class="similarity-score">
                 <span class="label">相似度：</span>
                 <div class="score-cell">
-                  <span class="score-value">{{ (order.score * 100).toFixed(2) }}%</span>
+                  <el-progress 
+                    type="dashboard"
+                    :percentage="Number((order.score * 100).toFixed(0))"
+                    :color="getScoreColor(order.score)"
+                    :width="50"
+                    :stroke-width="6"
+                  >
+                    <template #default="{ percentage }">
+                      <span class="score-value">{{ percentage }}%</span>
+                    </template>
+                  </el-progress>
+                </div>
+              </div>
+              <div class="tracking-sequence" v-if="order.dailySequence" style="display: flex; align-items: center; height: 45px;">
+                <span class="label" style="line-height: 45px;">物流序号：</span>
+                <div style="display: flex; align-items: center;">
+                  <span style="color: var(--el-color-primary); font-weight: 600; font-size: 45px; line-height: 45px;">{{ order.dailySequence }}</span>
+                                     <span v-if="order.shippingTime" style="color: var(--el-color-primary); font-size: 22px; font-weight: normal; opacity: 0.9; margin-left: 4px; line-height: 45px;">({{ formatDate(order.shippingTime) }})</span>
                 </div>
               </div>
               <div class="tracking-info" v-if="order.trackingNumber">
@@ -36,7 +53,6 @@
                 <span class="value">{{ order.trackingNumber }}</span>
               </div>
               <div class="shop-info">
-                <span class="label">店铺：</span>
                 <span class="value">{{ order.shopName }} ({{ order.aliasName }})</span>
               </div>
               <div class="order-number">
@@ -74,33 +90,35 @@
                       {{ order.customSku }}
                     </span>
                   </div>
-                  <div class="info-item sku-info">
-                    <span class="label">SKU：</span>
-                    <span class="value">{{ order.sku }}</span>
-                    <span class="label">SKC：</span>
-                    <span class="value">{{ order.skc }}</span>
-                  </div>
                   <div class="info-item quantity-info">
                     <div class="quantity-group">
                       <span class="label">官网数量：</span>
-                      <span class="value">{{ order.originalQuantity }}</span>
+                      <span class="value" style="color: var(--el-color-primary); font-size: 24px; font-weight: 600;">{{ order.originalQuantity }}</span>
                     </div>
                     <div class="quantity-group">
                       <span class="label">制作数量：</span>
-                      <span class="value">{{ order.quantity }}</span>
+                      <span class="value" style="color: var(--el-color-primary); font-size: 24px; font-weight: 600;">{{ order.quantity }}</span>
                     </div>
                   </div>
                 </div>
 
                 <!-- 商品信息 -->
                 <div class="product-info">
-                  <div class="info-item">
-                    <span class="label">标题：</span>
-                    <span class="value">{{ order.productTitle }}</span>
-                  </div>
-                  <div class="info-item">
-                    <span class="label">属性：</span>
-                    <span class="value">{{ order.productProperties }}</span>
+                  <div class="secondary-info">
+                    <div class="info-row">
+                      <span class="label">标题：</span>
+                      <span class="value" style="color: var(--el-text-color-secondary);">{{ order.productTitle }}</span>
+                    </div>
+                    <div class="info-row">
+                      <span class="label">属性：</span>
+                      <span class="value" style="color: var(--el-text-color-secondary);">{{ order.productProperties }}</span>
+                    </div>
+                    <div class="info-row">
+                      <span class="label">SKU：</span>
+                      <span class="value" style="color: var(--el-text-color-secondary);">{{ order.sku }}</span>
+                      <span class="label" style="margin-left: 16px;">SKC：</span>
+                      <span class="value" style="color: var(--el-text-color-secondary);">{{ order.skc }}</span>
+                    </div>
                   </div>
                 </div>
 
@@ -194,6 +212,8 @@ interface OrderResult {
   aliasName: string
   complianceGoodsMergedUrl: string
   trackingNumber: string
+  dailySequence: string
+  shippingTime: string
 }
 
 const props = defineProps<{
@@ -288,6 +308,19 @@ const handleClose = () => {
 const handleViewShipping = (row: any) => {
   emit('view-shipping', row)
 }
+
+const formatDate = (dateStr: string) => {
+  if (!dateStr) return ''
+  const date = new Date(dateStr)
+  return `${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+}
+
+const getScoreColor = (score: number) => {
+  if (score >= 0.9) return '#67C23A'  // 绿色
+  if (score >= 0.7) return '#409EFF'  // 蓝色
+  if (score >= 0.5) return '#E6A23C'  // 橙色
+  return '#F56C6C'  // 红色
+}
 </script>
 
 <style lang="scss" scoped>
@@ -349,6 +382,7 @@ const handleViewShipping = (row: any) => {
   }
 
   .order-list {
+    margin-top: -30px;
     margin-bottom: 120px;
 
     .order-item {
@@ -413,10 +447,64 @@ const handleViewShipping = (row: any) => {
           }
 
           .similarity-score {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+
+            .label {
+              color: var(--el-text-color-secondary);
+              font-size: 14px;
+            }
+
+            .score-cell {
+              display: flex;
+              align-items: center;
+
+              :deep(.el-progress) {
+                margin: 0;
+              }
+
+              .score-value {
+                font-size: 12px;
+                font-weight: bold;
+                color: var(--el-text-color-regular);
+              }
+            }
+          }
+
+          .tracking-sequence {
+            display: flex;
+            align-items: center;
+            height: 45px;
+
             .label {
               color: var(--el-text-color-secondary);
               margin-right: 8px;
               font-size: 16px;
+              height: 45px;
+              line-height: 45px;
+            }
+
+            .value {
+              display: flex;
+              align-items: center;
+              height: 45px;
+
+              .sequence-number {
+                color: var(--el-color-primary);
+                font-weight: 600;
+                font-size: 45px;
+                line-height: 45px;
+              }
+
+              .date-suffix {
+                color: var(--el-text-color-secondary);
+                font-size: 16px;
+                font-weight: normal;
+                opacity: 0.9;
+                margin-left: 4px;
+                line-height: 45px;
+              }
             }
           }
         }
@@ -551,6 +639,36 @@ const handleViewShipping = (row: any) => {
 
     .view-shipping-btn {
       margin-left: 8px;
+    }
+  }
+
+  .product-info {
+    .secondary-info {
+      padding: 12px 0;
+      margin-bottom: 16px;
+
+      .info-row {
+        display: flex;
+        align-items: flex-start;
+        margin-bottom: 8px;
+        font-size: 14px;
+        line-height: 1.5;
+
+        &:last-child {
+          margin-bottom: 0;
+        }
+
+        .label {
+          flex-shrink: 0;
+          width: 45px;
+          color: var(--el-text-color-secondary);
+        }
+
+        .value {
+          flex: 1;
+          word-break: break-all;
+        }
+      }
     }
   }
 }
