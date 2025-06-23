@@ -113,6 +113,11 @@
         </div>
       </div>
       <div class="flex gap-2">
+        <el-button type="primary" @click="handlerCompleteSelectedDrawTasks" plain
+          :disabled="selectedInnerOrders.length === 0" class="batch-draw-complete-btn">
+          <Icon icon="ep:check" class="mr-5px" />
+          批量作图完成
+        </el-button>
         <el-button type="success" @click="handleDownloadSelectedImages" plain
           :disabled="selectedInnerOrders.length === 0">
           <Icon icon="ep:picture" class="mr-5px" />
@@ -1959,6 +1964,129 @@ const handleDownloadSelectedImages = async () => {
   } finally {
     loading.value = false
   }
+}
+
+/** 批量完成选中订单的作图任务 */
+const handlerCompleteSelectedDrawTasks = async () => {
+  // 检查是否有选中的订单
+  if (!selectedInnerOrders.value || selectedInnerOrders.value.length === 0) {
+    ElMessage.warning('请先选择要标记作图完成的订单')
+    return
+  }
+
+  try {
+    // 仅过滤未完成的订单
+    const unfinishedOrders = selectedInnerOrders.value.filter(order => order.isCompleteDrawTask === 0)
+    
+    if (unfinishedOrders.length === 0) {
+      ElMessage.warning('所选订单均已完成作图任务')
+      return
+    }
+
+    // 确认操作
+    try {
+      await ElMessageBox.confirm(
+        `确定要将 ${unfinishedOrders.length} 个选中订单标记为作图完成吗？`, 
+        '确认操作', 
+        {
+          confirmButtonText: '确认',
+          cancelButtonText: '取消',
+          type: 'warning'
+        }
+      )
+    } catch (e) {
+      // 用户取消操作
+      return
+    }
+    
+    // 显示操作进行中的提示（不阻塞界面）
+    const processingMessage = ElMessage({
+      message: `正在处理 ${unfinishedOrders.length} 个订单，请稍候...`,
+      type: 'info',
+      duration: 0,
+      showClose: true
+    })
+    
+    // 禁用按钮，避免重复操作
+    const btnDisabled = ref(true)
+    setTimeout(() => {
+      const btn = document.querySelector('.batch-draw-complete-btn')
+      if (btn) btn.setAttribute('disabled', 'disabled')
+    }, 0)
+    
+    // 处理结果计数
+    let successCount = 0
+    let failCount = 0
+    
+    // 逐个处理订单
+    for (const order of unfinishedOrders) {
+      // 查找订单所属的批次
+      const batch = list.value.find(b => 
+        b.orderList && b.orderList.some(o => o.id === order.id)
+      )
+      
+      if (!batch) {
+        failCount++
+        continue
+      }
+      
+      try {
+        // 调用API标记作图完成
+        await OrderBatchApi.completeOrderTaskByAdmin({
+          taskType: 1, // 1表示作图任务
+          id: batch.id,
+          orderId: order.id
+        })
+        
+        // 更新本地数据状态
+        order.isCompleteDrawTask = 1
+        successCount++
+      } catch (err) {
+        failCount++
+      }
+    }
+    
+    // 关闭处理中的提示
+    processingMessage.close()
+    
+    // 显示结果
+    if (failCount > 0 && successCount > 0) {
+      ElMessage.warning(`已完成${successCount}个订单标记，${failCount}个订单失败`)
+    } else if (failCount > 0) {
+      ElMessage.error('操作失败，请稍后重试')
+    } else {
+      ElMessage.success(`成功标记${successCount}个订单作图完成`)
+    }
+    
+    // 清除勾选状态
+    if (successCount > 0) {
+      // 清除内部表格的选择
+      clearSelectedInnerOrders()
+    }
+    
+    // 恢复按钮状态
+    setTimeout(() => {
+      const btn = document.querySelector('.batch-draw-complete-btn')
+      if (btn) btn.removeAttribute('disabled')
+    }, 0)
+    
+  } catch (error) {
+    // 出错时也关闭提示
+    ElMessage.closeAll()
+    
+    ElMessage.error('批量标记作图完成失败，请重试')
+    console.error('批量标记作图完成失败:', error)
+    
+    // 清除勾选状态
+    clearSelectedInnerOrders()
+    
+    // 恢复按钮状态
+    setTimeout(() => {
+      const btn = document.querySelector('.batch-draw-complete-btn')
+      if (btn) btn.removeAttribute('disabled')
+    }, 0)
+  } 
+  // 不需要finally块了
 }
 
 /** 分页改变 */
