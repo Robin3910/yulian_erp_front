@@ -19,6 +19,8 @@ export interface OrderResult {
   shopName: string
   aliasName: string
   trackingNumber: string
+  dailySequence?: number
+  shippingTime?: number
 }
 
 export interface OrderNoGroup {
@@ -42,6 +44,8 @@ export interface ShippingOrder {
   createTime: number
   updateTime: number
   complianceGoodsMergedUrl: string | null
-  dailySequence?: number
-  shippingTime?: number
-} 
+  dailySequence?: number | undefined
+  shippingTime?: number | undefined
+}
+
+export type ShippingOrderNullable = ShippingOrder | null 

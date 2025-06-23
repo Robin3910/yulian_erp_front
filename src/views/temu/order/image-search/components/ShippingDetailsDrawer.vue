@@ -17,7 +17,7 @@
             <span class="label">物流序号</span>
             <div style="display: flex; align-items: center;">
               <span style="color: var(--el-color-primary); font-weight: 600; font-size: 45px; line-height: 45px;">{{ shippingData.dailySequence }}</span>
-              <span v-if="shippingData.createTime" style="color: var(--el-color-primary); font-size: 22px; font-weight: normal; opacity: 0.9; margin-left: 4px; line-height: 45px;">({{ formatDate(shippingData.createTime, 'MM-DD') }})</span>
+              <span v-if="shippingData.createTime" style="color: var(--el-color-primary); font-size: 22px; font-weight: normal; opacity: 0.9; margin-left: 4px; line-height: 45px;">({{ formatDate(new Date(shippingData.createTime), 'MM-DD') }})</span>
             </div>
           </div>
           <div class="info-item">
@@ -31,7 +31,7 @@
           </div>
           <div class="info-item">
             <span class="label">创建时间</span>
-            <span class="value">{{ shippingData.createTime ? formatDate(shippingData.createTime, 'YYYY-MM-DD HH:mm:ss') : '-' }}</span>
+            <span class="value">{{ shippingData.createTime ? formatDate(new Date(shippingData.createTime), 'YYYY-MM-DD HH:mm') : '-' }}</span>
           </div>
           <div class="info-item">
             <span class="label">包裹数量</span>
@@ -60,128 +60,165 @@
 
       <!-- 订单列表 -->
       <div class="order-list">
-        <div v-for="(orderGroup, groupIndex) in shippingData.orderNoList" :key="groupIndex">
-          <div v-for="(order, orderIndex) in orderGroup.orderList" :key="orderIndex" class="order-item">
-            <!-- 订单头部 -->
-            <div class="order-header">
-              <div class="order-basic-info">
-                
-                <div class="order-number">
-                  <span class="label">订单号：</span>
-                  <span class="value">{{ orderGroup.orderNo }}</span>
+        <el-collapse v-model="activeNames">
+          <el-collapse-item 
+            v-for="(orderGroup, groupIndex) in shippingData.orderNoList" 
+            :key="groupIndex"
+            :name="orderGroup.orderNo"
+          >
+            <template #title>
+              <div class="collapse-header">
+                <div class="package-icon">
+                  <el-icon><Box /></el-icon>
                 </div>
-                <div class="order-status">
-                  <el-tag :type="getOrderStatusType(order.orderStatus)">
-                    {{ getOrderStatusText(order.orderStatus) }}
-                  </el-tag>
+                <div class="package-info">
+                  <div class="info-row">
+                    <div class="left-section">
+                      <span class="package-no">包裹{{ groupIndex + 1 }}</span>
+                      <span class="order-no">{{ orderGroup.orderNo }}</span>
+                    </div>
+                    <div class="center-section">
+                      <span class="order-count">
+                        <el-icon><Goods /></el-icon>
+                        <span class="quantity">{{ getTotalQuantity(orderGroup) }}</span>
+                        <span>件商品</span>
+                      </span>
+                    </div>
+                    <div class="right-section">
+                      <span class="shipped-text">已发货: {{ getShippedCount(orderGroup) }}/{{ getTotalQuantity(orderGroup) }}</span>
+                      <el-progress 
+                        :percentage="getShippedPercentage(orderGroup)" 
+                        :stroke-width="8"
+                        :color="getProgressColor"
+                        :show-text="false"
+                      />
+                      <span class="progress-percentage">{{ getShippedPercentage(orderGroup) }}%</span>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-
-            <!-- 订单内容 -->
-            <div class="order-content">
-              <div class="content-wrapper">
-                <!-- 左侧信息 -->
-                <div class="info-section">
-                  <!-- 重要信息 -->
-                  <div class="important-info">
-                    <div class="info-item custom-sku">
-                      <span class="label">定制SKU：</span>
-                      <span class="value" style="font-size: 30px;font-weight: bold; color: var(--el-color-primary);">
-                      {{ order.customSku }}
-                    </span>
-                    </div>
-                    <div class="info-item quantity-info">
-                      <div class="quantity-group">
-                        <span class="label">官网数量：</span>
-                        <span class="value" style="color: var(--el-color-primary); font-size: 24px; font-weight: 600;">{{ order.originalQuantity }}</span>
-                      </div>
-                      <div class="quantity-group">
-                        <span class="label">制作数量：</span>
-                        <span class="value" style="color: var(--el-color-primary); font-size: 24px; font-weight: 600;">{{ order.quantity }}</span>
-                      </div>
-                    </div>
+            </template>
+            <div v-for="(order, orderIndex) in orderGroup.orderList" :key="orderIndex" class="order-item">
+              <!-- 订单头部 -->
+              <div class="order-header">
+                <div class="order-basic-info">
+                  <div class="order-number">
+                    <span class="label">订单号：</span>
+                    <span class="value">{{ order.orderNo }}</span>
                   </div>
-
-                  <!-- 商品信息 -->
-                  <div class="product-info">
-                    <div class="secondary-info">
-                      <div class="info-row">
-                        <span class="label">标题：</span>
-                        <span class="value" style="color: var(--el-text-color-secondary);">{{ order.productTitle }}</span>
-                      </div>
-                      <div class="info-row">
-                        <span class="label">属性：</span>
-                        <span class="value" style="color: var(--el-text-color-secondary);">{{ order.productProperties }}</span>
-                      </div>
-                      <div class="info-row">
-                        <span class="label">SKU：</span>
-                        <span class="value" style="color: var(--el-text-color-secondary);">{{ order.sku }}</span>
-                        <span class="label" style="margin-left: 16px;">SKC：</span>
-                        <span class="value" style="color: var(--el-text-color-secondary);">{{ order.skc }}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <!-- 定制信息 -->
-                  <div class="custom-info" v-if="order.customTextList">
-                    <div class="info-item">
-                      <span class="label">定制文字：</span>
-                      <span class="value">{{ order.customTextList }}</span>
-                    </div>
-                  </div>
-
-                  <!-- 打印按钮 -->
-                  <div class="print-buttons">
-                    <el-button 
-                      type="primary" 
-                      plain 
-                      :disabled="!order.complianceGoodsMergedUrl"
-                      @click="handlePrint(order.complianceGoodsMergedUrl)"
-                    >
-                      <el-icon><Printer /></el-icon>
-                      打印条码+合规单
-                    </el-button>
+                  <div class="order-status">
+                    <el-tag :type="getOrderStatusType(order.orderStatus)">
+                      {{ getOrderStatusText(order.orderStatus) }}
+                    </el-tag>
                   </div>
                 </div>
+              </div>
 
-                <!-- 右侧图片 -->
-                <div class="image-section">
-                  <!-- 定制图片 -->
-                  <div class="image-group" v-if="order.customImageUrls">
-                    <div
-                      v-for="(item, imgIndex) in order.customImageUrls.split(',')"
-                      :key="imgIndex"
-                      class="image-item"
-                    >
+              <!-- 订单内容 -->
+              <div class="order-content">
+                <div class="content-wrapper">
+                  <!-- 左侧信息 -->
+                  <div class="info-section">
+                    <!-- 重要信息 -->
+                    <div class="important-info">
+                      <div class="info-item custom-sku">
+                        <span class="label">定制SKU：</span>
+                        <span class="value" style="font-size: 30px;font-weight: bold; color: var(--el-color-primary);">
+                          {{ order.customSku }}
+                        </span>
+                      </div>
+                      <div class="info-item quantity-info">
+                        <div class="quantity-group">
+                          <span class="label">官网数量：</span>
+                          <span class="value" style="color: var(--el-color-primary); font-size: 24px; font-weight: 600;">{{ order.originalQuantity }}</span>
+                        </div>
+                        <div class="quantity-group">
+                          <span class="label">制作数量：</span>
+                          <span class="value" style="color: var(--el-color-primary); font-size: 24px; font-weight: 600;">{{ order.quantity }}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- 商品信息 -->
+                    <div class="product-info">
+                      <div class="secondary-info">
+                        <div class="info-row">
+                          <span class="label">标题：</span>
+                          <span class="value" style="color: var(--el-text-color-secondary);">{{ order.productTitle }}</span>
+                        </div>
+                        <div class="info-row">
+                          <span class="label">属性：</span>
+                          <span class="value" style="color: var(--el-text-color-secondary);">{{ order.productProperties }}</span>
+                        </div>
+                        <div class="info-row">
+                          <span class="label">SKU：</span>
+                          <span class="value" style="color: var(--el-text-color-secondary);">{{ order.sku }}</span>
+                          <span class="label" style="margin-left: 16px;">SKC：</span>
+                          <span class="value" style="color: var(--el-text-color-secondary);">{{ order.skc }}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- 定制信息 -->
+                    <div class="custom-info" v-if="order.customTextList">
+                      <div class="info-item">
+                        <span class="label">定制文字：</span>
+                        <span class="value">{{ order.customTextList }}</span>
+                      </div>
+                    </div>
+
+                    <!-- 打印按钮 -->
+                    <div class="print-buttons">
+                      <el-button 
+                        type="primary" 
+                        plain 
+                        :disabled="!order.complianceGoodsMergedUrl"
+                        @click="handlePrint(order.complianceGoodsMergedUrl, order)"
+                      >
+                        <el-icon><Printer /></el-icon>
+                        打印条码+合规单
+                      </el-button>
+                    </div>
+                  </div>
+
+                  <!-- 右侧图片 -->
+                  <div class="image-section">
+                    <!-- 定制图片 -->
+                    <div class="image-group" v-if="order.customImageUrls">
+                      <div
+                        v-for="(item, imgIndex) in order.customImageUrls.split(',')"
+                        :key="imgIndex"
+                        class="image-item"
+                      >
+                        <el-image
+                          :hide-on-click-modal="true"
+                          :preview-teleported="true"
+                          :src="item"
+                          :preview-src-list="[item]"
+                          style="width: 300px; height: 300px"
+                          fit="cover"
+                          loading="lazy"
+                          :initial-index="0"
+                        />
+                      </div>
                       <el-image
+                        v-if="order.effectiveImgUrl"
                         :hide-on-click-modal="true"
                         :preview-teleported="true"
-                        :src="item"
-                        :preview-src-list="[item]"
+                        :src="order.effectiveImgUrl"
+                        :preview-src-list="[order.effectiveImgUrl]"
                         style="width: 300px; height: 300px"
                         fit="cover"
                         loading="lazy"
                         :initial-index="0"
                       />
                     </div>
-                    <el-image
-                      v-if="order.effectiveImgUrl"
-                      :hide-on-click-modal="true"
-                      :preview-teleported="true"
-                      :src="order.effectiveImgUrl"
-                      :preview-src-list="[order.effectiveImgUrl]"
-                      style="width: 300px; height: 300px"
-                      fit="cover"
-                      loading="lazy"
-                      :initial-index="0"
-                    />
                   </div>
                 </div>
               </div>
             </div>
-          </div>
-        </div>
+          </el-collapse-item>
+        </el-collapse>
       </div>
     </div>
   </el-drawer>
@@ -190,11 +227,18 @@
 <script setup lang="ts">
 import { ref, computed, watch, nextTick } from 'vue'
 import { formatDate } from '@/utils/formatTime'
-import { Printer, Close } from '@element-plus/icons-vue'
+import { Printer, Close, Box, Goods } from '@element-plus/icons-vue'
 import { ElMessage, ElNotification } from 'element-plus'
 import printJS from 'print-js'
 import { PDFDocument } from 'pdf-lib'
 import type { ShippingOrder } from '@/api/temu/order/types'
+import { OrderApi } from '@/api/temu/order'
+
+// 添加更新订单状态的接口定义
+interface UpdateOrderStatusParams {
+  id: number
+  orderStatus: string
+}
 
 const props = defineProps<{
   modelValue: boolean
@@ -204,18 +248,14 @@ const props = defineProps<{
 const emit = defineEmits(['update:modelValue'])
 
 const visible = ref(props.modelValue)
+const activeNames = ref([])
 
 // 监听 modelValue 的变化
 watch(() => props.modelValue, (newVal) => {
   visible.value = newVal
-  // 当抽屉显示时，重置滚动条位置
-  if (newVal) {
-    nextTick(() => {
-      const container = document.querySelector('.shipping-info-container')
-      if (container) {
-        container.scrollTop = 0
-      }
-    })
+  // 当抽屉关闭时，重置展开状态
+  if (!newVal) {
+    activeNames.value = []
   }
 })
 
@@ -223,6 +263,14 @@ watch(() => props.modelValue, (newVal) => {
 watch(() => visible.value, (newVal) => {
   emit('update:modelValue', newVal)
 })
+
+// 监听 shippingData 的变化
+watch(() => props.shippingData, (newVal, oldVal) => {
+  // 只有当物流单号改变时才重置展开状态
+  if (newVal?.id !== oldVal?.id) {
+    activeNames.value = []
+  }
+}, { deep: true })
 
 // 获取订单状态类型
 const getOrderStatusType = (status: number): 'success' | 'warning' | 'info' | 'primary' | 'danger' => {
@@ -249,6 +297,7 @@ const getOrderStatusText = (status: number): string => {
 }
 
 const handleClose = () => {
+  activeNames.value = [] // 关闭时重置展开状态
   emit('update:modelValue', false)
 }
 
@@ -436,11 +485,11 @@ const totalQuantity = computed(() => {
   }, 0) || 0
 })
 
-// 计算已发货订单数
-const shippedOrders = computed(() => {
+// 计算已发货商品数
+const shippedQuantity = computed(() => {
   return props.shippingData.orderNoList?.reduce((total, group) => {
     return total + group.orderList.reduce((groupTotal, order) => {
-      // 如果订单状态为4（已发货），则加上该订单的官网数量
+      // 只统计状态为已发货(4)的订单数量
       return groupTotal + (order.orderStatus === 4 ? (order.originalQuantity || 0) : 0)
     }, 0)
   }, 0) || 0
@@ -449,12 +498,12 @@ const shippedOrders = computed(() => {
 // 计算发货进度百分比
 const shippedPercentage = computed(() => {
   if (totalQuantity.value === 0) return 0
-  return Math.round((shippedOrders.value / totalQuantity.value) * 100)
+  return Math.round((shippedQuantity.value / totalQuantity.value) * 100)
 })
 
 // 进度条格式化
 const progressFormat = (percentage: number) => {
-  return `${shippedOrders.value}/${totalQuantity.value}`
+  return `${shippedQuantity.value}/${totalQuantity.value}`
 }
 
 // 进度条颜色
@@ -464,33 +513,122 @@ const progressColor = (percentage: number) => {
   return '#67C23A'
 }
 
+// 进度条颜色
+const getProgressColor = (percentage: number) => {
+  if (percentage < 30) return '#F56C6C'
+  if (percentage < 70) return '#E6A23C'
+  return '#67C23A'
+}
+
+// 获取订单组的已发货数量
+const getShippedCount = (orderGroup: ShippingOrder['orderNoList'][0]) => {
+  return orderGroup.orderList.reduce((total: number, order) => {
+    return total + (order.orderStatus === 4 ? (order.originalQuantity || 0) : 0)
+  }, 0)
+}
+
+// 获取订单组的总数量
+const getTotalQuantity = (orderGroup: ShippingOrder['orderNoList'][0]) => {
+  return orderGroup.orderList.reduce((total: number, order) => {
+    return total + (order.originalQuantity || 0)
+  }, 0)
+}
+
+// 计算发货进度百分比
+const getShippedPercentage = (orderGroup: ShippingOrder['orderNoList'][0]) => {
+  const total = getTotalQuantity(orderGroup)
+  if (total === 0) return 0
+  return Math.round((getShippedCount(orderGroup) / total) * 100)
+}
+
 // 打印条码+合规单
-const handlePrint = async (url: string) => {
+const handlePrint = async (url: string, order: ShippingOrder['orderNoList'][0]['orderList'][0]) => {
+  // 检查URL是否存在
   if (!url) {
     ElMessage.error('打印失败：未找到打印文件')
     return
   }
 
   try {
+    // 立即更新订单状态为已发货(4)
+    await OrderApi.updateOrderStatus([{
+      id: order.id,
+      orderStatus: '4'
+    }] as UpdateOrderStatusParams[])
+    ElMessage.success('订单状态已更新为已发货')
+
+    // 更新本地数据状态
+    if (props.shippingData.orderNoList) {
+      props.shippingData.orderNoList.forEach(group => {
+        group.orderList.forEach(item => {
+          if (item.id === order.id) {
+            item.orderStatus = 4
+          }
+        })
+      })
+    }
+
+    // 处理URL中的@前缀
     const printUrl = url.startsWith('@') ? url.substring(1) : url
     const isPDF = printUrl.toLowerCase().endsWith('.pdf')
 
+    // 获取打印份数
+    const copies = order.originalQuantity || 1
+
     if (isPDF) {
+      // 如果是PDF，先合并多份
+      const mergedPdf = await PDFDocument.create()
+      const response = await fetch(printUrl)
+      if (!response.ok) {
+        throw new Error(`加载PDF失败: ${printUrl}`)
+      }
+      const pdfBytes = await response.arrayBuffer()
+      const pdf = await PDFDocument.load(pdfBytes)
+      
+      // 复制指定份数
+      for (let i = 0; i < copies; i++) {
+        const copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices())
+        copiedPages.forEach(page => {
+          mergedPdf.addPage(page)
+        })
+      }
+
+      // 保存并打印合并后的PDF
+      const mergedPdfBytes = await mergedPdf.save()
+      const mergedPdfBlob = new Blob([mergedPdfBytes], { type: 'application/pdf' })
+      const mergedPdfUrl = URL.createObjectURL(mergedPdfBlob)
+
       printJS({
-        printable: printUrl,
+        printable: mergedPdfUrl,
         type: 'pdf',
         showModal: true
       })
+
+      // 清理资源
+      setTimeout(() => {
+        URL.revokeObjectURL(mergedPdfUrl)
+      }, 10000)
     } else {
-      printJS({
-        printable: printUrl,
-        type: 'image',
-        showModal: true
-      })
+      // 如果是图片，循环打印指定份数
+      for (let i = 0; i < copies; i++) {
+        printJS({
+          printable: printUrl,
+          type: 'image',
+          showModal: true
+        })
+      }
     }
   } catch (error) {
-    console.error('打印错误:', error)
-    ElMessage.error('打印失败：' + (error instanceof Error ? error.message : '未知错误'))
+    if (error instanceof Error) {
+      if (error.message.includes('updateOrderStatus')) {
+        ElMessage.error('更新订单状态失败：' + error.message)
+      } else {
+        ElMessage.error('打印失败：' + error.message)
+      }
+    } else {
+      ElMessage.error('操作失败：未知错误')
+    }
+    console.error('操作错误:', error)
   }
 }
 </script>
@@ -622,16 +760,50 @@ const handlePrint = async (url: string) => {
   }
 
   .order-list {
-    margin-top: 10px;
+    margin-top: 10px;  // 减小顶部边距
     margin-bottom: 24px;
+
+    :deep(.el-collapse) {
+      border: none;
+      
+      .el-collapse-item {
+        margin-bottom: 16px;
+        background-color: var(--el-bg-color-overlay);
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+        
+        &:last-child {
+          margin-bottom: 0;
+        }
+
+        .el-collapse-item__header {
+          padding: 12px 20px;
+          min-height: 60px;
+          font-size: 16px;
+          background-color: var(--el-bg-color-overlay);
+          border-bottom: none;
+          
+          &:hover {
+            background-color: var(--el-fill-color-light);
+          }
+        }
+
+        .el-collapse-item__content {
+          padding: 0;
+        }
+      }
+    }
 
     .order-item {
       background-color: var(--el-bg-color-overlay);
-      border-radius: 12px;
-      margin-bottom: 24px;
+      margin-bottom: 16px;
       overflow: hidden;
-      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
       transition: all 0.3s ease;
+
+      &:last-child {
+        margin-bottom: 0;
+      }
 
       &:hover {
         transform: translateY(-2px);
@@ -649,26 +821,26 @@ const handlePrint = async (url: string) => {
           gap: 32px;
           font-size: 14px;
 
-          .shop-info, .order-number {
+          .order-number {
             .label {
               color: var(--el-text-color-secondary);
               margin-right: 8px;
-              font-size: 16px;
+              font-size: 14px;
             }
 
             .value {
               color: var(--el-color-primary);
               font-weight: 600;
-              font-size: 20px;
+              font-size: 16px;
             }
           }
 
           .order-status {
             :deep(.el-tag) {
-              font-size: 16px;
-              padding: 8px 16px;
-              font-weight: 600;
-              border-radius: 8px;
+              font-size: 14px;
+              padding: 6px 12px;
+              font-weight: 500;
+              border-radius: 4px;
             }
           }
         }
@@ -842,6 +1014,165 @@ const handlePrint = async (url: string) => {
         }
       }
     }
+  }
+}
+
+.collapse-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  padding: 4px 0;
+
+  .package-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    background-color: var(--el-color-primary-light-9);
+    border-radius: 8px;
+    color: var(--el-color-primary);
+    font-size: 24px;
+    flex-shrink: 0;
+  }
+
+  .package-info {
+    flex: 1;
+    min-width: 0;
+
+    .info-row {
+      display: flex;
+      align-items: center;
+      gap: 32px;
+      width: 100%;
+
+      .left-section {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        min-width: 240px;
+        max-width: 320px;
+
+        .package-no {
+          font-size: 16px;
+          font-weight: 600;
+          color: var(--el-text-color-primary);
+          white-space: nowrap;
+        }
+
+        .order-no {
+          font-size: 15px;
+          color: var(--el-text-color-regular);
+          opacity: 0.8;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+      }
+
+      .center-section {
+        display: flex;
+        align-items: center;
+        min-width: 120px;
+
+        .order-count {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          font-size: 14px;
+          color: var(--el-text-color-secondary);
+          white-space: nowrap;
+          
+          .el-icon {
+            font-size: 18px;
+            color: var(--el-color-success);
+          }
+
+          .quantity {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--el-color-primary);
+          }
+        }
+      }
+
+      .right-section {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        min-width: 300px;
+        max-width: 400px;
+
+        .shipped-text {
+          font-size: 14px;
+          color: var(--el-text-color-secondary);
+          white-space: nowrap;
+          min-width: 90px;
+        }
+
+        .el-progress {
+          flex: 1;
+          margin: 0;
+          min-width: 100px;
+          max-width: 500px;
+          
+          :deep(.el-progress-bar__outer) {
+            height: 8px;
+            background-color: var(--el-fill-color-darker);
+            border-radius: 4px;
+          }
+
+          :deep(.el-progress-bar__inner) {
+            border-radius: 4px;
+            transition: all 0.3s ease;
+          }
+        }
+
+        .progress-percentage {
+          font-size: 14px;
+          color: var(--el-text-color-secondary);
+          min-width: 40px;
+          text-align: right;
+          white-space: nowrap;
+        }
+      }
+    }
+  }
+}
+
+:deep(.el-collapse-item) {
+  background-color: var(--el-bg-color-overlay);
+  border-radius: 8px;
+  margin-bottom: 12px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  border: 1px solid var(--el-border-color-lighter);
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  }
+
+  .el-collapse-item__header {
+    padding: 12px 20px;
+    min-height: 60px;
+    font-size: 16px;
+    background-color: var(--el-bg-color-overlay);
+    border-bottom: none;
+    
+    &:hover {
+      background-color: var(--el-fill-color-light);
+    }
+  }
+
+  .el-collapse-item__content {
+    padding: 0;
   }
 }
 </style> 

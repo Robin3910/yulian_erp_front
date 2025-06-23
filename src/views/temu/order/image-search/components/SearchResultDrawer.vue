@@ -136,7 +136,7 @@
                     type="primary" 
                     plain 
                     :disabled="!order.complianceGoodsMergedUrl"
-                    @click="handlePrint(order.complianceGoodsMergedUrl)"
+                    @click="handlePrint(order.complianceGoodsMergedUrl, order)"
                   >
                     <el-icon><Printer /></el-icon>
                     打印条码+合规单
@@ -191,8 +191,16 @@ import { ElMessage, ElNotification } from 'element-plus'
 import { Printer } from '@element-plus/icons-vue'
 import printJS from 'print-js'
 import { PDFDocument } from 'pdf-lib'
+import { OrderApi } from '@/api/temu/order'
+
+// 添加更新订单状态的接口定义
+interface UpdateOrderStatusParams {
+  id: number
+  orderStatus: string
+}
 
 interface OrderResult {
+  id: number  // 添加id字段
   orderNo: string
   productTitle: string
   orderStatus: number
@@ -224,7 +232,14 @@ const props = defineProps<{
 const emit = defineEmits(['update:modelValue', 'view-shipping'])
 
 const dialogVisible = ref(props.modelValue)
+const localSearchResults = ref<OrderResult[]>([])
 
+// 初始化本地数据
+watch(() => props.searchResults, (newVal) => {
+  localSearchResults.value = JSON.parse(JSON.stringify(newVal))
+}, { immediate: true, deep: true })
+
+// 监听抽屉显示状态
 watch(() => props.modelValue, (newVal) => {
   dialogVisible.value = newVal
   // 当抽屉显示时，重置滚动条位置
@@ -244,7 +259,7 @@ watch(() => dialogVisible.value, (newVal) => {
 
 // 按相似度排序的结果
 const sortedResults = computed(() => {
-  return [...props.searchResults].sort((a, b) => b.score - a.score)
+  return [...localSearchResults.value].sort((a, b) => b.score - a.score)
 })
 
 // 获取订单状态类型
@@ -272,28 +287,75 @@ const getOrderStatusText = (status: number): string => {
 }
 
 // 打印条码+合规单
-const handlePrint = async (url: string) => {
+const handlePrint = async (url: string, order: OrderResult) => {
   if (!url) {
     ElMessage.error('打印失败：未找到打印文件')
     return
   }
 
   try {
+    // 立即更新订单状态为已发货(4)
+    await OrderApi.updateOrderStatus([{
+      id: order.id,
+      orderStatus: '4'
+    }] as UpdateOrderStatusParams[])
+    ElMessage.success('订单状态已更新为已发货')
+
+    // 更新本地数据状态
+    const index = localSearchResults.value.findIndex(item => item.id === order.id)
+    if (index !== -1) {
+      localSearchResults.value[index].orderStatus = 4
+    }
+
+    // 处理URL中的@前缀
     const printUrl = url.startsWith('@') ? url.substring(1) : url
     const isPDF = printUrl.toLowerCase().endsWith('.pdf')
 
+    // 获取打印份数
+    const copies = order.originalQuantity || 1
+
     if (isPDF) {
+      // 如果是PDF，先合并多份
+      const mergedPdf = await PDFDocument.create()
+      const response = await fetch(printUrl)
+      if (!response.ok) {
+        throw new Error(`加载PDF失败: ${printUrl}`)
+      }
+      const pdfBytes = await response.arrayBuffer()
+      const pdf = await PDFDocument.load(pdfBytes)
+      
+      // 复制指定份数
+      for (let i = 0; i < copies; i++) {
+        const copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices())
+        copiedPages.forEach(page => {
+          mergedPdf.addPage(page)
+        })
+      }
+
+      // 保存并打印合并后的PDF
+      const mergedPdfBytes = await mergedPdf.save()
+      const mergedPdfBlob = new Blob([mergedPdfBytes], { type: 'application/pdf' })
+      const mergedPdfUrl = URL.createObjectURL(mergedPdfBlob)
+
       printJS({
-        printable: printUrl,
+        printable: mergedPdfUrl,
         type: 'pdf',
         showModal: true
       })
+
+      // 清理资源
+      setTimeout(() => {
+        URL.revokeObjectURL(mergedPdfUrl)
+      }, 10000)
     } else {
-      printJS({
-        printable: printUrl,
-        type: 'image',
-        showModal: true
-      })
+      // 如果是图片，循环打印指定份数
+      for (let i = 0; i < copies; i++) {
+        printJS({
+          printable: printUrl,
+          type: 'image',
+          showModal: true
+        })
+      }
     }
   } catch (error) {
     console.error('打印错误:', error)
