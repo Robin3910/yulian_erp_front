@@ -26,6 +26,12 @@
       <div v-if="imageUrl" class="preview-image">
         <img :src="imageUrl" alt="预览图片" />
       </div>
+
+      <!-- 搜索历史 -->
+      <SearchHistory
+        ref="searchHistoryRef"
+        @select-history="handleHistorySelect"
+      />
     </el-card>
 
     <!-- 搜索结果抽屉 -->
@@ -50,14 +56,28 @@ import type { UploadFile, UploadRawFile } from 'element-plus'
 import { searchByImage } from '@/api/temu/image-search'
 import SearchResultDrawer from './components/SearchResultDrawer.vue'
 import ShippingDetailsDrawer from './components/ShippingDetailsDrawer.vue'
+import SearchHistory from './components/SearchHistory.vue'
 import { OrderApi } from '@/api/temu/order'
-import type { OrderResult, ShippingOrder } from '@/api/temu/order/types'
+import type { OrderResult, ShippingOrderNullable } from '@/api/temu/order/types'
+
+interface SearchHistoryItem {
+  imageUrl: string
+  searchTime: number
+  resultCount: number
+  searchResults: OrderResult[]
+}
+
+interface ImageSearchResult extends Omit<OrderResult, 'dailySequence' | 'shippingTime'> {
+  dailySequence?: number
+  shippingTime?: number
+}
 
 const imageUrl = ref<string>('')
 const searchResults = ref<OrderResult[]>([])
 const drawerVisible = ref(false)
 const shippingDrawerVisible = ref(false)
-const shippingData = ref<ShippingOrder | null>(null)
+const shippingData = ref<ShippingOrderNullable>(null)
+const searchHistoryRef = ref<InstanceType<typeof SearchHistory> | null>(null)
 
 const handleFileChange = async (uploadFile: UploadFile) => {
   if (!uploadFile.raw) {
@@ -90,13 +110,20 @@ const handleFileChange = async (uploadFile: UploadFile) => {
     imageUrl.value = URL.createObjectURL(file)
     
     // 调用搜索接口
-    const response = await searchByImage(file)
+    const response = await searchByImage(file) as OrderResult[]
     searchResults.value = response
     
     if (searchResults.value.length === 0) {
       ElMessage.warning('未找到相似商品')
     } else {
       drawerVisible.value = true
+      // 添加搜索历史
+      searchHistoryRef.value?.addSearchHistory({
+        imageUrl: imageUrl.value,
+        searchTime: Date.now(),
+        resultCount: searchResults.value.length,
+        searchResults: searchResults.value
+      })
     }
   } catch (error) {
     ElMessage.error('搜索失败，请重试')
@@ -182,6 +209,13 @@ const handleViewShipping = async (row: any) => {
     ElMessage.error('获取物流详情失败')
   }
 }
+
+// 处理历史记录点击
+const handleHistorySelect = (historyItem: SearchHistoryItem) => {
+  imageUrl.value = historyItem.imageUrl
+  searchResults.value = historyItem.searchResults
+  drawerVisible.value = true
+}
 </script>
 
 <style lang="scss" scoped>
@@ -205,7 +239,7 @@ const handleViewShipping = async (row: any) => {
   }
 
   .preview-image {
-    margin-top: 16px;
+    margin: 16px 0;
     
     img {
       max-width: 200px;
