@@ -85,40 +85,41 @@
                 <div class="info-section">
                   <!-- 重要信息 -->
                   <div class="important-info">
-                    
                     <div class="info-item custom-sku">
                       <span class="label">定制SKU：</span>
                       <span class="value" style="font-size: 30px;font-weight: bold; color: var(--el-color-primary);">
-                        {{ order.customSku }}
-                      </span>
-                    </div>
-                    <div class="info-item sku-info">
-                      <span class="label">SKU：</span>
-                      <span class="value">{{ order.sku }}</span>
-                      <span class="label">SKC：</span>
-                      <span class="value">{{ order.skc }}</span>
+                      {{ order.customSku }}
+                    </span>
                     </div>
                     <div class="info-item quantity-info">
                       <div class="quantity-group">
                         <span class="label">官网数量：</span>
-                        <span class="value">{{ order.originalQuantity }}</span>
+                        <span class="value" style="color: var(--el-color-primary); font-size: 24px; font-weight: 600;">{{ order.originalQuantity }}</span>
                       </div>
                       <div class="quantity-group">
                         <span class="label">制作数量：</span>
-                        <span class="value">{{ order.quantity }}</span>
+                        <span class="value" style="color: var(--el-color-primary); font-size: 24px; font-weight: 600;">{{ order.quantity }}</span>
                       </div>
                     </div>
                   </div>
 
                   <!-- 商品信息 -->
                   <div class="product-info">
-                    <div class="info-item">
-                      <span class="label">标题：</span>
-                      <span class="value">{{ order.productTitle }}</span>
-                    </div>
-                    <div class="info-item">
-                      <span class="label">属性：</span>
-                      <span class="value">{{ order.productProperties }}</span>
+                    <div class="secondary-info">
+                      <div class="info-row">
+                        <span class="label">标题：</span>
+                        <span class="value" style="color: var(--el-text-color-secondary);">{{ order.productTitle }}</span>
+                      </div>
+                      <div class="info-row">
+                        <span class="label">属性：</span>
+                        <span class="value" style="color: var(--el-text-color-secondary);">{{ order.productProperties }}</span>
+                      </div>
+                      <div class="info-row">
+                        <span class="label">SKU：</span>
+                        <span class="value" style="color: var(--el-text-color-secondary);">{{ order.sku }}</span>
+                        <span class="label" style="margin-left: 16px;">SKC：</span>
+                        <span class="value" style="color: var(--el-text-color-secondary);">{{ order.skc }}</span>
+                      </div>
                     </div>
                   </div>
 
@@ -564,7 +565,7 @@ const handlePrint = async (url: string) => {
         }
 
         .label {
-          font-size: 15px;
+          font-size: 14px;
           color: var(--el-text-color-secondary);
           font-weight: 500;
         }
@@ -785,6 +786,60 @@ const handlePrint = async (url: string) => {
       
       .el-icon {
         margin-right: 8px;
+      }
+    }
+  }
+}
+
+.product-info {
+  .secondary-info {
+    padding: 12px 0;
+    margin-bottom: 16px;
+
+    .info-row {
+      display: flex;
+      align-items: flex-start;
+      margin-bottom: 8px;
+      font-size: 14px;
+      line-height: 1.5;
+
+      &:last-child {
+        margin-bottom: 0;
+      }
+
+      .label {
+        flex-shrink: 0;
+        width: 45px;
+        color: var(--el-text-color-secondary);
+        margin-right: 8px;
+      }
+
+      .value {
+        flex: 1;
+        word-break: break-all;
+        color: var(--el-text-color-secondary);
+      }
+    }
+  }
+}
+
+.important-info {
+  .info-item {
+    &.custom-sku {
+      .value {
+        font-size: 30px;
+        font-weight: bold;
+        color: var(--el-color-primary);
+      }
+    }
+
+    &.quantity-info {
+      .quantity-group {
+        .value {
+          color: var(--el-color-primary);
+          font-size: 24px;
+          font-weight: 600;
+        }
       }
     }
   }
