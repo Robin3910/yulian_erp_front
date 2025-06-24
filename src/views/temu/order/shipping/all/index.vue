@@ -13,8 +13,7 @@
           </el-col>
           <el-col :span="24" :lg="6">
             <el-form-item label="物流单号" prop="trackingNumber" class="w-full">
-              <el-input
-v-model="queryParams.trackingNumber" placeholder="请输入物流单号" clearable
+              <el-input v-model="queryParams.trackingNumber" placeholder="请输入物流单号" clearable
                 @keyup.enter="handleQuery" />
             </el-form-item>
           </el-col>
@@ -46,19 +45,16 @@ v-model="queryParams.trackingNumber" placeholder="请输入物流单号" clearab
           </el-col>
           <el-col :span="24" :lg="6">
             <el-form-item label="类目" prop="categoryIds" class="w-full">
-              <el-select
-v-model="queryParams.categoryIds" placeholder="请选择类目" clearable multiple filterable
+              <el-select v-model="queryParams.categoryIds" placeholder="请选择类目" clearable multiple filterable
                 @input="handleCategorySearch" remote :remote-method="handleCategorySearch">
-                <el-option
-v-for="(item, index) in categoryList" :key="index" :label="item.categoryName"
+                <el-option v-for="(item, index) in categoryList" :key="index" :label="item.categoryName"
                   :value="item.categoryId" />
               </el-select>
             </el-form-item>
           </el-col>
           <el-col :span="24" :lg="6">
             <el-form-item label="订单创建时间" prop="createTime">
-              <el-date-picker
-v-model="queryParams.createTime" type="daterange" range-separator="至"
+              <el-date-picker v-model="queryParams.createTime" type="daterange" range-separator="至"
                 start-placeholder="开始日期" end-placeholder="结束日期" value-format="YYYY-MM-DD"
                 :default-time="[new Date(2000, 1, 1, 0, 0, 0), new Date(2000, 1, 1, 23, 59, 59)]" />
             </el-form-item>
@@ -111,23 +107,23 @@ v-model="queryParams.createTime" type="daterange" range-separator="至"
         <span class="info-item">{{ selectedStats.orderNos }}个订单编号</span>
         <span class="info-item">{{ selectedStats.total }}个订单</span>
       </div>
-      <el-table
-ref="tableRef" v-loading="loading" :data="list" :stripe="true" :show-overflow-tooltip="true"
+      <el-table ref="tableRef" v-loading="loading" :data="list" :stripe="true" :show-overflow-tooltip="true"
         @selection-change="handleSelectionChange" :span-method="handleSpanMethod" class="custom-table shipping-table"
         height="calc(100vh - 280px)" :header-cell-style="{ background: 'var(--el-bg-color)' }"
         :row-class-name="tableRowClassName" row-key="uniqueId" :virtual-scrolling="true" :scrollbar-always-on="true"
         :max-height="800">
         <!-- 复选框列 -->
-        <el-table-column
-type="selection" width="55" align="center" fixed="left"
+        <el-table-column type="selection" width="55" align="center" fixed="left"
           :selectable="(row, index) => isSelectable(row, index)" :reserve-selection="true" />
         <!-- 物流单号列 -->
         <el-table-column label="物流单号" align="center" min-width="170" fixed="left" class-name="tracking-column">
           <template #default="{ row, $index }">
             <template v-if="spanArr.trackingSpans[$index] !== 0">
-              <div class="tracking-number-cell" style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; min-height: 80px;">
+              <div class="tracking-number-cell"
+                style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; min-height: 80px;">
                 <!-- 添加"货已备齐"状态标签 -->
-                <el-tag :type="isProductionComplete(row) ? 'success' : 'warning'" class="stock-status-tag" size="small" style="margin-bottom: 4px;">
+                <el-tag :type="isProductionComplete(row) ? 'success' : 'warning'" class="stock-status-tag" size="small"
+                  style="margin-bottom: 4px;">
                   {{ isProductionComplete(row) ? '货已备齐' : '货未备齐' }}
                 </el-tag>
                 <div class="tracking-number-wrapper" style="margin: 4px 0; text-align: center;">
@@ -136,33 +132,37 @@ type="selection" width="55" align="center" fixed="left"
                   }}</span>
                 </div>
                 <div class="action-buttons" style="display: flex; gap: 8px; justify-content: center; margin-top: 4px;">
-                  <el-tooltip
-effect="dark" content="进入专注模式" placement="top" popper-class="custom-tooltip"
+                  <el-tooltip effect="dark" content="进入专注模式" placement="top" popper-class="custom-tooltip"
                     :show-after="100" :hide-after="200" :enterable="false" :offset="20">
-                    <el-button
-size="small" type="primary" plain class="action-button urgent-print-button"
+                    <el-button size="small" type="primary" plain class="action-button urgent-print-button"
                       @click.stop="handleFocus(row)">
-                      <el-icon><Aim /></el-icon>
+                      <el-icon>
+                        <Aim />
+                      </el-icon>
                       查看详情
                     </el-button>
                   </el-tooltip>
-                  <el-tooltip
-effect="dark" content="当前加急面单尚未上传，请联系相关人员及时上传！" placement="top"
+                  <el-tooltip effect="dark" content="当前加急面单尚未上传，请联系相关人员及时上传！" placement="top"
                     :disabled="!!row.expressOutsideImageUrl" popper-class="custom-tooltip" :show-after="100"
                     :hide-after="200" :enterable="false" :offset="20">
-                    <el-button
-size="small" type="primary" plain class="action-button urgent-print-button"
+                    <el-button size="small" type="primary" plain class="action-button urgent-print-button"
                       :disabled="!row.expressOutsideImageUrl" @click.stop="handlePrint(row.expressOutsideImageUrl)">
-                      <el-icon><Printer /></el-icon>
+                      <el-icon>
+                        <Printer />
+                      </el-icon>
                       打印加急面单
                     </el-button>
                   </el-tooltip>
-                  <el-button
-v-if="canShip(row)" size="small" type="success" class="action-button ship-button"
+                  <el-button v-if="canShip(row)" size="small" type="success" class="action-button ship-button"
                     @click.stop="handleShip(row)">
-                    <el-icon><Van /></el-icon>
+                    <el-icon>
+                      <Van />
+                    </el-icon>
                     发货
                   </el-button>
+                  <div style="margin-top: 4px; font-size: 12px; color: #909399;">
+                    发货人：{{ row.shippedOperatorNickname || '-' }}
+                  </div>
                 </div>
               </div>
             </template>
@@ -171,19 +171,18 @@ v-if="canShip(row)" size="small" type="success" class="action-button ship-button
         <!-- 物流序号列 -->
         <el-table-column label="物流序号" align="center" width="120" fixed="left" class-name="with-divider">
           <template #default="{ row, $index }">
-            <div style="display: flex; flex-direction: column; align-items: center; gap: 4px; background-color: var(--el-fill-color-light); padding: 8px; border-radius: 6px;">
-              <span
-class="count" :style="{ 
-                color: `${getColor($index)}`, 
-                fontSize: '24px', 
+            <div
+              style="display: flex; flex-direction: column; align-items: center; gap: 4px; background-color: var(--el-fill-color-light); padding: 8px; border-radius: 6px;">
+              <span class="count" :style="{
+                color: `${getColor($index)}`,
+                fontSize: '24px',
                 fontWeight: '800',
                 lineHeight: '1.2',
                 textAlign: 'center'
               }">
                 {{ row.dailySequence || '-' }}
               </span>
-              <span
-v-if="row.createTime" style="
+              <span v-if="row.createTime" style="
                 fontSize: '13px',
                 color: 'var(--el-text-color-secondary)',
                 textAlign: 'center'
@@ -219,12 +218,10 @@ v-if="row.createTime" style="
                   </div>
                 </div>
                 <div class="mt-2 flex justify-center gap-2">
-                  <el-tooltip
-effect="dark" content="当前面单尚未上传，请联系相关人员及时上传！" placement="top"
+                  <el-tooltip effect="dark" content="当前面单尚未上传，请联系相关人员及时上传！" placement="top"
                     :disabled="!!row.expressImageUrl" popper-class="custom-tooltip" :show-after="100" :hide-after="200"
                     :enterable="false" :offset="20">
-                    <el-button
-size="small" type="primary" plain class="action-button urgent-print-button"
+                    <el-button size="small" type="primary" plain class="action-button urgent-print-button"
                       :disabled="!row.expressImageUrl" @click.stop="handlePrint(row.expressImageUrl)">
                       <el-icon>
                         <Printer />
@@ -232,12 +229,10 @@ size="small" type="primary" plain class="action-button urgent-print-button"
                       打印面单
                     </el-button>
                   </el-tooltip>
-                  <el-tooltip
-effect="dark" content="当前商品条码尚未上传，请联系相关人员及时上传！" placement="top"
+                  <el-tooltip effect="dark" content="当前商品条码尚未上传，请联系相关人员及时上传！" placement="top"
                     :disabled="!!row.expressSkuImageUrl" popper-class="custom-tooltip" :show-after="100"
                     :hide-after="200" :enterable="false" :offset="20">
-                    <el-button
-size="small" type="info" plain class="action-button urgent-print-button"
+                    <el-button size="small" type="info" plain class="action-button urgent-print-button"
                       :disabled="!row.expressSkuImageUrl" @click.stop="handlePrint(row.expressSkuImageUrl)">
                       <el-icon>
                         <Printer />
@@ -266,8 +261,7 @@ size="small" type="info" plain class="action-button urgent-print-button"
         <!-- 产品图片 -->
         <el-table-column label="产品图片" align="center" prop="productImgUrl" min-width="110">
           <template #default="{ row }">
-            <el-image
-:hide-on-click-modal="true" :preview-teleported="true" :src="row.productImgUrl"
+            <el-image :hide-on-click-modal="true" :preview-teleported="true" :src="row.productImgUrl"
               :preview-src-list="[row.productImgUrl]" style="width: 80px; height: 80px" loading="lazy"
               :initial-index="0" fit="contain" :z-index="3000" :preview="false" />
           </template>
@@ -298,8 +292,7 @@ size="small" type="info" plain class="action-button urgent-print-button"
         </el-table-column>
 
         <!-- SKU信息 -->
-        <el-table-column
-label="SKU信息" align="center" min-width="275" class-name="text-left-column"
+        <el-table-column label="SKU信息" align="center" min-width="275" class-name="text-left-column"
           header-align="center">
           <template #default="{ row }">
             <div class="sku-info">
@@ -335,8 +328,7 @@ label="SKU信息" align="center" min-width="275" class-name="text-left-column"
           <template #default="{ row }">
             <div class="custom-images-container" v-if="row.customImageUrls">
               <div v-for="(item, index) in row.customImageUrls.split(',')" :key="index" class="image-item">
-                <el-image
-:hide-on-click-modal="true" :preview-teleported="true" :src="item" :preview-src-list="[item]"
+                <el-image :hide-on-click-modal="true" :preview-teleported="true" :src="item" :preview-src-list="[item]"
                   style="width: 60px; height: 60px" fit="cover" loading="lazy" :initial-index="0" :preview="false" />
               </div>
             </div>
@@ -356,8 +348,7 @@ label="SKU信息" align="center" min-width="275" class-name="text-left-column"
         <!-- 合成预览图 -->
         <el-table-column label="合成预览图" prop="effectiveImgUrl" align="center" min-width="110">
           <template #default="{ row }">
-            <el-image
-v-if="row.effectiveImgUrl" :hide-on-click-modal="true" :preview-teleported="true"
+            <el-image v-if="row.effectiveImgUrl" :hide-on-click-modal="true" :preview-teleported="true"
               :src="row.effectiveImgUrl" :preview-src-list="[row.effectiveImgUrl]" style="width: 80px; height: 80px"
               fit="cover" loading="lazy" :initial-index="0" :preview="false" />
             <span v-else>-</span>
@@ -379,12 +370,10 @@ v-if="row.effectiveImgUrl" :hide-on-click-modal="true" :preview-teleported="true
         <el-table-column label="操作" fixed="right" align="center" min-width="160">
           <template #default="{ row }">
             <div class="action-buttons">
-              <el-tooltip
-effect="dark" content="当前合规单尚未上传，请联系相关人员及时上传！" placement="left-start"
+              <el-tooltip effect="dark" content="当前合规单尚未上传，请联系相关人员及时上传！" placement="left-start"
                 :disabled="!!row.complianceImageUrl" popper-class="custom-tooltip custom-tooltip-left" :show-after="100"
                 :hide-after="200" :enterable="false" :offset="20">
-                <el-button
-size="small" type="warning" plain class="action-button" :disabled="!row.complianceImageUrl"
+                <el-button size="small" type="warning" plain class="action-button" :disabled="!row.complianceImageUrl"
                   @click.stop="handlePrint(row.complianceImageUrl, row.originalQuantity)">
                   <el-icon>
                     <Printer />
@@ -392,12 +381,10 @@ size="small" type="warning" plain class="action-button" :disabled="!row.complian
                   打印合规单
                 </el-button>
               </el-tooltip>
-              <el-tooltip
-effect="dark" content="当前合并文件尚未上传，请联系相关人员及时上传！" placement="left-start"
+              <el-tooltip effect="dark" content="当前合并文件尚未上传，请联系相关人员及时上传！" placement="left-start"
                 :disabled="!!row.complianceGoodsMergedUrl" popper-class="custom-tooltip custom-tooltip-left"
                 :show-after="100" :hide-after="200" :enterable="false" :offset="20">
-                <el-button
-size="small" type="warning" plain class="action-button"
+                <el-button size="small" type="warning" plain class="action-button"
                   :disabled="!row.complianceGoodsMergedUrl"
                   @click.stop="handlePrint(row.complianceGoodsMergedUrl, row.originalQuantity)">
                   <el-icon>
@@ -411,8 +398,7 @@ size="small" type="warning" plain class="action-button"
         </el-table-column>
       </el-table>
       <!-- 分页 -->
-      <Pagination
-:total="total" v-model:page="queryParams.pageNo" v-model:limit="queryParams.pageSize"
+      <Pagination :total="total" v-model:page="queryParams.pageNo" v-model:limit="queryParams.pageSize"
         @pagination="getList" />
     </ContentWrap>
 
@@ -2914,6 +2900,7 @@ $predefined-colors: (
 
   // 垂直分隔线
   :deep(.el-table__body) {
+
     .tracking-column,
     .order-info-column,
     .with-divider {
