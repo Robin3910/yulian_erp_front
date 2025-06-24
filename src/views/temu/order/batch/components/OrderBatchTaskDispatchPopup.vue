@@ -1,5 +1,5 @@
 <template>
-  <el-dialog v-model="dialogVisible" title="分配任务" width="30%" :before-close="handleClose">
+  <el-dialog v-model="dialogVisible" title="分配任务（可修改人员）" width="30%" :before-close="handleClose">
     <el-form :model="formData" ref="formRef">
       <el-form-item label="已选择批次数量：" prop="remark">
         <span>{{ formData.orderIds.length || 0 }}</span>
@@ -7,11 +7,11 @@
       <el-form-item
         label="选择作图员："
         prop="artStaffUserId"
-        :rules="[{ required: true, message: '请选择作图员', trigger: 'blur' }]"
+        :rules="[{ required: false, message: '请选择作图员', trigger: 'blur' }]"
       >
         <el-select
           v-model="formData.artStaffUserId"
-          placeholder="请选择"
+          placeholder="(选填)"
           style="width: 100%"
           filterable
           clearable
@@ -27,11 +27,11 @@
       <el-form-item
         label="选择生产员："
         prop="productionStaffUserId"
-        :rules="[{ required: true, message: '请选择生产员', trigger: 'blur' }]"
+        :rules="[{ required: false, message: '请选择生产员', trigger: 'blur' }]"
       >
         <el-select
           v-model="formData.productionStaffUserId"
-          placeholder="请选择"
+          placeholder="(选填)"
           style="width: 100%"
           filterable
           clearable
