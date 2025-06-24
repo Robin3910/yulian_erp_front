@@ -93,5 +93,9 @@ export const OrderApi = {
   // 更新订单定制图片
   updateOrderCustomImages: async (data: { orderId: number; customImageUrls: string }) => {
     return await request.put({ url: `/temu/order/update-custom-images`, data })
-  }
+  },
+  //批量修改订单状态
+  batchupdateOrderStatus: async (data: any) => {
+    return await request.post({ url: `/temu/order/update-order-status`, data })
+  },
 }

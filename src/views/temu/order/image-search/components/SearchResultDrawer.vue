@@ -295,7 +295,7 @@ const handlePrint = async (url: string, order: OrderResult) => {
 
   try {
     // 立即更新订单状态为已发货(4)
-    await OrderApi.updateOrderStatus([{
+    await OrderApi.batchupdateOrderStatus([{
       id: order.id,
       orderStatus: '4'
     }] as UpdateOrderStatusParams[])
