@@ -577,18 +577,9 @@ const getList = async () => {
   packageTagMap.clear() // 清空包裹标签映射
   loading.value = true
   try {
-    // 新增：处理定制SKU多关键词
-    let customSkuList: string[] | undefined = undefined;
-    if (queryParams.customSku && typeof queryParams.customSku === 'string') {
-      const trimmed = queryParams.customSku.trim();
-      if (trimmed) {
-        customSkuList = trimmed.split(/\s+/);
-      }
-    }
+    // 恢复为定制SKU模糊查询
     const data = await OrderApi.getShippingOrderPage({
-      ...queryParams,
-      customSkuList,
-      customSku: undefined // 避免传递原有的单个 customSku 字段
+      ...queryParams
     })
 
     if (!data.list || data.list.length === 0) {
