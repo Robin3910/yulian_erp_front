@@ -7,6 +7,8 @@ export {}
 
 declare module 'vue' {
   export interface GlobalComponents {
+    AlertRule: typeof import('./../api/temu/alert-rule/index.ts')['default']
+    AlertRuleForm: typeof import('./../views/temu/alert-rule/components/AlertRuleForm.vue')['default']
     AppLinkInput: typeof import('./../components/AppLinkInput/index.vue')['default']
     AppLinkSelectDialog: typeof import('./../components/AppLinkInput/AppLinkSelectDialog.vue')['default']
     Backtop: typeof import('./../components/Backtop/src/Backtop.vue')['default']
@@ -93,6 +95,7 @@ declare module 'vue' {
     ElScrollbar: typeof import('element-plus/es')['ElScrollbar']
     ElSelect: typeof import('element-plus/es')['ElSelect']
     ElSkeleton: typeof import('element-plus/es')['ElSkeleton']
+    ElSpace: typeof import('element-plus/es')['ElSpace']
     ElSwitch: typeof import('element-plus/es')['ElSwitch']
     ElTable: typeof import('element-plus/es')['ElTable']
     ElTableColumn: typeof import('element-plus/es')['ElTableColumn']
@@ -102,6 +105,7 @@ declare module 'vue' {
     ElTag: typeof import('element-plus/es')['ElTag']
     ElText: typeof import('element-plus/es')['ElText']
     ElTooltip: typeof import('element-plus/es')['ElTooltip']
+    ElTree: typeof import('element-plus/es')['ElTree']
     ElTreeSelect: typeof import('element-plus/es')['ElTreeSelect']
     ElUpload: typeof import('element-plus/es')['ElUpload']
     EndEventNode: typeof import('./../components/SimpleProcessDesignerV2/src/nodes/EndEventNode.vue')['default']
@@ -176,6 +180,8 @@ declare module 'vue' {
     VerifyPoints: typeof import('./../components/Verifition/src/Verify/VerifyPoints.vue')['default']
     VerifySlide: typeof import('./../components/Verifition/src/Verify/VerifySlide.vue')['default']
     VerticalButtonGroup: typeof import('./../components/VerticalButtonGroup/index.vue')['default']
+    Workertask: typeof import('./../api/temu/workertask/index.ts')['default']
+    WorkerTaskForm: typeof import('./../views/temu/workertask/WorkerTaskForm.vue')['default']
     XButton: typeof import('./../components/XButton/src/XButton.vue')['default']
     XTextButton: typeof import('./../components/XButton/src/XTextButton.vue')['default']
   }
