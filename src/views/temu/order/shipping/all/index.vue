@@ -399,7 +399,7 @@
       </el-table>
       <!-- 分页 -->
       <Pagination :total="total" v-model:page="queryParams.pageNo" v-model:limit="queryParams.pageSize"
-        @pagination="getList" />
+        @pagination="handlePagination" />
     </ContentWrap>
 
     <ShippingInfoPopup @confirm="handlerRemarkConfirm" ref="shippingInfoPopup" />
@@ -577,6 +577,13 @@ const packageTagMap = new Map<string, string>()
 
 /** 查询列表 */
 const getList = async () => {
+  // 清空选中记录和表格选中状态
+  selectedRows.value = []
+  selectedStats.value = { trackingNumbers: 0, orderNos: 0, total: 0 }
+  if (tableRef.value) {
+    tableRef.value.clearSelection()
+  }
+  
   packageTagMap.clear() // 清空包裹标签映射
   loading.value = true
   try {
@@ -2519,6 +2526,18 @@ const handleCategorySearch = (query: string) => {
 
 // 添加表格引用
 const tableRef = ref()
+
+/** 分页事件处理 */
+const handlePagination = (params: any) => {
+  // 清空选中记录
+  selectedRows.value = []
+  selectedStats.value = { trackingNumbers: 0, orderNos: 0, total: 0 }
+  // 如果表格实例存在，清空表格的选中状态
+  if (tableRef.value) {
+    tableRef.value.clearSelection()
+  }
+  getList()
+}
 </script>
 <style lang="scss">
 $predefined-colors: (
