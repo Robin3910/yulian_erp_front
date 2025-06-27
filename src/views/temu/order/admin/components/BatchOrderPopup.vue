@@ -7,7 +7,8 @@
             <div class="text-shadow-color-blueGray text-xl">{{ `订单号:${item.orderNo}` }}</div>
             <!--店铺名称-->
             <el-form-item label="店铺名称：" class="mb-2 cursor-pointer">
-              <div class="text-left" :title="item.shopName" v-if="item.shopName"  style="font-weight: bolder;font-size: 18px">
+              <div class="text-left" :title="item.shopName" v-if="item.shopName"
+                style="font-weight: bolder;font-size: 18px">
                 {{ item.shopName }}
               </div>
             </el-form-item>
@@ -27,28 +28,15 @@
               <!--  定制图片-->
               <el-form-item label="定制图片：" class="mb-2 cursor-pointer">
                 <div class="text-left flex" v-if="item.customImageUrls">
-                  <div
-                    v-for="(_item, _index) in item.customImageUrls.split(',')"
-                    :key="_index"
-                    class="mr-1"
-                  >
-                    <el-image
-                      class="w-10 h-10"
-                      :hide-on-click-modal="true"
-                      :preview-teleported="true"
-                      :src="_item"
-                      :preview-src-list="[_item]"
-                    />
+                  <div v-for="(_item, _index) in item.customImageUrls.split(',')" :key="_index" class="mr-1">
+                    <el-image class="w-10 h-10" :hide-on-click-modal="true" :preview-teleported="true" :src="_item"
+                      :preview-src-list="[_item]" />
                   </div>
                 </div>
               </el-form-item>
               <!--  定制文字-->
               <el-form-item label="定制文字：" class="mb-2 cursor-pointer">
-                <div
-                  class="text-left truncate"
-                  :title="item.customTextList"
-                  v-if="item.customTextList"
-                >
+                <div class="text-left truncate" :title="item.customTextList" v-if="item.customTextList">
                   {{ item.customTextList }}
                 </div>
               </el-form-item>
@@ -75,30 +63,25 @@
                 <!-- 分类价格 -->
                 <el-form-item label="分类价格：" class="mb-2 cursor-pointer">
                   <div class="text-left" v-if="item.categoryPriceRule">
-                    <div
-                      v-for="(_rule, _index) in sortRulePrice(
-                        (item.categoryPriceRule as RulePriceByNumber).unitPrice
-                      )"
-                      :key="_index"
-                    >
-                      <div
-                        >数量：
+                    <div v-for="(_rule, _index) in sortRulePrice(
+                      (item.categoryPriceRule as RulePriceByNumber).unitPrice
+                    )" :key="_index">
+                      <div>数量：
                         <el-tag size="small">
                           {{
                             sortRulePrice((item.categoryPriceRule as RulePriceByNumber).unitPrice)[
                               _index - 1
                             ]
                               ? sortRulePrice(
-                                  (item.categoryPriceRule as RulePriceByNumber).unitPrice
-                                )[_index - 1].max
+                                (item.categoryPriceRule as RulePriceByNumber).unitPrice
+                              )[_index - 1].max
                               : 0
                           }}
                         </el-tag>
                         ~
                         <el-tag size="small">{{ _rule.max }}</el-tag>
                         价格：
-                        <el-tag size="small"
-                          >¥{{ parseFloat((_rule.price as any) || 0).toFixed(2) }}
+                        <el-tag size="small">¥{{ parseFloat((_rule.price as any) || 0).toFixed(2) }}
                         </el-tag>
                       </div>
                     </div>
@@ -114,7 +97,7 @@
                           ¥{{
                             parseFloat(
                               ((item.categoryPriceRule as RulePriceByNumber).defaultPrice as any) ||
-                                0
+                              0
                             ).toFixed(2)
                           }}
                         </el-tag>
@@ -128,50 +111,42 @@
                 <el-form-item label="分类价格：" class="mb-2 cursor-pointer">
                   <div class="text-left" v-if="item.categoryPriceRule">
                     <div v-if="item.categoryPriceRule as RulePriceByLayout">
-                      <div
-                        >单个产品的价格:
-                        <el-tag size="small"
-                          >¥{{
-                            parseFloat(
-                              ((item.categoryPriceRule as RulePriceByLayout).singlePrice as any) ||
-                                0
-                            ).toFixed(2)
-                          }}
+                      <div>单个产品的价格:
+                        <el-tag size="small">¥{{
+                          parseFloat(
+                            ((item.categoryPriceRule as RulePriceByLayout).singlePrice as any) ||
+                            0
+                          ).toFixed(2)
+                        }}
                         </el-tag>
                       </div>
                     </div>
                     <div v-if="item.categoryPriceRule as RulePriceByLayout">
-                      <div
-                        >单个版面可以制作的产品数量:
+                      <div>单个版面可以制作的产品数量:
                         <el-tag size="small">
                           {{ (item.categoryPriceRule as RulePriceByLayout).singleLayoutCount }}
                         </el-tag>
                       </div>
                     </div>
-                    <div
-                      v-for="(_rule, _index) in sortRulePrice(
-                        (item.categoryPriceRule as RulePriceByLayout).unitPrice
-                      )"
-                      :key="_index"
-                    >
-                      <div
-                        >版面数量：
+                    <div v-for="(_rule, _index) in sortRulePrice(
+                      (item.categoryPriceRule as RulePriceByLayout).unitPrice
+                    )" :key="_index">
+                      <div>版面数量：
                         <el-tag size="small">
                           {{
                             sortRulePrice((item.categoryPriceRule as RulePriceByLayout).unitPrice)[
                               _index - 1
                             ]
                               ? sortRulePrice(
-                                  (item.categoryPriceRule as RulePriceByLayout).unitPrice
-                                )[_index - 1].max
+                                (item.categoryPriceRule as RulePriceByLayout).unitPrice
+                              )[_index - 1].max
                               : 0
                           }}
                         </el-tag>
                         ~
                         <el-tag size="small">{{ _rule.max }}</el-tag>
                         价格：
-                        <el-tag size="small"
-                          >¥{{ parseFloat((_rule.price as any) || 0).toFixed(2) }}
+                        <el-tag size="small">¥{{ parseFloat((_rule.price as any) || 0).toFixed(2) }}
                         </el-tag>
                       </div>
                     </div>
@@ -187,7 +162,7 @@
                           ¥{{
                             parseFloat(
                               ((item.categoryPriceRule as RulePriceByLayout).defaultPrice as any) ||
-                                0
+                              0
                             ).toFixed(2)
                           }}
                         </el-tag>
@@ -197,25 +172,25 @@
                 </el-form-item>
               </template>
               <!--  数量-->
-              <el-form-item
-                label="制作数量："
-                class="mb-2 cursor-pointer"
-                :prop="`orderList.${index}.quantity`"
-                :rules="[{ required: true, message: '请输入数量', trigger: 'blur' }]"
-              >
+              <el-form-item label="制作数量：" class="mb-2 cursor-pointer" :prop="`orderList.${index}.quantity`"
+                :rules="[{ required: true, message: '请输入数量', trigger: 'blur' }]">
                 <el-input v-model.number="item.quantity" class="!w-240px" clearable />
               </el-form-item>
               <!-- 单价 -->
               <el-form-item label="单价：" class="mb-2 cursor-pointer">
                 <div class="text-left">
-                  ¥{{ calculateUnitPrice(item) ? _.round(calculateUnitPrice(item), 4) : '0.00' }}
+                  <span v-if="item.isReturnOrder === 1" class="text-orange-500">此订单为返单，无需付费</span>
+                  <span v-else>¥{{ calculateUnitPrice(item) ? _.round(calculateUnitPrice(item), 4) : '0.00' }}</span>
+                  <!-- ¥{{ calculateUnitPrice(item) ? _.round(calculateUnitPrice(item), 4) : '0.00' }} -->
                 </div>
               </el-form-item>
 
               <!-- 总价 -->
               <el-form-item label="总价：" class="mb-2 cursor-pointer">
                 <div class="text-left">
-                  ¥{{ _.round(calculateUnitPrice(item) * item.quantity,6).toFixed(2)||'0.00' }}
+                  <span v-if="item.isReturnOrder === 1" class="text-orange-500">此订单为返单，无需付费</span>
+                  <span v-else>¥{{ _.round(calculateUnitPrice(item) * item.quantity, 6).toFixed(2) || '0.00' }}</span>
+                  <!-- ¥{{ _.round(calculateUnitPrice(item) * item.quantity, 6).toFixed(2) || '0.00' }} -->
                 </div>
               </el-form-item>
             </div>
@@ -230,12 +205,11 @@
         <!-- 订单数 -->
         <div class="text-left text-orange-500">
           <span>订单数：{{ formData.orderList.length || 0 }} </span>
-          <span class="ml-2"
-            >总价：¥{{
-              _.round(formData.orderList
-                .reduce((acc, item) => acc + calculateUnitPrice(item) * item.quantity, 0),3).toFixed(2)
-            }}</span
-          >
+          <span class="ml-2">总价：¥{{
+            _.round(formData.orderList
+              .filter(item => item.isReturnOrder !== 1)
+              .reduce((acc, item) => acc + calculateUnitPrice(item) * item.quantity, 0), 3).toFixed(2)
+          }}</span>
         </div>
         <div>
           <el-button @click="dialogVisible = false" :disabled="loading">取消</el-button>
@@ -281,22 +255,22 @@ const filterOrderQuantity = (list: any[]) => {
     const productTitle = item.productTitle.toLowerCase()
     const productCategoryName = item.productCategoryName.toLowerCase()
     const originalQuantity = item.quantity || 1 // 保存原始订单数量
-    
+
     console.log('处理商品属性:', properties)
-    
+
     // 特殊处理带有 + 号的多个数量情况（如 70pcs+70pcs）
     if (properties.includes('+')) {
       console.log('发现带+号的属性:', properties)
       const parts = properties.split('+')
       console.log('分割后的部分:', parts)
-      
+
       // 检查是否每个部分都包含数量
       const validParts = parts.filter(part => {
         const match = part.trim().match(/(\d+)[\s\u00A0-]*(|cps|pc|pcs|set|sets|个|件|片|张)/i)
         console.log('部分匹配结果:', part.trim(), match ? '匹配成功' : '匹配失败')
         return match !== null
       })
-      
+
       if (validParts.length >= 2) {
         console.log('找到多个有效部分，设置数量为:', validParts.length)
         item.quantity = validParts.length * originalQuantity
@@ -315,22 +289,22 @@ const filterOrderQuantity = (list: any[]) => {
       item.quantity = 1 * originalQuantity
       return
     }
-    
+
     // 特殊处理 rainbow 情况 - 移到最前面
     if (properties.includes('rainbow')) {
-     
+
       // 使用更宽松的匹配模式
       const rainbowMatch = properties.match(/(\d+)[\s\u00A0-]*(|cps|pc|pcs|set|sets|个|件|片|张)/i)
-    
+
       if (rainbowMatch) {
         const propertyQuantity = parseInt(rainbowMatch[1], 10)
         item.quantity = propertyQuantity * originalQuantity
         return
       } else {
-    
+
         // 尝试其他匹配方式
         const altMatch = properties.match(/(\d+)\s*(|cps|pc|pcs|set|sets|个|件|片|张)/i)
-    
+
         if (altMatch) {
           const propertyQuantity = parseInt(altMatch[1], 10)
           item.quantity = propertyQuantity * originalQuantity
@@ -362,7 +336,7 @@ const filterOrderQuantity = (list: any[]) => {
         item.quantity = diyQuantity * originalQuantity;
         return;
       }
-      
+
       // 当LeZdz店铺的属性描述包含"g Jar Label"或"kg Jar Label"格式时，使用官网数量
       if (properties.match(/\d+g jar label/i) || properties.match(/\d+kg jar label/i)) {
         item.quantity = originalQuantity;
@@ -377,7 +351,7 @@ const filterOrderQuantity = (list: any[]) => {
         item.quantity = originalQuantity;
         return;
       }
-      
+
       // 从产品名称中提取数量信息，如"【定制】200pcs/set"中的200
       const titlePcsMatch = productTitle.match(/(\d+)pcs\/set/i);
       if (titlePcsMatch) {
@@ -394,7 +368,7 @@ const filterOrderQuantity = (list: any[]) => {
         item.quantity = originalQuantity;
         return;
       }
-      
+
       // 当LECODZ店铺的属性描述为"style 数字"格式时，使用官网数量
       if (properties.match(/style\s*\d+/i)) {
         item.quantity = originalQuantity;
@@ -434,20 +408,20 @@ const filterOrderQuantity = (list: any[]) => {
         item.quantity = propertyQuantity * originalQuantity;
         return;
       }
-      
+
       // 专门匹配形如"3.54*2.12in-30pcs"的格式
       let pcsMatch = properties.match(/\d+\.\d+[\*x×]\d+\.\d+in-(\d+)pcs/i)
-      
+
       // 如果上面的特定格式匹配不成功，尝试匹配 -30pcs 或直接 30pcs 这样的格式
       if (!pcsMatch) {
         pcsMatch = properties.match(/[-\s](\d+)[\s\u00A0]*pcs/i)
       }
-      
+
       // 如果上面的匹配还不成功，尝试更宽松的匹配方式
       if (!pcsMatch) {
         pcsMatch = properties.match(/(\d+)[\s\u00A0]*pcs/i)
       }
-      
+
       if (pcsMatch) {
         const propertyQuantity = parseInt(pcsMatch[1], 10)
         item.quantity = propertyQuantity * originalQuantity
@@ -467,7 +441,7 @@ const filterOrderQuantity = (list: any[]) => {
         item.quantity = originalQuantity;
         return;
       }
-      
+
       // 匹配形如"style 数字"的格式
       const styleMatch = properties.match(/style\s*(\d+)/i);
       if (styleMatch) {
@@ -475,7 +449,7 @@ const filterOrderQuantity = (list: any[]) => {
         item.quantity = originalQuantity;
         return;
       }
-      
+
       // 匹配形如"pink-10pcs"或"green-20pcs"这样的格式
       const colorPcsMatch = properties.match(/[a-z]+-(\d+)pcs/i);
       if (colorPcsMatch) {
@@ -550,36 +524,36 @@ const calculateUnitPrice = computed(() => {
       let minPrice = 0
       //首先计算出 单个产品的单价*数量的价格
       let singleTotalPrice = (priceRule.singlePrice as number) * item.quantity
-      minPrice= singleTotalPrice
+      minPrice = singleTotalPrice
       // 然后计算产品最大可以需要几个版面
       let maxLayoutCount = Math.ceil((item.quantity / (priceRule.singleLayoutCount as number)) as number)
       for (let index = 1; index <= maxLayoutCount; index++) {
         let currentTotalPrice = 0
-        let remainPrice=0
+        let remainPrice = 0
         // 当前整版的价格
-        let  currentLayoutTotalPrice=calcLayoutUnitPrice(index)*index;
+        let currentLayoutTotalPrice = calcLayoutUnitPrice(index) * index;
         //检查是是否存在剩余的单个产品 没有就是0  有就加上单个产品*价格
-        let  remainder=item.quantity-index * (priceRule.singleLayoutCount as number)
-        if (remainder > 0){
-          remainPrice=priceRule.singlePrice as number * remainder
-        }else {
-          remainPrice=0
+        let remainder = item.quantity - index * (priceRule.singleLayoutCount as number)
+        if (remainder > 0) {
+          remainPrice = priceRule.singlePrice as number * remainder
+        } else {
+          remainPrice = 0
         }
-        currentTotalPrice=currentLayoutTotalPrice+remainPrice
+        currentTotalPrice = currentLayoutTotalPrice + remainPrice
         if (currentTotalPrice <= minPrice) {
           minPrice = currentTotalPrice
-          console.log(`产品数量${item.quantity },
+          console.log(`产品数量${item.quantity},
          方案1(直接按产品计价)：按单个单品价格算是${singleTotalPrice},
-         方案2(购买版面+产品)：购买${index}个版面完成制作${index*(priceRule.singleLayoutCount as number)}个产品花费价格：${index*calcLayoutUnitPrice(index)},
+         方案2(购买版面+产品)：购买${index}个版面完成制作${index * (priceRule.singleLayoutCount as number)}个产品花费价格：${index * calcLayoutUnitPrice(index)},
          剩余${remainder}个产品
-         价格是${remainder>0?priceRule.singlePrice as number * remainder:0},
+         价格是${remainder > 0 ? priceRule.singlePrice as number * remainder : 0},
          方案2总价是:${currentTotalPrice},由版面总价${currentLayoutTotalPrice}+剩余产品的总价${remainPrice}组成,
 
         `)
         }
 
       }
-      return minPrice/item.quantity||0
+      return minPrice / item.quantity || 0
     }
     return 0
   }
