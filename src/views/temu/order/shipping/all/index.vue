@@ -1030,181 +1030,273 @@ const handlePrint = async (url: string, quantity?: number) => {
   })
 
   try {
-    // 找到对应的订单数据 - 更宽松的查找条件
-    let relatedOrder: any = null
-    // 先根据URL精确匹配
-    relatedOrder = list.value.find(item => 
-      (item.expressOutsideImageUrl === url || 
-        (item.expressOutsideImageUrl?.startsWith('@') && item.expressOutsideImageUrl.substring(1) === printUrl))
-    )
-    
-    // 如果没找到，则按物流单号从URL中提取
-    if (!relatedOrder) {
-      // 尝试从URL中提取可能的物流单号或订单号
-      const possibleIds = printUrl.match(/[A-Z0-9]{10,}/g) || []
-      for (const id of possibleIds) {
-        const foundOrder = list.value.find(item => 
-          item.trackingNumber?.includes(id) || item.orderNo?.includes(id)
-        )
-        if (foundOrder) {
-          relatedOrder = foundOrder
-          break
-        }
-      }
-    }
-    
-    // 如果仍然没找到，使用第一个选中的行
-    if (!relatedOrder && selectedRows.value.length > 0) {
-      relatedOrder = selectedRows.value[0]
-    }
-    
-    console.log('关联订单信息:', relatedOrder)
-    
-    // 获取序号信息
-    const sequenceNumber = String(relatedOrder?.dailySequence || '-')
-    console.log('物流序号:', sequenceNumber)
-    
-    // 获取日期信息
-    const dateText = relatedOrder?.createTime ? formatDateSafe(relatedOrder.createTime, 'MM-DD') : '-'
-
-    // 判断是否为PDF文件
-    const isPDF = printUrl.toLowerCase().endsWith('.pdf')
-
-    if (isPDF) {
-      // 使用fetch获取PDF内容
-      const response = await fetch(printUrl)
-      if (!response.ok) {
-        throw new Error(`获取PDF文件失败: ${response.statusText}`)
-      }
-      const pdfBlob = await response.blob()
+    // 只有在打印加急面单时才添加序号页
+    if (isUrgentLabel) {
+      // 找到对应的订单数据 - 更宽松的查找条件
+      let relatedOrder: any = null
+      // 先根据URL精确匹配
+      relatedOrder = list.value.find(item => 
+        (item.expressOutsideImageUrl === url || 
+          (item.expressOutsideImageUrl?.startsWith('@') && item.expressOutsideImageUrl.substring(1) === printUrl))
+      )
       
-      try {
-        // 使用PDFDocument处理PDF文件
-        const pdfBytes = await pdfBlob.arrayBuffer()
-        const pdfDoc = await PDFDocument.load(pdfBytes)
-        
-        // 创建新的PDF，添加序号页
-        const mergedPdf = await PDFDocument.create()
-        
-        // 获取原始PDF的第一页尺寸作为参考
-        const originalPages = pdfDoc.getPages()
-        const originalPageSize = originalPages.length > 0 
-          ? originalPages[0].getSize() 
-          : { width: 595, height: 842 } // A4尺寸作为默认值
-        
-        // 创建序号页，使用与原始PDF相同的尺寸
-        const firstPage = mergedPdf.addPage([originalPageSize.width, originalPageSize.height])
-        const { width, height } = firstPage.getSize()
-        
-        // 使用默认字体
-        const helveticaFont = await mergedPdf.embedFont(StandardFonts.Helvetica)
-        
-        // 序号只有两位，可以使用更大的字体
-        const maxFontSizeWidth = width * 0.9 // 占页面宽度的90%
-        const maxFontSizeHeight = height * 0.75 // 占页面高度的75%，留出日期空间
-        const maxFontSize = Math.min(maxFontSizeWidth, maxFontSizeHeight)
-        
-        // 根据序号长度计算实际字体大小
-        let fontSize = maxFontSize
-        if (sequenceNumber.length > 2) {
-          fontSize = maxFontSize / (sequenceNumber.length * 0.5) // 调整系数以适应更长的序号
-        }
-        
-        const textWidth = helveticaFont.widthOfTextAtSize(sequenceNumber, fontSize)
-        
-        // 绘制序号(移至页面上部)
-        firstPage.drawText(sequenceNumber, {
-          x: (width - textWidth) / 2,
-          y: height * 0.65 - fontSize / 2, // 向上移动到页面65%处
-          size: fontSize,
-          color: rgb(0, 0, 0),
-          font: helveticaFont
-        })
-        
-        // 绘制日期(放在页面更下方)
-        const dateWidth = helveticaFont.widthOfTextAtSize(dateText, 24)
-        firstPage.drawText(dateText, {
-          x: (width - dateWidth) / 2,
-          y: height * 0.1, // 放在页面底部10%处
-          size: 24,
-          color: rgb(0, 0, 0),
-          font: helveticaFont
-        })
-        
-        // 拷贝原PDF的所有页面，保持原始尺寸
-        const pages = await mergedPdf.copyPages(pdfDoc, pdfDoc.getPageIndices())
-        pages.forEach(page => {
-          mergedPdf.addPage(page)
-        })
-        
-        // 生成合并后的PDF数据
-        const mergedPdfBytes = await mergedPdf.save()
-        const mergedPdfBlob = new Blob([mergedPdfBytes], { type: 'application/pdf' })
-        const mergedPdfUrl = URL.createObjectURL(mergedPdfBlob)
-        
-        // 关闭加载
-        loading.close()
-        
-        // 打印合并后的PDF
-        printJS({
-          printable: mergedPdfUrl,
-          type: 'pdf',
-          showModal: true,
-          onLoadingEnd: () => {
-            URL.revokeObjectURL(mergedPdfUrl)
+      // 如果没找到，则按物流单号从URL中提取
+      if (!relatedOrder) {
+        // 尝试从URL中提取可能的物流单号或订单号
+        const possibleIds = printUrl.match(/[A-Z0-9]{10,}/g) || []
+        for (const id of possibleIds) {
+          const foundOrder = list.value.find(item => 
+            item.trackingNumber?.includes(id) || item.orderNo?.includes(id)
+          )
+          if (foundOrder) {
+            relatedOrder = foundOrder
+            break
           }
-        })
+        }
+      }
+      
+      // 如果仍然没找到，使用第一个选中的行
+      if (!relatedOrder && selectedRows.value.length > 0) {
+        relatedOrder = selectedRows.value[0]
+      }
+      
+      console.log('关联订单信息:', relatedOrder)
+      
+      // 获取序号信息
+      const sequenceNumber = String(relatedOrder?.dailySequence || '-')
+      console.log('物流序号:', sequenceNumber)
+      
+      // 获取日期信息
+      const dateText = relatedOrder?.createTime ? formatDateSafe(relatedOrder.createTime, 'MM-DD') : '-'
+
+      // 判断是否为PDF文件
+      const isPDF = printUrl.toLowerCase().endsWith('.pdf')
+
+      if (isPDF) {
+        // 使用fetch获取PDF内容
+        const response = await fetch(printUrl)
+        if (!response.ok) {
+          throw new Error(`获取PDF文件失败: ${response.statusText}`)
+        }
+        const pdfBlob = await response.blob()
+
+        try {
+          // 使用PDFDocument处理PDF文件
+          const pdfBytes = await pdfBlob.arrayBuffer()
+          const pdfDoc = await PDFDocument.load(pdfBytes)
+          
+          // 创建新的PDF，添加序号页
+          const mergedPdf = await PDFDocument.create()
+
+          // 获取原始PDF的第一页尺寸作为参考
+          const originalPages = pdfDoc.getPages()
+          const originalPageSize = originalPages.length > 0 
+            ? originalPages[0].getSize() 
+            : { width: 595, height: 842 } // A4尺寸作为默认值
+          
+          // 创建序号页，使用与原始PDF相同的尺寸
+          const firstPage = mergedPdf.addPage([originalPageSize.width, originalPageSize.height])
+          const { width, height } = firstPage.getSize()
+          
+          // 使用默认字体
+          const helveticaFont = await mergedPdf.embedFont(StandardFonts.Helvetica)
+          
+          // 序号只有两位，可以使用更大的字体
+          const maxFontSizeWidth = width * 0.9 // 占页面宽度的90%
+          const maxFontSizeHeight = height * 0.75 // 占页面高度的75%，留出日期空间
+          const maxFontSize = Math.min(maxFontSizeWidth, maxFontSizeHeight)
+          
+          // 根据序号长度计算实际字体大小
+          let fontSize = maxFontSize
+          if (sequenceNumber.length > 2) {
+            fontSize = maxFontSize / (sequenceNumber.length * 0.5) // 调整系数以适应更长的序号
+          }
+          
+          const textWidth = helveticaFont.widthOfTextAtSize(sequenceNumber, fontSize)
+          
+          // 绘制序号(移至页面上部)
+          firstPage.drawText(sequenceNumber, {
+            x: (width - textWidth) / 2,
+            y: height * 0.65 - fontSize / 2, // 向上移动到页面65%处
+            size: fontSize,
+            color: rgb(0, 0, 0),
+            font: helveticaFont
+          })
+          
+          // 绘制日期(放在页面更下方)
+          const dateWidth = helveticaFont.widthOfTextAtSize(dateText, 24)
+          firstPage.drawText(dateText, {
+            x: (width - dateWidth) / 2,
+            y: height * 0.1, // 放在页面底部10%处
+            size: 24,
+            color: rgb(0, 0, 0),
+            font: helveticaFont
+          })
+          
+          // 拷贝原PDF的所有页面，保持原始尺寸
+          const pages = await mergedPdf.copyPages(pdfDoc, pdfDoc.getPageIndices())
+          pages.forEach(page => {
+            mergedPdf.addPage(page)
+          })
+
+          // 生成合并后的PDF数据
+          const mergedPdfBytes = await mergedPdf.save()
+          const mergedPdfBlob = new Blob([mergedPdfBytes], { type: 'application/pdf' })
+          const mergedPdfUrl = URL.createObjectURL(mergedPdfBlob)
+
+          // 关闭加载
+          loading.close()
+
+          // 打印合并后的PDF
+            printJS({
+              printable: mergedPdfUrl,
+              type: 'pdf',
+              showModal: true,
+              onLoadingEnd: () => {
+                URL.revokeObjectURL(mergedPdfUrl)
+              }
+          })
+
+          ElMessage.success('打印完成')
+        } catch (error) {
+          console.error('处理PDF文件失败:', error)
+          loading.close()
+          ElMessage.error('处理PDF文件失败')
+        }
+      } else {
+        // 如果是图片，创建一个包含序号页面和图片的HTML
+        // 创建序号页面HTML - 不使用中文，只用数字
+        const sequencePageHtml = `
+          <div style="page-break-after: always;">
+            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; width: 100%; position: relative;">
+              <div style="font-size: 500px; font-weight: bold; line-height: 1; margin-top: -120px;">${sequenceNumber}</div>
+              <div style="font-size: 24px; position: absolute; bottom: 5%;">${dateText}</div>
+            </div>
+          </div>
+        `
         
-        ElMessage.success('打印完成')
-      } catch (error) {
-        console.error('处理PDF文件失败:', error)
+        // 合并序号页和图片页
+        const printContent = sequencePageHtml + Array(printCount).fill(`
+          <div style="page-break-after: always;">
+            <img src="${printUrl}" style="width: 100%; height: auto;">
+          </div>
+        `).join('')
+
         loading.close()
-        ElMessage.error('处理PDF文件失败')
+
+        // 使用HTML方式打印
+        printJS({
+          printable: printContent,
+          type: 'raw-html',
+          showModal: true,
+          targetStyles: ['*'],
+          style: `
+            @page {
+              margin: 0;
+              size: auto;
+            }
+            @media print {
+              body { margin: 0; }
+              img { width: 100%; height: auto; }
+              div { page-break-after: always; }
+              .header, .footer {
+                display: none !important;
+              }
+            }
+          `
+        })
+
+        ElMessage.success('打印完成')
       }
     } else {
-      // 如果是图片，创建一个包含序号页面和图片的HTML
-      // 创建序号页面HTML - 不使用中文，只用数字
-      const sequencePageHtml = `
-        <div style="page-break-after: always;">
-          <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; width: 100%; position: relative;">
-            <div style="font-size: 500px; font-weight: bold; line-height: 1; margin-top: -120px;">${sequenceNumber}</div>
-            <div style="font-size: 24px; position: absolute; bottom: 5%;">${dateText}</div>
-          </div>
-        </div>
-      `
-      
-      // 合并序号页和图片页
-      const printContent = sequencePageHtml + Array(printCount).fill(`
-        <div style="page-break-after: always;">
-          <img src="${printUrl}" style="width: 100%; height: auto;">
-        </div>
-      `).join('')
+      // 非加急面单的打印处理 - 不添加序号页
+      // 判断是否为PDF文件
+      const isPDF = printUrl.toLowerCase().endsWith('.pdf')
 
-      loading.close()
+      if (isPDF) {
+        // 使用fetch获取PDF内容
+        const response = await fetch(printUrl)
+        if (!response.ok) {
+          throw new Error(`获取PDF文件失败: ${response.statusText}`)
+        }
+        const pdfBlob = await response.blob()
 
-      // 使用HTML方式打印
-      printJS({
-        printable: printContent,
-        type: 'raw-html',
-        showModal: true,
-        targetStyles: ['*'],
-        style: `
-          @page {
-            margin: 0;
-            size: auto;
+        try {
+          // 直接使用PDFDocument处理PDF文件
+          const pdfBytes = await pdfBlob.arrayBuffer()
+          const pdfDoc = await PDFDocument.load(pdfBytes)
+          
+          // 创建新的PDF
+          const mergedPdf = await PDFDocument.create()
+          
+          // 拷贝原PDF的所有页面
+          const pages = await mergedPdf.copyPages(pdfDoc, pdfDoc.getPageIndices())
+          
+          // 根据打印份数添加页面
+          for (let i = 0; i < printCount; i++) {
+            pages.forEach(page => {
+              mergedPdf.addPage(page)
+            })
           }
-          @media print {
-            body { margin: 0; }
-            img { width: 100%; height: auto; }
-            div { page-break-after: always; }
-            .header, .footer {
-              display: none !important;
+          
+          // 生成PDF数据
+          const mergedPdfBytes = await mergedPdf.save()
+          const mergedPdfBlob = new Blob([mergedPdfBytes], { type: 'application/pdf' })
+          const mergedPdfUrl = URL.createObjectURL(mergedPdfBlob)
+
+          // 关闭加载
+          loading.close()
+
+          // 打印PDF
+          printJS({
+            printable: mergedPdfUrl,
+            type: 'pdf',
+            showModal: true,
+            onLoadingEnd: () => {
+              URL.revokeObjectURL(mergedPdfUrl)
             }
-          }
-        `
-      })
+          })
 
-      ElMessage.success('打印完成')
+          ElMessage.success('打印完成')
+        } catch (error) {
+          console.error('处理PDF文件失败:', error)
+          loading.close()
+          ElMessage.error('处理PDF文件失败')
+        }
+      } else {
+        // 如果是图片，直接创建图片HTML
+        const printContent = Array(printCount).fill(`
+          <div style="page-break-after: always;">
+            <img src="${printUrl}" style="width: 100%; height: auto;">
+          </div>
+        `).join('')
+
+        loading.close()
+
+        // 使用HTML方式打印
+        printJS({
+          printable: printContent,
+          type: 'raw-html',
+          showModal: true,
+          targetStyles: ['*'],
+          style: `
+            @page {
+              margin: 0;
+              size: auto;
+            }
+            @media print {
+              body { margin: 0; }
+              img { width: 100%; height: auto; }
+              div { page-break-after: always; }
+              .header, .footer {
+                display: none !important;
+              }
+            }
+          `
+        })
+
+        ElMessage.success('打印完成')
+      }
     }
   } catch (error: any) {
     loading.close()
@@ -1658,7 +1750,7 @@ const handlerPrintBatchUrgent = async () => {
       const mergedPdfBytes = await mergedPdf.save()
       const mergedPdfBlob = new Blob([mergedPdfBytes], { type: 'application/pdf' })
       const mergedPdfUrl = URL.createObjectURL(mergedPdfBlob)
-      
+
       // 打印PDF
       printJS({
         printable: mergedPdfUrl,
@@ -2337,7 +2429,7 @@ const handlerPrintBatchAll = async () => {
           // 获取页面尺寸，可能从缓存或之前的PDF中获取
           let pageSize = defaultPageSize
           if (printUrl.toLowerCase().endsWith('.pdf')) {
-            const response = await fetch(printUrl)
+          const response = await fetch(printUrl)
             if (!response.ok) {
               console.error(`加载PDF失败: ${printUrl}`)
               failCount++
