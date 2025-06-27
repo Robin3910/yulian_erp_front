@@ -391,6 +391,7 @@ import { COLOR_ARRAYS } from '@/utils/color'
 import printJS from 'print-js'
 import { PDFDocument } from 'pdf-lib'
 import ShippingInfoPopup from '../components/ShippingInfoPopup.vue'
+import { useUrgentOrderStore } from '@/store/modules/urgentOrder'
 // const tableRef = useTemplateRef<InstanceType<typeof ElTable>>('tableRef')
 const shippingInfoPopup = useTemplateRef('shippingInfoPopup')
 
@@ -943,6 +944,10 @@ const handleShip = async (row: ExtendedOrderVO) => {
 
     ElMessage.success('发货成功')
     getList()
+
+    // 更新加急订单数量
+    const urgentOrderStore = useUrgentOrderStore()
+    await urgentOrderStore.fetchUrgentOrderCount()
   } catch (error) {
     if (error !== 'cancel') {
       console.error('发货失败:', error)

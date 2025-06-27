@@ -98,4 +98,8 @@ export const OrderApi = {
   batchupdateOrderStatus: async (data: any) => {
     return await request.post({ url: `/temu/order/update-order-status`, data })
   },
+  // 获取加急未发货订单总数
+  getUrgentUnshippedCount: async () => {
+    return await request.get({ url: `/temu/order-shipping/count` })
+  },
 }
