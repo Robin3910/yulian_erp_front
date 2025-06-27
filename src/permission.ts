@@ -8,6 +8,7 @@ import { usePageLoading } from '@/hooks/web/usePageLoading'
 import { useDictStoreWithOut } from '@/store/modules/dict'
 import { useUserStoreWithOut } from '@/store/modules/user'
 import { usePermissionStoreWithOut } from '@/store/modules/permission'
+import { useUrgentOrderStore } from '@/store/modules/urgentOrder'
 
 const { start, done } = useNProgress()
 
@@ -68,6 +69,8 @@ router.beforeEach(async (to, from, next) => {
       const dictStore = useDictStoreWithOut()
       const userStore = useUserStoreWithOut()
       const permissionStore = usePermissionStoreWithOut()
+      const urgentOrderStore = useUrgentOrderStore()
+      
       if (!dictStore.getIsSetDict) {
         await dictStore.setDictMap()
       }
@@ -80,6 +83,10 @@ router.beforeEach(async (to, from, next) => {
         permissionStore.getAddRouters.forEach((route) => {
           router.addRoute(route as unknown as RouteRecordRaw) // 动态添加可访问路由表
         })
+        
+        // 获取加急未发货订单数量
+        await urgentOrderStore.fetchUrgentOrderCount()
+        
         const redirectPath = from.query.redirect || to.path
         // 修复跳转时不带参数的问题
         const redirect = decodeURIComponent(redirectPath as string)
@@ -87,6 +94,10 @@ router.beforeEach(async (to, from, next) => {
         const nextData = to.path === redirect ? { ...to, replace: true } : { path: redirect, query }
         next(nextData)
       } else {
+        // 如果用户信息已设置，也获取加急订单数量（用于页面刷新等情况）
+        if (urgentOrderStore.urgentOrderCount === 0) {
+          await urgentOrderStore.fetchUrgentOrderCount()
+        }
         next()
       }
     }
