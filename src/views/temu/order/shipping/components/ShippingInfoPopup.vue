@@ -14,6 +14,10 @@
         </div>
         <div class="panel-content">
           <div class="info-item">
+            <span class="label">物流序号</span>
+            <span class="value" style="font-weight: bold; color: #E6A23C; font-size: 20px;">{{ formData.orders[0]?.dailySequence || '-' }}</span>
+          </div>
+          <div class="info-item">
             <span class="label">物流单号</span>
             <span class="value">{{ formData.orders[0]?.trackingNumber || '-' }}</span>
           </div>
@@ -788,7 +792,7 @@ const handlerPrintBatchMerged = async () => {
         background: var(--el-fill-color-light);
         border-radius: 8px;
         transition: all 0.3s ease;
-        min-width: 280px;
+        min-width: 200px;
         flex-shrink: 0;
 
         &:hover {
