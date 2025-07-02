@@ -439,7 +439,7 @@
       />
       <el-table-column label="操作" align="center" min-width="150px" fixed="right">
         <template #default="scope">
-          <div class="flex justify-center" v-if="scope.row.status === 0">
+          <div class="flex justify-center" v-if="hasUncompletedOrders(scope.row)">
             <el-popconfirm
               title="是否确认完成订单?"
               placement="top-start"
@@ -609,10 +609,11 @@ const handleUpdateBathchStatus = async (row: any) => {
     //   message.warning('请先上传文件!')
     //   return
     // }
-    if (row.status == 1) {
-      message.warning('该订单已完成生产!')
-      return
-    }
+    // 移除对批次状态的检查，允许在批次已完成但有新订单的情况下再次完成
+    // if (row.status == 1) {
+    //   message.warning('该订单已完成生产!')
+    //   return
+    // }
     await OrderBatchApi.updateOrderBatchStatusByTask({ taskId: row.taskId, id: row.id })
     row.status = true
     message.success('操作成功')
@@ -748,6 +749,13 @@ const handlerRemarkConfirm = async (data: any) => {
 onMounted(() => {
   getList()
 })
+
+const hasUncompletedOrders = (row: OrderBatchVO): boolean => {
+  if (!row.orderList || row.orderList.length === 0) {
+    return false
+  }
+  return row.orderList.some((order: any) => order.isCompleteDrawTask === 0 || order.isCompleteProducerTask === 0)
+}
 </script>
 
 <style lang="scss" scoped>
