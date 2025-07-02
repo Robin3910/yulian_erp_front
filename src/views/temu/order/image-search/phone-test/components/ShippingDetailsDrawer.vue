@@ -11,6 +11,10 @@
       <div class="package-info-panel">
         <div class="panel-content">
           <div class="info-item">
+            <span class="label">物流序号</span>
+            <span class="value" style="font-weight: bold; color: #E6A23C; font-size: 23px;">{{ shippingData.dailySequence || '-' }}</span>
+          </div>
+          <div class="info-item">
             <span class="label">物流单号</span>
             <span class="value">{{ shippingData.trackingNumber || '-' }}</span>
           </div>
