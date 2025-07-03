@@ -507,6 +507,7 @@ interface OrderItem {
   dailySequence?: number | null // 添加物流序号字段
   shippedOperatorNickname?: string | null // 添加发货人字段
   remark?: string | null // 添加备注字段
+  shippingStatus?: number | string | null // 添加发货状态字段
 }
 
 interface OrderNoGroup {
@@ -984,16 +985,8 @@ const getOrderStatusText = (status: number) => {
 
 // 添加判断是否可以发货的方法
 const canShip = (row: ExtendedOrderVO) => {
-  // 获取同一物流单号下的所有订单
-  const sameTrackingOrders = list.value.filter(
-    (item) => item.trackingNumber === row.trackingNumber
-  );
-
-  // 检查是否所有订单都已经是已发货状态(4)
-  const allShipped = sameTrackingOrders.every((item) => item.orderStatus === 4);
-
-  // 如果所有订单都已发货，则不显示发货按钮
-  return !allShipped;
+  // 只要当前行的shippingStatus为0，则显示发货按钮
+  return row.shippingStatus === 0 || row.shippingStatus === '0';
 }
 
 // 修改发货处理方法
