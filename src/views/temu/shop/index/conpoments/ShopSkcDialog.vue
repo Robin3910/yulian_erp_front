@@ -42,6 +42,7 @@
           <el-button type="primary" :icon="Plus" @click="handleAdd">
             新增SKC
           </el-button>
+          <el-button type="success" @click="handleExportAllSkc">导出全部SKC</el-button>
         </div>
       </div>
 
@@ -163,7 +164,7 @@
 import { Dialog } from '@/components/Dialog'
 import { Icon } from '@/components/Icon'
 import { ShopApi, ShopOldTypeVO, ShopOldTypeDeleteDTO } from '@/api/temu/shop'
-import { ElMessageBox, ElNotification } from 'element-plus'
+import { ElMessageBox, ElNotification, ElLoading } from 'element-plus'
 import { Delete, Plus, Search } from '@element-plus/icons-vue'
 import { h } from 'vue'
 
@@ -321,10 +322,15 @@ const handleAdd = () => {
 
 // 提交新增
 const submitAdd = async () => {
-  await addFormRef.value.validate()
-  
   submitting.value = true
+  const loadingInstance = ElLoading.service({
+    lock: true,
+    text: '正在批量新增SKC，请稍候...',
+    background: 'rgba(0, 0, 0, 0.3)'
+  })
   try {
+    await addFormRef.value.validate()
+    
     // 分割并过滤输入的SKC
     const skcs = addForm.value.skc.split(/[\n\s]+/).filter(item => item.trim())
     
@@ -380,6 +386,7 @@ const submitAdd = async () => {
     message.error('新增SKC失败')
   } finally {
     submitting.value = false
+    loadingInstance.close()
   }
 }
 
@@ -455,6 +462,27 @@ const pageList = computed(() => {
 
 // 修改total计算属性
 const total = computed(() => filteredSkcList.value.length)
+
+// 批量导出全部SKC
+const handleExportAllSkc = () => {
+  // 获取所有SKC字符串
+  const allSkcArr = skcList.value.map(item => item.skc).filter(Boolean)
+  if (!allSkcArr.length) {
+    message.warning('没有可导出的SKC')
+    return
+  }
+  const content = allSkcArr.join('\n')
+  const blob = new Blob([content], { type: 'text/plain;charset=utf-8' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `shop_${props.shopId}_skc.txt`
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
+  message.success('导出成功')
+}
 
 defineExpose({ open })
 </script>
