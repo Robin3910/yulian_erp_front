@@ -13,7 +13,8 @@
           </el-col>
           <el-col :span="24" :lg="6">
             <el-form-item label="物流单号" prop="trackingNumber" class="w-full">
-              <el-input v-model="queryParams.trackingNumber" placeholder="请输入物流单号" clearable
+              <el-input
+v-model="queryParams.trackingNumber" placeholder="请输入物流单号" clearable
                 @keyup.enter="handleQuery" />
             </el-form-item>
           </el-col>
@@ -66,6 +67,14 @@ v-model="queryParams.createTime" type="daterange" range-separator="至"
           <el-col :span="24" :lg="6">
             <el-form-item label="物流序号" prop="dailySequence" class="w-full">
               <el-input v-model="queryParams.dailySequence" placeholder="请输入物流序号" clearable @keyup.enter="handleQuery" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="24" :lg="6">
+            <el-form-item label="发货状态" prop="shippingStatus" class="w-full">
+              <el-select v-model="queryParams.shippingStatus" placeholder="请选择发货状态" clearable>
+                <el-option label="未发货" :value="0" />
+                <el-option label="已发货" :value="1" />
+              </el-select>
             </el-form-item>
           </el-col>
           <el-col :span="24" :lg="6">
@@ -548,7 +557,8 @@ const queryParams = reactive({
   customSku: null as string | null,
   categoryIds: [] as number[], // 添加类目查询字段
   isUrgent: undefined, // 添加加急状态查询参数
-  dailySequence: null as string | null // 添加物流序号查询参数
+  dailySequence: null as string | null, // 添加物流序号查询参数
+  shippingStatus: undefined // 新增发货状态查询参数
 })
 const queryFormRef = ref() // 搜索的表单
 
