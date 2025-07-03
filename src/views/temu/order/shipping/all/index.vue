@@ -2454,6 +2454,57 @@ const handlerPrintBatchAll = async () => {
         const sequenceNumber = String(firstOrder.dailySequence || '-')
         const dateText = firstOrder.createTime ? formatDateSafe(firstOrder.createTime, 'MM-DD') : '-'
         
+        // 检查是否有名片类目的商品
+        const isBusinessCardCategory = orders.some(order => {
+          // 检查类目是否为名片类目
+          return order.categoryId && categoryList.value.some(category => 
+            category.categoryId == order.categoryId && 
+            category.categoryName && 
+            category.categoryName.includes('名片')
+          )
+        })
+        
+        // 如果有名片类目的商品，收集物料信息
+        let materialInfoText = ''
+        if (isBusinessCardCategory) {
+          // 收集规格和数量信息
+          const materialSpecs = new Map<string, number>()
+          
+          orders.forEach(order => {
+            // 从商品属性中提取规格
+            const properties = order.productProperties || ''
+            // 提取规格信息，假设格式为"规格：xxx"或包含规格信息
+            let spec = ''
+            if (properties) {
+              const specMatch = properties.match(/规格[:：]?\s*([^,，;；\n]+)/i)
+              if (specMatch && specMatch[1]) {
+                spec = specMatch[1].trim()
+              } else {
+                // 如果没有明确的"规格："标记，就使用整个属性字符串作为规格
+                spec = properties.trim()
+              }
+            }
+            
+            if (spec) {
+              // 获取官网数量
+              const quantity = order.originalQuantity || 0
+              // 累加相同规格的数量
+              materialSpecs.set(spec, (materialSpecs.get(spec) || 0) + quantity)
+            }
+          })
+          
+          // 格式化物料信息为 "规格数字pcs*数量"
+          const materialInfoArray = Array.from(materialSpecs.entries()).map(([spec, quantity]) => {
+            // 从规格中提取数字
+            const specNumber = spec.match(/\d+/);
+            // 如果能提取到数字，则使用该数字，否则使用完整规格
+            const specText = specNumber ? specNumber[0] : spec;
+            return `${specText}pcs*${quantity}`
+          })
+          
+          materialInfoText = materialInfoArray.join('\n')
+        }
+        
         // 1. 首先添加加急面单（每个物流单号只需要一次）
         const urgentUrl = orders[0].expressOutsideImageUrl
         if (urgentUrl) {
@@ -2487,37 +2538,99 @@ const handlerPrintBatchAll = async () => {
             // 使用默认字体
             const helveticaFont = await mergedPdf.embedFont(StandardFonts.Helvetica)
             
-            // 计算序号文本宽度和字体大小
-            const maxFontSizeWidth = width * 0.9 // 占页面宽度的90%
-            const maxFontSizeHeight = height * 0.75 // 占页面高度的75%，留出日期空间
+            // 计算序号文本宽度和字体大小 - 修复显示不完整问题
+            const maxFontSizeWidth = width * 0.8 // 占页面宽度的80%
+            const maxFontSizeHeight = height * 0.6 // 占页面高度的60%
             const maxFontSize = Math.min(maxFontSizeWidth, maxFontSizeHeight)
             
-            // 根据序号长度计算实际字体大小
-            let fontSize = maxFontSize
-            if (sequenceNumber.length > 2) {
-              fontSize = maxFontSize / (sequenceNumber.length * 0.5) // 调整系数以适应更长的序号
+            // 根据序号长度统一计算字体大小，确保所有长度的序号都显示完整
+            let fontSize
+            if (sequenceNumber.length <= 1) {
+              fontSize = maxFontSize * 0.8 // 单位数使用80%的最大字体
+            } else if (sequenceNumber.length === 2) {
+              fontSize = maxFontSize * 0.7 // 双位数使用70%的最大字体
+            } else {
+              fontSize = maxFontSize / (sequenceNumber.length * 0.5) // 三位数及以上保持原有计算方式
             }
+            
+            // 确保字体大小不会过大导致显示不完整
+            fontSize = Math.min(fontSize, height * 0.4)
             
             const textWidth = helveticaFont.widthOfTextAtSize(sequenceNumber, fontSize)
             
-            // 绘制序号(移至页面上部)
+            // 绘制序号(调整位置往下一点)
             sequencePage.drawText(sequenceNumber, {
               x: (width - textWidth) / 2,
-              y: height * 0.65 - fontSize / 2, // 向上移动到页面65%处
+              y: height * 0.6, // 调整到页面60%处，比之前略微下移
               size: fontSize,
               color: rgb(0, 0, 0),
               font: helveticaFont
             })
             
-            // 绘制日期(放在页面更下方)
+            // 绘制日期(放在序号下方，更加贴近序号)
             const dateWidth = helveticaFont.widthOfTextAtSize(dateText, 24)
             sequencePage.drawText(dateText, {
               x: (width - dateWidth) / 2,
-              y: height * 0.1, // 放在页面底部10%处
+              y: height * 0.45, // 调整到页面45%处，更加贴近序号
               size: 24,
               color: rgb(0, 0, 0),
               font: helveticaFont
             })
+            
+                          // 如果是名片类目，添加物料信息
+              if (isBusinessCardCategory && materialInfoText) {
+                // 计算物料信息文本的位置和大小
+                const materialLines = materialInfoText.split('\n')
+                const lineCount = materialLines.length
+                
+                // 根据行数动态调整字体大小和列数
+                let materialFontSize = 14 // 默认字体大小
+                
+                // 根据行数确定列数
+                let columns = 2 // 默认使用双列
+                if (lineCount > 15) {
+                  columns = 3 // 行数很多时使用三列
+                } else if (lineCount <= 6) {
+                  columns = 1 // 行数较少时使用单列
+                }
+                
+                // 行高和每列的行数
+                const lineHeight = materialFontSize * 1.2
+                const rowsPerColumn = Math.ceil(lineCount / columns)
+                const totalColumnHeight = rowsPerColumn * lineHeight
+                
+                // 固定在页面下方，不占用日期位置
+                // 日期位置在 height * 0.45，确保物料信息在日期下方
+                const dateBottomY = height * 0.45 - 30 // 日期下方留出空间
+                let yPosition = dateBottomY // 从日期下方开始显示物料信息
+                
+                // 如果内容太多导致可能超出页面，调整字体大小
+                if (totalColumnHeight > dateBottomY - 20) { // 20是底部边距
+                  materialFontSize = Math.max(10, 14 - Math.ceil((totalColumnHeight - (dateBottomY - 20)) / 100))
+                }
+                
+                // 绘制每一行物料信息
+                materialLines.forEach((line, index) => {
+                  // 计算当前行应该在哪一列
+                  const columnIndex = Math.floor(index / rowsPerColumn)
+                  // 计算当前行在当前列中的索引
+                  const rowInColumnIndex = index % rowsPerColumn
+                  
+                  const lineWidth = helveticaFont.widthOfTextAtSize(line, materialFontSize)
+                  
+                  // 计算列宽和X位置
+                  const columnWidth = width / columns
+                  const xPosition = columnWidth * columnIndex + (columnWidth - lineWidth) / 2
+                  
+                  sequencePage.drawText(line, {
+                    x: xPosition,
+                    y: yPosition - (rowInColumnIndex * lineHeight),
+                    size: materialFontSize,
+                    color: rgb(0, 0, 0),
+                    font: helveticaFont
+                  })
+                })
+            }
             
             // 然后添加加急面单原始页面
             const copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices())
