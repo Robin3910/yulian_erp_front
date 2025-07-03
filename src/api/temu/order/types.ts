@@ -46,6 +46,7 @@ export interface ShippingOrder {
   complianceGoodsMergedUrl: string | null
   dailySequence?: number | undefined
   shippingTime?: number | undefined
+  shippedOperatorNickname?: string | null
 }
 
 export type ShippingOrderNullable = ShippingOrder | null 

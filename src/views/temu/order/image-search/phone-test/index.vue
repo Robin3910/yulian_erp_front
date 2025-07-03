@@ -166,6 +166,7 @@
 
     <!-- 物流详情抽屉 -->
     <ShippingDetailsDrawer
+      v-if="shippingDrawerVisible && shippingData"
       v-model="shippingDrawerVisible"
       :shipping-data="shippingData"
     />
@@ -196,28 +197,6 @@ import ShippingDetailsDrawer from './components/ShippingDetailsDrawer.vue'
 import CameraView from './components/CameraView.vue'
 import { OrderApi } from '@/api/temu/order'
 import type { OrderResult, ShippingOrder } from '@/api/temu/order/types'
-
-interface OrderResult {
-  orderNo: string
-  productTitle: string
-  orderStatus: number
-  sku: string
-  skc: string
-  customSku: string
-  quantity: number
-  productProperties: string
-  customImageUrls: string
-  customTextList: string | null
-  productImgUrl: string
-  effectiveImgUrl: string
-  originalQuantity: number
-  productId: string
-  score: number
-  shopName: string
-  aliasName: string
-  complianceGoodsMergedUrl: string
-  trackingNumber?: string
-}
 
 const fileInput = ref<HTMLInputElement | null>(null)
 const imageUrl = ref<string>('')
