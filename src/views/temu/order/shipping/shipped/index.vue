@@ -27,14 +27,6 @@
               <el-input v-model="queryParams.customSku" placeholder="请输入定制SKU" clearable @keyup.enter="handleQuery" />
             </el-form-item>
           </el-col>
-          <!-- <el-col :span="24" :lg="6">
-            <el-form-item label="订单状态" prop="orderStatus" class="w-full">
-              <el-select v-model="queryParams.orderStatus" placeholder="请选择订单状态" clearable>
-                <el-option :label="'已生产待发货'" :value="3" />
-                <el-option :label="'已发货'" :value="4" />
-              </el-select>
-            </el-form-item>
-          </el-col> -->
           <el-col :span="24" :lg="6">
             <el-form-item label="加急状态" prop="isUrgent" class="w-full">
               <el-select v-model="queryParams.isUrgent" placeholder="请选择加急状态" clearable>
@@ -497,10 +489,10 @@ const queryParams = reactive({
   trackingNumber: undefined,
   shopId: undefined,
   createTime: [],
-  orderStatus: 4,
+  shippingStatus: 1, // 1=已发货
   customSku: undefined as string | undefined,
-  categoryIds: [] as number[], // 添加类目查询字段
-  isUrgent: undefined // 添加加急状态查询参数
+  categoryIds: [] as number[],
+  isUrgent: undefined
 })
 const queryFormRef = ref() // 搜索的表单
 
