@@ -15,15 +15,7 @@
       </div>
       
       <div v-else class="upload-buttons">
-        <input
-          ref="fileInput"
-          type="file"
-          accept="image/*"
-          capture="environment"
-          style="display: none"
-          @change="handleFileSelect"
-        />
-        <el-button type="primary" size="large" @click="openCamera">
+        <el-button type="primary" size="large" @click="handleStartCamera">
           <el-icon class="icon"><Camera /></el-icon>
           拍照搜索
         </el-button>
@@ -31,6 +23,13 @@
           <el-icon class="icon"><Picture /></el-icon>
           从相册选择
         </el-button>
+        <input
+          ref="fileInput"
+          type="file"
+          accept="image/*"
+          style="display: none"
+          @change="handleFileSelect"
+        />
       </div>
 
       <div class="upload-hint">
@@ -167,8 +166,16 @@
 
     <!-- 物流详情抽屉 -->
     <ShippingDetailsDrawer
+      v-if="shippingDrawerVisible && shippingData"
       v-model="shippingDrawerVisible"
       :shipping-data="shippingData"
+    />
+
+    <!-- 相机组件 -->
+    <CameraView
+      v-if="showCamera"
+      @capture="handleCameraCapture"
+      @close="showCamera = false"
     />
 
     <!-- 加载中 -->
@@ -187,30 +194,9 @@ import { Camera, Picture, Back, Printer } from '@element-plus/icons-vue'
 import { searchByImage } from '@/api/temu/image-search'
 import printJS from 'print-js'
 import ShippingDetailsDrawer from './components/ShippingDetailsDrawer.vue'
+import CameraView from './components/CameraView.vue'
 import { OrderApi } from '@/api/temu/order'
 import type { OrderResult, ShippingOrder } from '@/api/temu/order/types'
-
-interface OrderResult {
-  orderNo: string
-  productTitle: string
-  orderStatus: number
-  sku: string
-  skc: string
-  customSku: string
-  quantity: number
-  productProperties: string
-  customImageUrls: string
-  customTextList: string | null
-  productImgUrl: string
-  effectiveImgUrl: string
-  originalQuantity: number
-  productId: string
-  score: number
-  shopName: string
-  aliasName: string
-  complianceGoodsMergedUrl: string
-  trackingNumber?: string
-}
 
 const fileInput = ref<HTMLInputElement | null>(null)
 const imageUrl = ref<string>('')
@@ -219,6 +205,13 @@ const loading = ref(false)
 const selectedFile = ref<File | null>(null)
 const shippingDrawerVisible = ref(false)
 const shippingData = ref<ShippingOrder | null>(null)
+const showCamera = ref(false)
+
+// 开始相机拍照
+const handleStartCamera = () => {
+  resetImage() // 重置之前的搜索结果
+  showCamera.value = true
+}
 
 // 图片压缩函数
 async function compressImage(file: File): Promise<File> {
@@ -284,18 +277,32 @@ const sortedResults = computed(() => {
   return [...searchResults.value].sort((a, b) => b.score - a.score)
 })
 
-// 打开相机
-const openCamera = () => {
+// 处理相机拍照结果
+const handleCameraCapture = async (file: File) => {
+  showCamera.value = false
+  await processImageFile(file)
+}
+
+// 重置图片
+const resetImage = () => {
+  imageUrl.value = ''
   if (fileInput.value) {
-    fileInput.value.setAttribute('capture', 'environment')
-    fileInput.value.click()
+    fileInput.value.value = ''
   }
+  selectedFile.value = null
+  searchResults.value = []
+}
+
+// 重置搜索
+const resetSearch = () => {
+  searchResults.value = []
+  resetImage()
 }
 
 // 打开相册
 const openGallery = () => {
+  resetImage() // 重置之前的搜索结果
   if (fileInput.value) {
-    fileInput.value.removeAttribute('capture')
     fileInput.value.click()
   }
 }
@@ -305,7 +312,12 @@ const handleFileSelect = async (event: Event) => {
   const input = event.target as HTMLInputElement
   if (!input.files?.length) return
 
-  let file = input.files[0]
+  const file = input.files[0]
+  await processImageFile(file)
+}
+
+// 处理图片文件
+const processImageFile = async (file: File) => {
   // 验证文件类型
   const isValidType = ['image/png', 'image/jpeg', 'image/bmp', 'image/gif'].includes(file.type)
   if (!isValidType) {
@@ -313,20 +325,21 @@ const handleFileSelect = async (event: Event) => {
     return
   }
 
+  let processedFile = file
   // 如果文件大于200KB，进行压缩
   if (file.size / 1024 / 1024 > 0.2) {
     const originalSize = (file.size / 1024 / 1024).toFixed(2)
     console.log(`原始文件大小: ${originalSize}MB`)
     ElMessage.info('图片较大，正在压缩...')
-    file = await compressImage(file)
-    const compressedSize = (file.size / 1024 / 1024).toFixed(2)
+    processedFile = await compressImage(file)
+    const compressedSize = (processedFile.size / 1024 / 1024).toFixed(2)
     console.log(`压缩后文件大小: ${compressedSize}MB`)
     ElMessage.success(`压缩完成：${originalSize}MB -> ${compressedSize}MB`)
   }
 
   // 显示预览图
-  imageUrl.value = URL.createObjectURL(file)
-  selectedFile.value = file
+  imageUrl.value = URL.createObjectURL(processedFile)
+  selectedFile.value = processedFile
   await handleSearch()
 }
 
@@ -351,21 +364,6 @@ const handleSearch = async () => {
   } finally {
     loading.value = false
   }
-}
-
-// 重置图片
-const resetImage = () => {
-  imageUrl.value = ''
-  if (fileInput.value) {
-    fileInput.value.value = ''
-  }
-  selectedFile.value = null
-}
-
-// 重置搜索
-const resetSearch = () => {
-  searchResults.value = []
-  resetImage()
 }
 
 // 获取订单状态类型
