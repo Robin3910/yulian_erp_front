@@ -2471,7 +2471,7 @@ const handlerPrintBatchAll = async () => {
           )
         })
         
-        // 如果有名片类目的商品，收集物料信息
+                  // 如果有名片类目的商品，收集物料信息
         let materialInfoText = ''
         if (isBusinessCardCategory) {
           // 收集规格和数量信息
@@ -2490,6 +2490,13 @@ const handlerPrintBatchAll = async () => {
                 // 如果没有明确的"规格："标记，就使用整个属性字符串作为规格
                 spec = properties.trim()
               }
+            }
+            
+            // 如果规格为空或只有中文字符，则使用制作数量作为规格
+            //如果制作数量不存在则默认使用 0
+            if (!spec || !/\d+/.test(spec)) {
+              // 使用制作数量作为规格
+              spec = String(order.quantity || 0)
             }
             
             if (spec) {
