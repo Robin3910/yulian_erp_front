@@ -6,7 +6,7 @@
     </div>
 
     <!-- 上传区域 -->
-    <div class="upload-section" v-if="!result">
+    <div class="upload-section" v-if="!result && !searchResults.length">
       <div class="preview-container" v-if="imageUrl">
         <img :src="imageUrl" alt="条码图片" class="preview-image" />
         <div class="preview-actions">
@@ -38,7 +38,7 @@
     </div>
 
     <!-- 识别结果 -->
-    <div v-else class="result-section">
+    <div v-if="result && !searchResults.length" class="result-section">
       <!-- 顶部操作栏 -->
       <div class="action-bar">
         <el-button type="primary" plain @click="resetResult">
@@ -69,8 +69,149 @@
       </div>
     </div>
 
+    <!-- 搜索结果列表 -->
+    <div v-if="searchResults.length" class="search-results">
+      <!-- 顶部操作栏 -->
+      <div class="action-bar">
+        <el-button type="primary" plain @click="resetSearch">
+          <el-icon><Back /></el-icon>
+          重新识别
+        </el-button>
+        <span class="result-count">找到 {{ searchResults.length }} 个结果</span>
+      </div>
+
+      <!-- 结果列表 -->
+      <div class="result-list">
+        <div v-for="(order, index) in sortedResults" :key="index" class="result-item">
+          <!-- 订单基本信息 -->
+          <div class="order-header">
+            <div class="order-top-center">
+              <div v-if="order.dailySequence" class="shipping-sequence-card">
+                物流序号: <span class="seq-num">{{ order.dailySequence }}</span>
+                <span v-if="order.shippingTime" class="shipping-date">（{{ formatDate(order.shippingTime) }}）</span>
+              </div>
+              <div v-if="order.trackingNumber" class="tracking-number-card">
+                物流单号: <span class="tracking-number-value">{{ order.trackingNumber }}</span>
+              </div>
+              <div class="custom-sku-card" v-if="order.customSku">
+                定制SKU: <span class="custom-sku-num">{{ order.customSku }}</span>
+              </div>
+            </div>
+            <div class="order-status-row">
+              <el-tag :type="getOrderStatusType(order.orderStatus)" class="order-status-tag">
+                {{ getOrderStatusText(order.orderStatus) }}
+              </el-tag>
+              <div class="shipping-info-btn-inline" v-if="order.trackingNumber">
+                <el-button class="shipping-detail-btn" @click="handleViewShipping(order)">
+                  <el-icon style="margin-right: 4px;"><Van /></el-icon>
+                  查看物流详情
+                </el-button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 图片展示 -->
+          <div class="image-section">
+            <el-scrollbar>
+              <div class="image-list">
+                <template v-if="order.customImageUrls">
+                  <div
+                    v-for="(item, imgIndex) in order.customImageUrls.split(',')"
+                    :key="imgIndex"
+                    class="image-item"
+                  >
+                    <el-image
+                      :src="item"
+                      :preview-src-list="[item]"
+                      fit="cover"
+                      loading="lazy"
+                      :initial-index="0"
+                    />
+                  </div>
+                </template>
+                <div v-if="order.effectiveImgUrl" class="image-item">
+                  <el-image
+                    :src="order.effectiveImgUrl"
+                    :preview-src-list="[order.effectiveImgUrl]"
+                    fit="cover"
+                    loading="lazy"
+                    :initial-index="0"
+                  />
+                </div>
+              </div>
+            </el-scrollbar>
+          </div>
+
+          <!-- 订单详细信息 -->
+          <div class="order-details">
+            <div class="detail-section card-block">
+              <div class="section-title">重要信息</div>
+              <div class="detail-item">
+                <span class="label">店铺：</span>
+                <span class="value">{{ order.shopName }} ({{ order.aliasName }})</span>
+              </div>
+              <div class="detail-item">
+                <span class="label">订单号：</span>
+                <span class="value">{{ order.orderNo }}</span>
+              </div>
+              <div class="detail-item" v-if="result">
+                <span class="label">条码编号：</span>
+                <span class="value">{{ result }}</span>
+              </div>
+              <div class="detail-item">
+                <span class="label">SKU / SKC：</span>
+                <span class="value">{{ order.sku }} / {{ order.skc }}</span>
+              </div>
+              <div class="detail-item">
+                <span class="label">图片ID：</span>
+                <span class="value">{{ order.productId }}</span>
+              </div>
+              <div class="detail-item">
+                <span class="label">数量信息：</span>
+                <span class="value">官网：{{ order.originalQuantity }} / 制作：{{ order.quantity }}</span>
+              </div>
+            </div>
+
+            <div class="detail-section card-block">
+              <div class="section-title">商品信息</div>
+              <div class="detail-item">
+                <span class="label">标题：</span>
+                <span class="value">{{ order.productTitle }}</span>
+              </div>
+              <div class="detail-item">
+                <span class="label">属性：</span>
+                <span class="value">{{ order.productProperties }}</span>
+              </div>
+            </div>
+
+            <template v-if="order.customTextList">
+              <div class="detail-section card-block">
+                <div class="section-title">定制信息</div>
+                <div class="detail-item">
+                  <span class="label">定制文字：</span>
+                  <span class="value">{{ order.customTextList }}</span>
+                </div>
+              </div>
+            </template>
+
+            <!-- 打印按钮 -->
+            <div class="print-action">
+              <el-button 
+                type="primary" 
+                :disabled="!order.complianceGoodsMergedUrl"
+                @click="handlePrint(order.complianceGoodsMergedUrl)"
+              >
+                <el-icon><Printer /></el-icon>
+                打印条码+合规单
+              </el-button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- 错误提示 -->
-    <div v-if="error && !result" class="error-section">
+    <div v-if="error && !result && !searchResults.length" class="error-section">
       <div class="error-card">
         <div class="error-header">
           <el-icon class="error-icon"><WarningFilled /></el-icon>
@@ -83,6 +224,20 @@
       </div>
     </div>
 
+    <!-- 物流详情抽屉 -->
+    <ShippingDetailsDrawer
+      v-if="shippingDrawerVisible && shippingData"
+      v-model="shippingDrawerVisible"
+      :shipping-data="shippingData"
+    />
+
+    <!-- 物流详情抽屉 -->
+    <ShippingDetailsDrawer
+      v-if="shippingDrawerVisible && shippingData"
+      v-model="shippingDrawerVisible"
+      :shipping-data="shippingData"
+    />
+
     <!-- 相机组件 -->
     <BarcodeCameraView
       v-if="showCamera"
@@ -93,19 +248,24 @@
     <!-- 加载中 -->
     <el-loading 
       v-model="loading" 
-      text="识别中..."
+      text="识别并查询中..."
       background="rgba(255, 255, 255, 0.9)"
     />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { ElMessage } from 'element-plus';
-import { Camera, Picture, Back, SuccessFilled, WarningFilled, CopyDocument } from '@element-plus/icons-vue';
+import { Camera, Picture, Back, SuccessFilled, WarningFilled, CopyDocument, Printer, LocationFilled, Van } from '@element-plus/icons-vue';
 import Quagga from 'quagga';
 import { BrowserMultiFormatReader } from '@zxing/library';
 import BarcodeCameraView from './components/BarcodeCameraView.vue';
+import { searchByBarcode } from '@/api/temu/image-search';
+import { OrderApi } from '@/api/temu/order';
+import type { OrderResult, ShippingOrder } from '@/api/temu/order/types';
+import printJS from 'print-js';
+import ShippingDetailsDrawer from '../../image-search/phone/components/ShippingDetailsDrawer.vue';
 
 const imageUrl = ref<string | null>(null);
 const result = ref<string | null>(null);
@@ -113,7 +273,26 @@ const error = ref<string | null>(null);
 const loading = ref(false);
 const showCamera = ref(false);
 const fileInput = ref<HTMLInputElement | null>(null);
+const searchResults = ref<OrderResult[]>([]);
+const shippingDrawerVisible = ref(false);
+const shippingData = ref<ShippingOrder | null>(null);
 let fileRaw: File | null = null;
+
+// 按物流序号排序的结果
+const sortedResults = computed(() => {
+  return [...searchResults.value].sort((a, b) => {
+    // 优先按物流序号排序，如果没有则按订单号排序
+    if (a.dailySequence && b.dailySequence) {
+      return a.dailySequence - b.dailySequence;
+    } else if (a.dailySequence) {
+      return -1;
+    } else if (b.dailySequence) {
+      return 1;
+    } else {
+      return a.orderNo.localeCompare(b.orderNo);
+    }
+  });
+})
 
 // 开始相机拍照
 const handleStartCamera = () => {
@@ -136,12 +315,20 @@ const resetImage = () => {
   fileRaw = null;
   result.value = null;
   error.value = null;
+  searchResults.value = [];
 };
 
 // 重置结果
 const resetResult = () => {
   result.value = null;
   error.value = null;
+  searchResults.value = [];
+};
+
+// 重置搜索
+const resetSearch = () => {
+  searchResults.value = [];
+  resetImage();
 };
 
 // 打开相册
@@ -188,6 +375,105 @@ const copyResult = async () => {
   }
 };
 
+// 根据条码查询订单
+const searchOrderByBarcode = async () => {
+  if (!result.value) {
+    ElMessage.warning('请先识别条码');
+    return;
+  }
+
+  try {
+    const response = await searchByBarcode(result.value);
+    searchResults.value = response;
+    
+    if (searchResults.value.length === 0) {
+      ElMessage.warning('未找到相关订单');
+    } else {
+      ElMessage.success(`找到 ${searchResults.value.length} 个相关订单`);
+    }
+  } catch (error) {
+    ElMessage.error('查询订单失败，请重试');
+    console.error('Barcode search error:', error);
+  } finally {
+    loading.value = false;
+  }
+};
+
+// 获取订单状态类型
+const getOrderStatusType = (status: number): 'success' | 'warning' | 'info' | 'primary' | 'danger' => {
+  switch (status) {
+    case 0: return 'info'     // 待下单
+    case 1: return 'primary'  // 已下单待送产
+    case 2: return 'warning'  // 已送产待生产
+    case 3: return 'primary'  // 已生产待发货
+    case 4: return 'success'  // 已发货
+    default: return 'info'
+  }
+}
+
+// 获取订单状态文本
+const getOrderStatusText = (status: number): string => {
+  switch (status) {
+    case 0: return '待下单'
+    case 1: return '已下单待送产'
+    case 2: return '已送产待生产'
+    case 3: return '已生产待发货'
+    case 4: return '已发货'
+    default: return '未知状态'
+  }
+}
+
+// 打印功能
+const handlePrint = async (url: string) => {
+  if (!url) {
+    ElMessage.error('打印失败：未找到打印文件')
+    return
+  }
+
+  try {
+    const printUrl = url.startsWith('@') ? url.substring(1) : url
+    const isPDF = printUrl.toLowerCase().endsWith('.pdf')
+
+    if (isPDF) {
+      printJS({
+        printable: printUrl,
+        type: 'pdf',
+        showModal: true
+      })
+    } else {
+      printJS({
+        printable: printUrl,
+        type: 'image',
+        showModal: true
+      })
+    }
+  } catch (error) {
+    console.error('打印错误:', error)
+    ElMessage.error('打印失败：' + (error instanceof Error ? error.message : '未知错误'))
+  }
+}
+
+// 查看物流详情
+const handleViewShipping = async (row: any) => {
+  try {
+    // 调用接口获取物流详情
+    const response = await OrderApi.getShippingOrderPage({
+      trackingNumber: row.trackingNumber,
+      pageNo: 1,
+      pageSize: 10
+    })
+    
+    if (response.list && response.list.length > 0) {
+      // 直接使用完整的物流订单数据
+      shippingData.value = response.list[0]
+      shippingDrawerVisible.value = true
+    }
+  } catch (error) {
+    console.error('获取物流详情失败:', error)
+    ElMessage.error('获取物流详情失败')
+  }
+}
+
 async function decodeBarcode() {
   if (!fileRaw) return;
   result.value = null;
@@ -210,6 +496,8 @@ async function decodeBarcode() {
         if (res && res.codeResult) {
           result.value = res.codeResult.code;
           loading.value = false;
+          // 识别成功后自动查询订单
+          searchOrderByBarcode();
         } else {
           console.log('Quagga 未识别到条码，也没有定位框，尝试用ZXing识别整张图片');
           zxingDecode(imageUrl.value!, false);
@@ -230,6 +518,8 @@ async function zxingDecode(imageDataUrl: string, isZoomed = false, scale = 1.2, 
     result.value = resultZXing.getText();
     error.value = null;
     loading.value = false;
+    // 识别成功后自动查询订单
+    searchOrderByBarcode();
   } catch (e) {
     if (!isZoomed) {
       console.log('ZXing 也无法识别该条码，开始进行放大图片识别...');
@@ -276,6 +566,14 @@ async function zoomImage(imageDataUrl: string, scale = 2): Promise<string> {
     };
     img.src = imageDataUrl;
   });
+}
+
+function formatDate(ts: number) {
+  if (!ts) return '';
+  const date = new Date(ts);
+  const mm = String(date.getMonth() + 1).padStart(2, '0');
+  const dd = String(date.getDate()).padStart(2, '0');
+  return `${mm}-${dd}`;
 }
 </script>
 
@@ -396,8 +694,10 @@ async function zoomImage(imageDataUrl: string, scale = 2): Promise<string> {
 
         .result-header {
           display: flex;
+          flex-direction: column;
           align-items: center;
-          margin-bottom: 20px;
+          padding: 16px 0 8px 0;
+          border-bottom: 1px solid #ebeef5;
 
           .result-icon {
             font-size: 24px;
@@ -434,8 +734,11 @@ async function zoomImage(imageDataUrl: string, scale = 2): Promise<string> {
         }
 
         .result-actions {
+          display: flex;
+          justify-content: center;
+
           .el-button {
-            width: 100%;
+            width: 200px;
             height: 44px;
             border-radius: 22px;
             font-size: 16px;
@@ -443,6 +746,238 @@ async function zoomImage(imageDataUrl: string, scale = 2): Promise<string> {
             .el-icon {
               margin-right: 8px;
             }
+          }
+        }
+      }
+    }
+  }
+
+  .search-results {
+    padding: 10px 10px 10px;
+    min-height: 100vh;
+
+    .action-bar {
+      position: fixed;
+      top: 44px;
+      left: 0;
+      right: 0;
+      padding: 10px;
+      background-color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+      z-index: 99;
+
+      .result-count {
+        font-size: 14px;
+        color: #606266;
+      }
+    }
+
+    .result-list {
+      padding-top: 0px;
+
+      .result-item {
+        background: #fff;
+        border-radius: 14px;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+        margin-bottom: 18px;
+        padding: 0 0 16px 0;
+
+        .order-header {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          padding: 18px 0 10px 0;
+          border-bottom: 1px solid #ebeef5;
+          background: #fff;
+
+          .order-top-center {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 10px;
+
+            .shipping-sequence-card {
+              background: #fdf6ec;
+              color: #e6a23c;
+              font-size: 20px;
+              font-weight: bold;
+              border-radius: 8px;
+              padding: 6px 24px;
+              margin-bottom: 2px;
+              box-shadow: 0 2px 8px rgba(230,162,60,0.08);
+              .seq-num {
+                font-size: 24px;
+                font-weight: 900;
+                margin-left: 4px;
+              }
+              .shipping-date {
+                font-size: 16px;
+                color: #bfa76a;
+                font-weight: 500;
+                margin-left: 8px;
+              }
+            }
+            .tracking-number-card {
+              background: #f0f9ff;
+              color: #409eff;
+              font-size: 16px;
+              font-weight: 600;
+              border-radius: 8px;
+              padding: 4px 18px;
+              margin-bottom: 2px;
+              .tracking-number-value {
+                font-size: 18px;
+                font-weight: bold;
+                margin-left: 4px;
+              }
+            }
+            .custom-sku-card {
+              background: #f0f9eb;
+              color: #67c23a;
+              font-size: 18px;
+              font-weight: bold;
+              border-radius: 8px;
+              padding: 4px 18px;
+              margin-bottom: 2px;
+              .custom-sku-num {
+                font-size: 20px;
+                font-weight: 900;
+                margin-left: 4px;
+              }
+            }
+          }
+
+          .order-status-row {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 12px;
+            margin: 8px 0 0 0;
+            .order-status-tag {
+              font-size: 16px;
+              font-weight: bold;
+              padding: 6px 22px;
+              border-radius: 20px;
+              background: linear-gradient(90deg, #f0f9ff 60%, #e0f7fa 100%);
+              color: #409eff;
+              border: none;
+              box-shadow: 0 2px 8px rgba(64,158,255,0.08);
+              letter-spacing: 1px;
+            }
+            .shipping-info-btn-inline {
+              display: flex;
+              align-items: center;
+              .shipping-detail-btn {
+                background: linear-gradient(90deg, #409eff 60%, #66b1ff 100%);
+                color: #fff;
+                font-size: 16px;
+                font-weight: 600;
+                border: none;
+                border-radius: 22px;
+                padding: 0 20px;
+                height: 40px;
+                box-shadow: 0 2px 8px rgba(64,158,255,0.10);
+                display: flex;
+                align-items: center;
+                transition: background 0.2s, box-shadow 0.2s;
+                .el-icon {
+                  font-size: 18px;
+                }
+                &:hover, &:active {
+                  background: linear-gradient(90deg, #337ecc 60%, #409eff 100%);
+                  box-shadow: 0 4px 16px rgba(64,158,255,0.18);
+                  color: #fff;
+                }
+              }
+            }
+          }
+        }
+
+        .image-section {
+          display: flex;
+          justify-content: center;
+          padding: 16px 0;
+          border-bottom: 1px solid #ebeef5;
+
+          .image-list {
+            display: flex;
+            gap: 12px;
+            overflow-x: auto;
+            padding-bottom: 8px;
+            -webkit-overflow-scrolling: touch;
+
+            &::-webkit-scrollbar {
+              display: none;
+            }
+
+            .image-item {
+              flex: 0 0 auto;
+              width: 200px;
+              height: 200px;
+              border-radius: 8px;
+              overflow: hidden;
+              border: 1px solid #e4e7ed;
+
+              .el-image {
+                width: 100%;
+                height: 100%;
+              }
+            }
+          }
+        }
+
+        .order-details {
+          padding: 16px;
+
+          .detail-section {
+            margin-bottom: 16px;
+
+            .section-title {
+              font-size: 14px;
+              font-weight: 600;
+              color: #303133;
+              margin-bottom: 8px;
+            }
+
+            .detail-item {
+              display: flex;
+              align-items: flex-start;
+              margin-bottom: 8px;
+
+              .label {
+                font-size: 14px;
+                color: #909399;
+                margin-right: 8px;
+                flex-shrink: 0;
+                min-width: 80px;
+              }
+
+              .value {
+                font-size: 14px;
+                color: #303133;
+                flex: 1;
+                word-break: break-all;
+              }
+
+              &.highlight {
+                .value {
+                  color: #e6a23c;
+                  font-weight: 600;
+                }
+              }
+            }
+          }
+
+          .print-action {
+            display: flex;
+            justify-content: center;
+            margin-top: 16px;
           }
         }
       }
@@ -497,6 +1032,38 @@ async function zoomImage(imageDataUrl: string, scale = 2): Promise<string> {
           font-size: 16px;
         }
       }
+    }
+  }
+}
+
+.card-block {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+  margin-bottom: 18px;
+  padding: 18px 14px 10px 14px;
+  .section-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #409eff;
+    margin-bottom: 12px;
+    letter-spacing: 1px;
+  }
+  .detail-item {
+    display: flex;
+    align-items: flex-start;
+    margin-bottom: 8px;
+    .label {
+      font-size: 14px;
+      color: #909399;
+      min-width: 80px;
+      font-weight: 500;
+    }
+    .value {
+      font-size: 14px;
+      color: #303133;
+      flex: 1;
+      word-break: break-all;
     }
   }
 }

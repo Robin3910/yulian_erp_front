@@ -1,4 +1,5 @@
 import request from '@/config/axios'
+import type { OrderResult } from '@/api/temu/order/types'
 
 export interface ImageSearchResult {
   productId: string
@@ -19,5 +20,17 @@ export function searchByImage(file: File) {
     headers: {
       'Content-Type': 'multipart/form-data'
     }
+  })
+}
+
+/**
+ * 条码搜索
+ * @param goodsSnNo 条码号
+ * @returns 搜索结果
+ */
+export function searchByBarcode(goodsSnNo: string) {
+  return request.post<OrderResult[]>({ 
+    url: '/temu/image-search/search-barcode', 
+    data: { goodsSnNo }
   })
 }
