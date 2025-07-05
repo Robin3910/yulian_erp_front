@@ -11,6 +11,10 @@
       <div class="package-info-panel">
         <div class="panel-content">
           <div class="info-item">
+            <span class="label">物流序号</span>
+            <span class="value" style="font-weight: bold; color: #E6A23C; font-size: 23px;">{{ shippingData.dailySequence || '-' }}</span>
+          </div>
+          <div class="info-item">
             <span class="label">物流单号</span>
             <span class="value">{{ shippingData.trackingNumber || '-' }}</span>
           </div>
@@ -30,8 +34,8 @@
             <span class="label">商品总数</span>
             <span class="value" style="font-weight: bold; color: #67C23A; font-size: 23px;">{{ totalQuantity }}件</span>
             <div class="progress-info">
-              <el-progress 
-                :percentage="shippedPercentage" 
+              <el-progress
+                :percentage="shippedPercentage"
                 :format="progressFormat"
                 :stroke-width="20"
                 :color="progressColor"
@@ -150,9 +154,9 @@
 
                 <!-- 打印按钮 -->
                 <div class="print-buttons">
-                  <el-button 
-                    type="primary" 
-                    plain 
+                  <el-button
+                    type="primary"
+                    plain
                     :disabled="!order.complianceGoodsMergedUrl"
                     @click="handlePrint(order.complianceGoodsMergedUrl)"
                   >
@@ -167,16 +171,31 @@
       </div>
     </div>
   </el-drawer>
+  <template v-if="String(shippingData.shippingStatus) === '0'">
+    <div style="position: fixed; left: 0; right: 0; bottom: 0; z-index: 9999; background: #fff; padding: 16px; box-shadow: 0 -2px 8px rgba(0,0,0,0.06);">
+      <el-button type="success" size="large" style="width: 100%;" @click="handleShip" :loading="shipLoading">
+        <el-icon><Van /></el-icon>
+        发货
+      </el-button>
+    </div>
+  </template>
+  <template v-else-if="String(shippingData.shippingStatus) === '1'">
+    <div style="position: fixed; left: 0; right: 0; bottom: 0; z-index: 9999; background: #fff; padding: 16px; box-shadow: 0 -2px 8px rgba(0,0,0,0.06); display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 16px;">
+      <el-tag type="success" effect="plain" size="large" style="font-size:15px;font-weight:bold;padding:2px 18px;line-height:1.2;">当前物流已发货</el-tag>
+      <el-tag v-if="shippingData.shippedOperatorNickname" type="info" effect="plain" size="large" style="font-size:15px;padding:2px 18px;line-height:1.2;">发货人：{{ shippingData.shippedOperatorNickname }}</el-tag>
+    </div>
+  </template>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, watch, nextTick } from 'vue'
 import { formatDate } from '@/utils/formatTime'
-import { Printer } from '@element-plus/icons-vue'
-import { ElMessage, ElNotification } from 'element-plus'
+import { Printer, Van } from '@element-plus/icons-vue'
+import { ElMessage, ElNotification, ElMessageBox } from 'element-plus'
 import printJS from 'print-js'
 import { PDFDocument } from 'pdf-lib'
 import type { ShippingOrder } from '@/api/temu/order/types'
+import { OrderApi } from '@/api/temu/order'
 
 const props = defineProps<{
   modelValue: boolean
@@ -251,8 +270,8 @@ const handlePrintAll = async () => {
     // 首先处理加急单（只打印一次）
     const urgentUrl = props.shippingData.orderNoList?.[0]?.expressOutsideImageUrl;
     if (urgentUrl) {
-      const processedUrgentUrl = urgentUrl.startsWith('@') 
-        ? urgentUrl.substring(1) 
+      const processedUrgentUrl = urgentUrl.startsWith('@')
+        ? urgentUrl.substring(1)
         : urgentUrl;
       try {
         await addPdfToMerged(mergedPdf, processedUrgentUrl);
@@ -404,7 +423,7 @@ const addPdfToMerged = async (mergedPdf: PDFDocument, url: string) => {
 // 计算总包裹数
 const totalPackages = computed(() => {
   const uniquePackages = new Set(
-    props.shippingData.orderNoList?.flatMap(group => 
+    props.shippingData.orderNoList?.flatMap(group =>
       group.orderList.map(order => `${order.skc}_${order.sku}`)
     ) || []
   )
@@ -475,6 +494,41 @@ const handlePrint = async (url: string) => {
     ElMessage.error('打印失败：' + (error instanceof Error ? error.message : '未知错误'))
   }
 }
+
+const shipLoading = ref(false)
+const handleShip = async () => {
+  try {
+    shipLoading.value = true
+    // 获取所有订单id
+    const orderIds = props.shippingData.orderNoList?.flatMap(group => group.orderList.map(order => order.id)) || []
+    if (orderIds.length === 0) {
+      ElMessage.error('没有可发货的订单')
+      return
+    }
+    await ElMessageBox.confirm(
+      `确认发货该物流单号下的 ${orderIds.length} 个订单吗？该操作确认后无法撤回`,
+      '提示',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }
+    )
+    await OrderApi.batchUpdateOrderStatus({
+      orderIds,
+      orderStatus: 4,
+      trackingNumber: props.shippingData.trackingNumber
+    })
+    ElMessage.success('发货成功')
+    emit('update:modelValue', false)
+  } catch (error) {
+    if (error !== 'cancel') {
+      ElMessage.error('发货失败')
+    }
+  } finally {
+    shipLoading.value = false
+  }
+}
 </script>
 
 <style lang="scss" scoped>
@@ -520,11 +574,11 @@ const handlePrint = async (url: string) => {
         .progress-info {
           flex: 1;
           margin-left: 16px;
-          
+
           :deep(.el-progress-bar__outer) {
             border-radius: 10px;
           }
-          
+
           :deep(.el-progress-bar__inner) {
             border-radius: 10px;
           }
@@ -540,7 +594,7 @@ const handlePrint = async (url: string) => {
             height: 44px;
             font-size: 15px;
             border-radius: 8px;
-            
+
             .el-icon {
               margin-right: 8px;
             }
@@ -678,7 +732,7 @@ const handlePrint = async (url: string) => {
               height: 44px;
               font-size: 15px;
               border-radius: 8px;
-              
+
               .el-icon {
                 margin-right: 8px;
               }
