@@ -99,6 +99,7 @@ export default {
     cutMenu: 'Cut Menu',
     copy: 'Copy',
     clearAndReset: 'Clear cache and reset',
+    refreshMenuCache: 'Refresh menu cache',
     copySuccess: 'Copy success',
     copyFailed: 'Copy failed',
     footer: 'Footer',

@@ -279,7 +279,7 @@ onBeforeUnmount(() => {
 
   .control-buttons {
     position: absolute;
-    bottom: 40px;
+    bottom: 100px;
     left: 0;
     right: 0;
     display: flex;

@@ -12,11 +12,13 @@ import { ThemeSwitch } from '@/layout/components/ThemeSwitch'
 import ColorRadioPicker from './components/ColorRadioPicker.vue'
 import InterfaceDisplay from './components/InterfaceDisplay.vue'
 import LayoutRadioPicker from './components/LayoutRadioPicker.vue'
+import { useRouter } from 'vue-router'
 
 defineOptions({ name: 'Setting' })
 
 const { t } = useI18n()
 const appStore = useAppStore()
+const router = useRouter()
 
 const { getPrefixCls } = useDesign()
 const prefixCls = getPrefixCls('setting')
@@ -197,6 +199,21 @@ const clear = () => {
   wsCache.delete(CACHE_KEY.IS_DARK)
   window.location.reload()
 }
+
+// 跳转到条码识别页面
+const goToBarcodeScan = () => {
+  const currentRoute = router.currentRoute.value
+  const targetPath = '/temu/admin/barcode/phone'
+  
+  // 如果当前已经在条码识别页面，则直接触发相机启动
+  if (currentRoute.path === targetPath) {
+    // 触发全局事件来启动相机
+    window.dispatchEvent(new CustomEvent('startBarcodeCamera'))
+  } else {
+    // 如果不在条码识别页面，则跳转过去
+    router.push(`${targetPath}?autoStart=true`)
+  }
+}
 </script>
 
 <template>
@@ -206,6 +223,14 @@ const clear = () => {
     @click="drawer = true"
   >
     <Icon color="#fff" icon="ep:setting" />
+  </div>
+
+  <!-- 条码识别按钮 -->
+  <div
+    class="fixed right-0 top-[calc(45%+60px)] h-40px w-40px cursor-pointer bg-[#67c23a] text-center leading-40px"
+    @click="goToBarcodeScan"
+  >
+    <Icon color="#fff" icon="ep:camera" />
   </div>
 
   <ElDrawer v-model="drawer" :z-index="4000" direction="rtl" size="350px">
@@ -298,5 +323,11 @@ $prefix-cls: #{$namespace}-setting;
 .#{$prefix-cls} {
   border-radius: 6px 0 0 6px;
   z-index: 1200;/*修正没有z-index会被表格层覆盖,值不要超过4000*/
+}
+
+// 条码识别按钮样式
+.fixed.right-0.top-\[calc\(45\%\+60px\)\] {
+  border-radius: 6px 0 0 6px;
+  z-index: 1200;
 }
 </style>

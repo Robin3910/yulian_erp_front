@@ -278,6 +278,9 @@ const shippingDrawerVisible = ref(false);
 const shippingData = ref<ShippingOrder | null>(null);
 let fileRaw: File | null = null;
 
+// 获取路由参数
+const route = useRoute();
+
 // 按物流序号排序的结果
 const sortedResults = computed(() => {
   return [...searchResults.value].sort((a, b) => {
@@ -298,6 +301,16 @@ const sortedResults = computed(() => {
 const handleStartCamera = () => {
   resetImage();
   showCamera.value = true;
+};
+
+// 检查是否需要自动启动相机
+const checkAutoStartCamera = () => {
+  if (route.query.autoStart === 'true') {
+    // 延迟一点时间确保页面完全加载
+    setTimeout(() => {
+      handleStartCamera();
+    }, 500);
+  }
 };
 
 // 处理相机拍照结果
@@ -575,6 +588,23 @@ function formatDate(ts: number) {
   const dd = String(date.getDate()).padStart(2, '0');
   return `${mm}-${dd}`;
 }
+
+// 页面加载时检查是否需要自动启动相机
+onMounted(() => {
+  checkAutoStartCamera();
+  
+  // 监听全局事件，用于从其他组件触发相机启动
+  window.addEventListener('startBarcodeCamera', () => {
+    handleStartCamera();
+  });
+});
+
+// 组件卸载时清理事件监听器
+onBeforeUnmount(() => {
+  window.removeEventListener('startBarcodeCamera', () => {
+    handleStartCamera();
+  });
+});
 </script>
 
 <style lang="scss" scoped>

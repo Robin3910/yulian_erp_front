@@ -100,6 +100,7 @@ export default {
     cutMenu: '切割菜单',
     copy: '拷贝',
     clearAndReset: '清除缓存并且重置',
+    refreshMenuCache: '刷新菜单缓存',
     copySuccess: '拷贝成功',
     copyFailed: '拷贝失败',
     footer: '页脚',
