@@ -93,6 +93,7 @@
               <div v-if="order.trackingNumber" class="tracking-number-card">
                 物流单号: <span class="tracking-number-value">{{ order.trackingNumber }}</span>
               </div>
+             
               <div class="custom-sku-card" v-if="order.customSku">
                 定制SKU: <span class="custom-sku-num">{{ order.customSku }}</span>
               </div>
@@ -108,6 +109,30 @@
                 </el-button>
               </div>
             </div>
+            <div v-if="shippingData && shippingData.orderNoList && shippingData.orderNoList.length" class="picking-progress-list">
+                <div v-for="orderGroup in shippingData.orderNoList" :key="orderGroup.orderNo" class="picking-progress-item">
+                  <div class="picking-progress-title">拣货进度（订单号: {{ orderGroup.orderNo }}）</div>
+                  <el-progress
+                    :percentage="orderGroup.orderList.length > 0
+                      ? Math.round(orderGroup.orderList.filter(item => item.isCompleteProducerTask === 1).length / orderGroup.orderList.length * 100)
+                      : 0"
+                    :status="orderGroup.orderList.length > 0 && orderGroup.orderList.filter(item => item.isCompleteProducerTask === 1).length === orderGroup.orderList.length ? 'success' : 'exception'"
+                    :stroke-width="18"
+                    :show-text="false"
+                    class="picking-progress-bar"
+                  />
+                  <div class="picking-progress-status">
+                    {{
+                      orderGroup.orderList.filter(item => item.isCompleteProducerTask === 1).length
+                    }}/{{ orderGroup.orderList.length }}
+                    {{
+                      orderGroup.orderList.length > 0 && orderGroup.orderList.filter(item => item.isCompleteProducerTask === 1).length === orderGroup.orderList.length
+                        ? '拣货完成'
+                        : '拣货中'
+                    }}
+                  </div>
+                </div>
+              </div>
           </div>
 
           <!-- 图片展示 -->
@@ -263,6 +288,7 @@ import { OrderApi } from '@/api/temu/order';
 import type { OrderResult, ShippingOrder } from '@/api/temu/order/types';
 import printJS from 'print-js';
 import ShippingDetailsDrawer from '../../image-search/phone/components/ShippingDetailsDrawer.vue';
+import { ElProgress } from 'element-plus';
 
 const imageUrl = ref<string | null>(null);
 const result = ref<string | null>(null);
@@ -1069,6 +1095,47 @@ function formatDate(ts: number) {
       color: #303133;
       flex: 1;
       word-break: break-all;
+    }
+  }
+}
+
+.picking-progress-list {
+  width: 100%;
+  margin: 10px 0 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+  .picking-progress-item {
+    width: 92%;
+    background: #f8fafd;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(64,158,255,0.06);
+    padding: 10px 12px 8px 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    .picking-progress-title {
+      font-size: 15px;
+      color: #409eff;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    .picking-progress-bar {
+      width: 100%;
+      margin-bottom: 4px;
+    }
+    .picking-progress-status {
+      font-size: 13px;
+      color: #67c23a;
+      font-weight: 600;
+      margin-left: 2px;
+    }
+    .el-progress--exception .el-progress-bar__inner {
+      background: #f56c6c !important;
+    }
+    .el-progress--success .el-progress-bar__inner {
+      background: #67c23a !important;
     }
   }
 }

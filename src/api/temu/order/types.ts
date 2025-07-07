@@ -21,6 +21,7 @@ export interface OrderResult {
   trackingNumber: string
   dailySequence?: number
   shippingTime?: number
+  isCompleteProducerTask?: number
 }
 
 export interface OrderNoGroup {
