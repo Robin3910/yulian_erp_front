@@ -102,7 +102,7 @@
                 {{ getOrderStatusText(order.orderStatus) }}
               </el-tag>
               <div class="shipping-info-btn-inline" v-if="order.trackingNumber">
-                <el-button class="shipping-detail-btn" @click="handleViewShipping(order)">
+                <el-button class="shipping-detail-btn" @click="handleViewShipping">
                   <el-icon style="margin-right: 4px;"><Van /></el-icon>
                   查看物流详情
                 </el-button>
@@ -166,9 +166,13 @@
                 <span class="label">图片ID：</span>
                 <span class="value">{{ order.productId }}</span>
               </div>
-              <div class="detail-item">
+              <div class="detail-item highlight">
                 <span class="label">数量信息：</span>
-                <span class="value">官网：{{ order.originalQuantity }} / 制作：{{ order.quantity }}</span>
+                <span class="value">
+                  <span class="quantity-highlight">官网：{{ order.originalQuantity }}</span>
+                  <span class="quantity-separator"> / </span>
+                  <span class="quantity-highlight">制作：{{ order.quantity }}</span>
+                </span>
               </div>
             </div>
 
@@ -231,13 +235,6 @@
       :shipping-data="shippingData"
     />
 
-    <!-- 物流详情抽屉 -->
-    <ShippingDetailsDrawer
-      v-if="shippingDrawerVisible && shippingData"
-      v-model="shippingDrawerVisible"
-      :shipping-data="shippingData"
-    />
-
     <!-- 相机组件 -->
     <BarcodeCameraView
       v-if="showCamera"
@@ -274,12 +271,9 @@ const loading = ref(false);
 const showCamera = ref(false);
 const fileInput = ref<HTMLInputElement | null>(null);
 const searchResults = ref<OrderResult[]>([]);
-const shippingDrawerVisible = ref(false);
 const shippingData = ref<ShippingOrder | null>(null);
+const shippingDrawerVisible = ref(false);
 let fileRaw: File | null = null;
-
-// 获取路由参数
-const route = useRoute();
 
 // 按物流序号排序的结果
 const sortedResults = computed(() => {
@@ -301,16 +295,6 @@ const sortedResults = computed(() => {
 const handleStartCamera = () => {
   resetImage();
   showCamera.value = true;
-};
-
-// 检查是否需要自动启动相机
-const checkAutoStartCamera = () => {
-  if (route.query.autoStart === 'true') {
-    // 延迟一点时间确保页面完全加载
-    setTimeout(() => {
-      handleStartCamera();
-    }, 500);
-  }
 };
 
 // 处理相机拍照结果
@@ -394,11 +378,16 @@ const searchOrderByBarcode = async () => {
     ElMessage.warning('请先识别条码');
     return;
   }
-
   try {
     const response = await searchByBarcode(result.value);
     searchResults.value = response;
-    
+    if (searchResults.value.length > 0) {
+      // 自动查物流详情
+      const trackingNumber = searchResults.value[0].trackingNumber;
+      if (trackingNumber) {
+        await fetchShippingDetail(trackingNumber);
+      }
+    }
     if (searchResults.value.length === 0) {
       ElMessage.warning('未找到相关订单');
     } else {
@@ -467,25 +456,26 @@ const handlePrint = async (url: string) => {
 }
 
 // 查看物流详情
-const handleViewShipping = async (row: any) => {
+const handleViewShipping = () => {
+  shippingDrawerVisible.value = true;
+  // 不再发请求，直接用 shippingData.value
+};
+
+const fetchShippingDetail = async (trackingNumber: string) => {
   try {
-    // 调用接口获取物流详情
     const response = await OrderApi.getShippingOrderPage({
-      trackingNumber: row.trackingNumber,
+      trackingNumber,
       pageNo: 1,
       pageSize: 10
-    })
-    
+    });
     if (response.list && response.list.length > 0) {
-      // 直接使用完整的物流订单数据
-      shippingData.value = response.list[0]
-      shippingDrawerVisible.value = true
+      shippingData.value = response.list[0];
     }
   } catch (error) {
-    console.error('获取物流详情失败:', error)
-    ElMessage.error('获取物流详情失败')
+    console.error('获取物流详情失败:', error);
+    ElMessage.error('获取物流详情失败');
   }
-}
+};
 
 async function decodeBarcode() {
   if (!fileRaw) return;
@@ -521,6 +511,7 @@ async function decodeBarcode() {
   } catch (e: any) {
     error.value = '识别失败，请确认图片为有效条码。';
     loading.value = false;
+    
   }
 }
 
@@ -538,7 +529,8 @@ async function zxingDecode(imageDataUrl: string, isZoomed = false, scale = 1.2, 
       console.log('ZXing 也无法识别该条码，开始进行放大图片识别...');
       const zoomedDataUrl = await zoomImage(imageDataUrl, scale);
       await zxingDecode(zoomedDataUrl, true, scale, 1);
-    } else if (tryCount < 10 && scale < 2.0) {
+    } else if (tryCount < 3
+     && scale < 2.0) {
       const nextScale = scale + 0.2;
       console.log(`放大重试，当前 scale: ${nextScale.toFixed(1)}`);
       const zoomedDataUrl = await zoomImage(imageDataUrl, nextScale);
@@ -588,23 +580,6 @@ function formatDate(ts: number) {
   const dd = String(date.getDate()).padStart(2, '0');
   return `${mm}-${dd}`;
 }
-
-// 页面加载时检查是否需要自动启动相机
-onMounted(() => {
-  checkAutoStartCamera();
-  
-  // 监听全局事件，用于从其他组件触发相机启动
-  window.addEventListener('startBarcodeCamera', () => {
-    handleStartCamera();
-  });
-});
-
-// 组件卸载时清理事件监听器
-onBeforeUnmount(() => {
-  window.removeEventListener('startBarcodeCamera', () => {
-    handleStartCamera();
-  });
-});
 </script>
 
 <style lang="scss" scoped>

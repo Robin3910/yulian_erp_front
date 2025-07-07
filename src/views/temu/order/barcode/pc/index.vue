@@ -86,7 +86,7 @@ async function zxingDecode(imageDataUrl: string, isZoomed = false, scale = 1.2, 
       console.log('ZXing 也无法识别该条码，开始进行放大图片识别...');
       const zoomedDataUrl = await zoomImage(imageDataUrl, scale);
       await zxingDecode(zoomedDataUrl, true, scale, 1);
-    } else if (tryCount < 10 && scale < 2.0) {
+    } else if (tryCount < 5 && scale < 2.0) {
       const nextScale = scale + 0.2;
       console.log(`放大重试，当前 scale: ${nextScale.toFixed(1)}`);
       const zoomedDataUrl = await zoomImage(imageDataUrl, nextScale);
