@@ -257,7 +257,7 @@
                 <div v-for="(item, index) in row.customImageUrls.split(',')" :key="index"
                   class="image-item no-border flex items-center justify-center">
                   <el-image class="w-60px h-60px object-contain" :hide-on-click-modal="true" :preview-teleported="true"
-                    :src="item" :preview-src-list="[item]" />
+                    :src="item+ '?x-oss-process=image/resize,w_200'" :preview-src-list="[item]" />
                 </div>
               </div>
               <div class="upload-button-container">
@@ -273,7 +273,7 @@
           <template #default="{ row }">
             <div class="text-left">
               <el-image class="w-60px h-60px" v-if="row.effectiveImgUrl" :hide-on-click-modal="true"
-                :preview-teleported="true" :preview-src-list="[row.effectiveImgUrl]" :src="row.effectiveImgUrl" />
+                :preview-teleported="true" :preview-src-list="[row.effectiveImgUrl]" :src="row.effectiveImgUrl+ '?x-oss-process=image/resize,w_200'" />
             </div>
           </template>
         </el-table-column>

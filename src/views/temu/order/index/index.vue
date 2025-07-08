@@ -309,7 +309,7 @@
                     class="w-60px h-60px object-contain"
                     :hide-on-click-modal="true"
                     :preview-teleported="true"
-                    :src="item"
+                    :src="item+ '?x-oss-process=image/resize,w_200'"
                     :preview-src-list="[item]"
                   />
                 </div>
@@ -332,7 +332,7 @@
               :hide-on-click-modal="true"
               :preview-teleported="true"
               :preview-src-list="[row.effectiveImgUrl]"
-              :src="row.effectiveImgUrl"
+              :src="row.effectiveImgUrl+ '?x-oss-process=image/resize,w_200'"
             />
           </div>
         </template>
