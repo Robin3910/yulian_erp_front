@@ -81,158 +81,57 @@
       </div>
 
       <!-- 结果列表 -->
-      <div class="result-list">
-        <div v-for="(order, index) in sortedResults" :key="index" class="result-item">
-          <!-- 订单基本信息 -->
-          <div class="order-header">
-            <div class="order-top-center">
-              <div v-if="order.dailySequence" class="shipping-sequence-card">
-                物流序号: <span class="seq-num">{{ order.dailySequence }}</span>
-                <span v-if="order.shippingTime" class="shipping-date">（{{ formatDate(order.shippingTime) }}）</span>
+      <div class="message-list">
+        <div v-for="(order, index) in sortedResults" :key="order.orderNo || index" class="message-item">
+          <div class="top-flex">
+            <div class="avatar-section">
+              <el-image
+                :src="order.effectiveImgUrl || defaultAvatar"
+                :preview-src-list="order.effectiveImgUrl ? [order.effectiveImgUrl] : [defaultAvatar]"
+                fit="cover"
+                class="avatar"
+              />
+            </div>
+            <div class="content-section">
+              <div class="top-row">
+                <span class="main-title">
+                  {{ order.dailySequence || '--' }}<span v-if="'sortingSequence' in order && order.sortingSequence != null">-{{ order.sortingSequence }}</span>
+                </span>
+                <span class="time">{{ formatDate(order.shippingTime) }}</span>
               </div>
-              <div v-if="order.trackingNumber" class="tracking-number-card">
-                物流单号: <span class="tracking-number-value">{{ order.trackingNumber }}</span>
+              <div class="middle-row">
+                <span class="sub-info">顺丰单号 {{ order.trackingNumber }}</span>
               </div>
-             
-              <div class="custom-sku-card" v-if="order.customSku">
-                定制SKU: <span class="custom-sku-num">{{ order.customSku }}</span>
+              <div class="bottom-row">
+                <span class="sub-info">定制SKU {{ order.customSku }}</span>
+              </div>
+              <div class="bottom-row">
+                <span class="sub-info">官网 {{ order.originalQuantity }}&nbsp;&nbsp;&nbsp;制作 {{ order.quantity }}</span>
               </div>
             </div>
-            <div class="order-status-row">
-              <el-tag :type="getOrderStatusType(order.orderStatus)" class="order-status-tag">
-                {{ getOrderStatusText(order.orderStatus) }}
-              </el-tag>
-              <div class="shipping-info-btn-inline" v-if="order.trackingNumber">
-                <el-button class="shipping-detail-btn" @click="handleViewShipping">
-                  <el-icon style="margin-right: 4px;"><Van /></el-icon>
-                  查看物流详情
-                </el-button>
-              </div>
-            </div>
-            <div v-if="shippingData && shippingData.orderNoList && shippingData.orderNoList.length" class="picking-progress-list">
-                <div v-for="orderGroup in shippingData.orderNoList" :key="orderGroup.orderNo" class="picking-progress-item">
-                  <div class="picking-progress-title">拣货进度（订单号: {{ orderGroup.orderNo }}）</div>
-                  <el-progress
-                    :percentage="orderGroup.orderList.length > 0
-                      ? Math.round(orderGroup.orderList.filter(item => item.isCompleteProducerTask === 1).length / orderGroup.orderList.length * 100)
-                      : 0"
-                    :status="orderGroup.orderList.length > 0 && orderGroup.orderList.filter(item => item.isCompleteProducerTask === 1).length === orderGroup.orderList.length ? 'success' : 'exception'"
-                    :stroke-width="18"
-                    :show-text="false"
-                    class="picking-progress-bar"
-                  />
-                  <div class="picking-progress-status">
-                    {{
-                      orderGroup.orderList.filter(item => item.isCompleteProducerTask === 1).length
-                    }}/{{ orderGroup.orderList.length }}
-                    {{
-                      orderGroup.orderList.length > 0 && orderGroup.orderList.filter(item => item.isCompleteProducerTask === 1).length === orderGroup.orderList.length
-                        ? '拣货完成'
-                        : '拣货中'
-                    }}
-                  </div>
-                </div>
-              </div>
           </div>
-
-          <!-- 图片展示 -->
-          <div class="image-section">
-            <el-scrollbar>
-              <div class="image-list">
-                <template v-if="order.customImageUrls">
-                  <div
-                    v-for="(item, imgIndex) in order.customImageUrls.split(',')"
-                    :key="imgIndex"
-                    class="image-item"
-                  >
-                    <el-image
-                      :src="item"
-                      :preview-src-list="[item]"
-                      fit="cover"
-                      loading="lazy"
-                      :initial-index="0"
-                    />
-                  </div>
-                </template>
-                <div v-if="order.effectiveImgUrl" class="image-item">
-                  <el-image
-                    :src="order.effectiveImgUrl"
-                    :preview-src-list="[order.effectiveImgUrl]"
-                    fit="cover"
-                    loading="lazy"
-                    :initial-index="0"
-                  />
-                </div>
-              </div>
-            </el-scrollbar>
-          </div>
-
-          <!-- 订单详细信息 -->
-          <div class="order-details">
-            <div class="detail-section card-block">
-              <div class="section-title">重要信息</div>
-              <div class="detail-item">
-                <span class="label">店铺：</span>
-                <span class="value">{{ order.shopName }} ({{ order.aliasName }})</span>
-              </div>
-              <div class="detail-item">
-                <span class="label">订单号：</span>
-                <span class="value">{{ order.orderNo }}</span>
-              </div>
-              <div class="detail-item" v-if="result">
-                <span class="label">条码编号：</span>
-                <span class="value">{{ result }}</span>
-              </div>
-              <div class="detail-item">
-                <span class="label">SKU / SKC：</span>
-                <span class="value">{{ order.sku }} / {{ order.skc }}</span>
-              </div>
-              <div class="detail-item">
-                <span class="label">图片ID：</span>
-                <span class="value">{{ order.productId }}</span>
-              </div>
-              <div class="detail-item highlight">
-                <span class="label">数量信息：</span>
-                <span class="value">
-                  <span class="quantity-highlight">官网：{{ order.originalQuantity }}</span>
-                  <span class="quantity-separator"> / </span>
-                  <span class="quantity-highlight">制作：{{ order.quantity }}</span>
+          <div v-if="shippingData && shippingData.orderNoList && shippingData.orderNoList.length" class="picking-progress-list">
+            <div
+              v-for="orderGroup in shippingData.orderNoList"
+              :key="orderGroup.orderNo"
+              class="picking-progress-item">
+              <div class="progress-bar-wrap">
+                <el-progress
+                  :percentage="orderGroup.orderList.length > 0
+                    ? Math.round(orderGroup.orderList.filter(item => item.isCompleteProducerTask === 1).length / orderGroup.orderList.length * 100)
+                    : 0"
+                  :status="orderGroup.orderList.length > 0 && orderGroup.orderList.filter(item => item.isCompleteProducerTask === 1).length === orderGroup.orderList.length ? 'success' : 'exception'"
+                  :stroke-width="6"
+                  :show-text="false"
+                  class="picking-progress-bar"
+                />
+                <span class="progress-status-text">
+                  {{ orderGroup.orderList.filter(item => item.isCompleteProducerTask === 1).length }}/{{ orderGroup.orderList.length }}
                 </span>
               </div>
-            </div>
-
-            <div class="detail-section card-block">
-              <div class="section-title">商品信息</div>
-              <div class="detail-item">
-                <span class="label">标题：</span>
-                <span class="value">{{ order.productTitle }}</span>
+              <div class="picking-progress-status">
+                {{ orderGroup.orderList.length > 0 && orderGroup.orderList.filter(item => item.isCompleteProducerTask === 1).length === orderGroup.orderList.length ? '拣货完成' : '拣货中' }}
               </div>
-              <div class="detail-item">
-                <span class="label">属性：</span>
-                <span class="value">{{ order.productProperties }}</span>
-              </div>
-            </div>
-
-            <template v-if="order.customTextList">
-              <div class="detail-section card-block">
-                <div class="section-title">定制信息</div>
-                <div class="detail-item">
-                  <span class="label">定制文字：</span>
-                  <span class="value">{{ order.customTextList }}</span>
-                </div>
-              </div>
-            </template>
-
-            <!-- 打印按钮 -->
-            <div class="print-action">
-              <el-button 
-                type="primary" 
-                :disabled="!order.complianceGoodsMergedUrl"
-                @click="handlePrint(order.complianceGoodsMergedUrl)"
-              >
-                <el-icon><Printer /></el-icon>
-                打印条码+合规单
-              </el-button>
             </div>
           </div>
         </div>
@@ -271,7 +170,7 @@
     <el-loading 
       v-model="loading" 
       text="识别并查询中..."
-      background="rgba(255, 255, 255, 0.9)"
+      background="rgba(24, 25, 26, 0.9)"
     />
   </div>
 </template>
@@ -279,7 +178,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import { ElMessage } from 'element-plus';
-import { Camera, Picture, Back, SuccessFilled, WarningFilled, CopyDocument, Printer, LocationFilled, Van } from '@element-plus/icons-vue';
+import { Camera, Picture, Back, SuccessFilled, WarningFilled, CopyDocument } from '@element-plus/icons-vue';
 import Quagga from 'quagga';
 import { BrowserMultiFormatReader } from '@zxing/library';
 import BarcodeCameraView from './components/BarcodeCameraView.vue';
@@ -288,7 +187,8 @@ import { OrderApi } from '@/api/temu/order';
 import type { OrderResult, ShippingOrder } from '@/api/temu/order/types';
 import printJS from 'print-js';
 import ShippingDetailsDrawer from '../../image-search/phone/components/ShippingDetailsDrawer.vue';
-import { ElProgress } from 'element-plus';
+
+const defaultAvatar = 'https://img.yzcdn.cn/vant/cat.jpeg';
 
 const imageUrl = ref<string | null>(null);
 const result = ref<string | null>(null);
@@ -301,10 +201,10 @@ const shippingData = ref<ShippingOrder | null>(null);
 const shippingDrawerVisible = ref(false);
 let fileRaw: File | null = null;
 
+
 // 按物流序号排序的结果
 const sortedResults = computed(() => {
   return [...searchResults.value].sort((a, b) => {
-    // 优先按物流序号排序，如果没有则按订单号排序
     if (a.dailySequence && b.dailySequence) {
       return a.dailySequence - b.dailySequence;
     } else if (a.dailySequence) {
@@ -315,7 +215,7 @@ const sortedResults = computed(() => {
       return a.orderNo.localeCompare(b.orderNo);
     }
   });
-})
+});
 
 // 开始相机拍照
 const handleStartCamera = () => {
@@ -407,11 +307,18 @@ const searchOrderByBarcode = async () => {
   try {
     const response = await searchByBarcode(result.value);
     searchResults.value = response;
-    if (searchResults.value.length > 0) {
-      // 自动查物流详情
-      const trackingNumber = searchResults.value[0].trackingNumber;
-      if (trackingNumber) {
-        await fetchShippingDetail(trackingNumber);
+    if (searchResults.value.length > 0 && searchResults.value[0].trackingNumber) {
+      try {
+        const shippingRes = await OrderApi.getShippingOrderPage({
+          trackingNumber: searchResults.value[0].trackingNumber,
+          pageNo: 1,
+          pageSize: 10
+        });
+        if (shippingRes.list && shippingRes.list.length > 0) {
+          shippingData.value = shippingRes.list[0];
+        }
+      } catch (err) {
+        console.error('自动查物流详情失败', err);
       }
     }
     if (searchResults.value.length === 0) {
@@ -424,82 +331,6 @@ const searchOrderByBarcode = async () => {
     console.error('Barcode search error:', error);
   } finally {
     loading.value = false;
-  }
-};
-
-// 获取订单状态类型
-const getOrderStatusType = (status: number): 'success' | 'warning' | 'info' | 'primary' | 'danger' => {
-  switch (status) {
-    case 0: return 'info'     // 待下单
-    case 1: return 'primary'  // 已下单待送产
-    case 2: return 'warning'  // 已送产待生产
-    case 3: return 'primary'  // 已生产待发货
-    case 4: return 'success'  // 已发货
-    default: return 'info'
-  }
-}
-
-// 获取订单状态文本
-const getOrderStatusText = (status: number): string => {
-  switch (status) {
-    case 0: return '待下单'
-    case 1: return '已下单待送产'
-    case 2: return '已送产待生产'
-    case 3: return '已生产待发货'
-    case 4: return '已发货'
-    default: return '未知状态'
-  }
-}
-
-// 打印功能
-const handlePrint = async (url: string) => {
-  if (!url) {
-    ElMessage.error('打印失败：未找到打印文件')
-    return
-  }
-
-  try {
-    const printUrl = url.startsWith('@') ? url.substring(1) : url
-    const isPDF = printUrl.toLowerCase().endsWith('.pdf')
-
-    if (isPDF) {
-      printJS({
-        printable: printUrl,
-        type: 'pdf',
-        showModal: true
-      })
-    } else {
-      printJS({
-        printable: printUrl,
-        type: 'image',
-        showModal: true
-      })
-    }
-  } catch (error) {
-    console.error('打印错误:', error)
-    ElMessage.error('打印失败：' + (error instanceof Error ? error.message : '未知错误'))
-  }
-}
-
-// 查看物流详情
-const handleViewShipping = () => {
-  shippingDrawerVisible.value = true;
-  // 不再发请求，直接用 shippingData.value
-};
-
-const fetchShippingDetail = async (trackingNumber: string) => {
-  try {
-    const response = await OrderApi.getShippingOrderPage({
-      trackingNumber,
-      pageNo: 1,
-      pageSize: 10
-    });
-    if (response.list && response.list.length > 0) {
-      shippingData.value = response.list[0];
-    }
-  } catch (error) {
-    console.error('获取物流详情失败:', error);
-    ElMessage.error('获取物流详情失败');
   }
 };
 
@@ -599,7 +430,7 @@ async function zoomImage(imageDataUrl: string, scale = 2): Promise<string> {
   });
 }
 
-function formatDate(ts: number) {
+function formatDate(ts?: number) {
   if (!ts) return '';
   const date = new Date(ts);
   const mm = String(date.getMonth() + 1).padStart(2, '0');
@@ -610,535 +441,373 @@ function formatDate(ts: number) {
 
 <style lang="scss" scoped>
 .mobile-barcode-reader {
+  background: #f5f7fa;
   min-height: 100vh;
-  background-color: #f5f7fa;
-  
-  .nav-header {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 44px;
-    background-color: #fff;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
-    z-index: 100;
+}
+.dark .mobile-barcode-reader {
+  background: #18191A;
+}
 
-    .title {
-      font-size: 17px;
-      font-weight: 600;
-      color: #303133;
-    }
+.nav-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 44px;
+  background-color: #232323;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+  z-index: 100;
+
+  .title {
+    font-size: 17px;
+    font-weight: 600;
+    color: #fff;
   }
+}
 
-  .upload-section {
-    padding: 64px 20px 20px;
+.upload-section {
+  padding: 64px 20px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 64px);
+
+  .preview-container {
+    width: 100%;
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
-    min-height: calc(100vh - 64px);
+    gap: 20px;
 
-    .preview-container {
-      width: 100%;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 20px;
-
-      .preview-image {
-        width: 100%;
-        max-width: 300px;
-        height: auto;
-        border-radius: 12px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-      }
-
-      .preview-actions {
-        display: flex;
-        gap: 12px;
-      }
-    }
-
-    .upload-buttons {
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
+    .preview-image {
       width: 100%;
       max-width: 300px;
-
-      .el-button {
-        width: 100%;
-        height: 48px;
-        border-radius: 24px;
-        font-size: 16px;
-
-        .icon {
-          font-size: 20px;
-          margin-right: 8px;
-        }
-      }
+      height: auto;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     }
 
-    .upload-hint {
-      margin-top: 16px;
-      color: #909399;
-      font-size: 14px;
-      text-align: center;
-    }
-  }
-
-  .result-section {
-    padding: 64px 20px 20px;
-    min-height: 100vh;
-
-    .action-bar {
-      position: fixed;
-      top: 44px;
-      left: 0;
-      right: 0;
-      padding: 10px;
-      background-color: #fff;
+    .preview-actions {
       display: flex;
-      align-items: center;
-      justify-content: space-between;
-      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
-      z-index: 99;
-
-      .result-title {
-        font-size: 16px;
-        font-weight: 600;
-        color: #303133;
-      }
+      gap: 12px;
     }
+  }
 
-    .result-content {
-      padding-top: 60px;
+  .upload-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    width: 100%;
+    max-width: 300px;
 
-      .result-card {
-        background-color: #fff;
-        border-radius: 12px;
-        padding: 24px;
-        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+    .el-button {
+      width: 100%;
+      height: 48px;
+      border-radius: 24px;
+      font-size: 16px;
 
-        .result-header {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          padding: 16px 0 8px 0;
-          border-bottom: 1px solid #ebeef5;
-
-          .result-icon {
-            font-size: 24px;
-            color: #67c23a;
-            margin-right: 8px;
-          }
-
-          .result-text {
-            font-size: 18px;
-            font-weight: 600;
-            color: #67c23a;
-          }
-        }
-
-        .barcode-result {
-          margin-bottom: 24px;
-
-          .barcode-label {
-            font-size: 14px;
-            color: #909399;
-            margin-bottom: 8px;
-          }
-
-          .barcode-value {
-            font-size: 20px;
-            font-weight: 600;
-            color: #303133;
-            word-break: break-all;
-            padding: 12px;
-            background-color: #f5f7fa;
-            border-radius: 8px;
-            border: 1px solid #e4e7ed;
-          }
-        }
-
-        .result-actions {
-          display: flex;
-          justify-content: center;
-
-          .el-button {
-            width: 200px;
-            height: 44px;
-            border-radius: 22px;
-            font-size: 16px;
-
-            .el-icon {
-              margin-right: 8px;
-            }
-          }
-        }
+      .icon {
+        font-size: 20px;
+        margin-right: 8px;
       }
     }
   }
 
-  .search-results {
-    padding: 10px 10px 10px;
-    min-height: 100vh;
-
-    .action-bar {
-      position: fixed;
-      top: 44px;
-      left: 0;
-      right: 0;
-      padding: 10px;
-      background-color: #fff;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
-      z-index: 99;
-
-      .result-count {
-        font-size: 14px;
-        color: #606266;
-      }
-    }
-
-    .result-list {
-      padding-top: 0px;
-
-      .result-item {
-        background: #fff;
-        border-radius: 14px;
-        box-shadow: 0 2px 12px rgba(0,0,0,0.04);
-        margin-bottom: 18px;
-        padding: 0 0 16px 0;
-
-        .order-header {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          padding: 18px 0 10px 0;
-          border-bottom: 1px solid #ebeef5;
-          background: #fff;
-
-          .order-top-center {
-            width: 100%;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 8px;
-            margin-bottom: 10px;
-
-            .shipping-sequence-card {
-              background: #fdf6ec;
-              color: #e6a23c;
-              font-size: 20px;
-              font-weight: bold;
-              border-radius: 8px;
-              padding: 6px 24px;
-              margin-bottom: 2px;
-              box-shadow: 0 2px 8px rgba(230,162,60,0.08);
-              .seq-num {
-                font-size: 24px;
-                font-weight: 900;
-                margin-left: 4px;
-              }
-              .shipping-date {
-                font-size: 16px;
-                color: #bfa76a;
-                font-weight: 500;
-                margin-left: 8px;
-              }
-            }
-            .tracking-number-card {
-              background: #f0f9ff;
-              color: #409eff;
-              font-size: 16px;
-              font-weight: 600;
-              border-radius: 8px;
-              padding: 4px 18px;
-              margin-bottom: 2px;
-              .tracking-number-value {
-                font-size: 18px;
-                font-weight: bold;
-                margin-left: 4px;
-              }
-            }
-            .custom-sku-card {
-              background: #f0f9eb;
-              color: #67c23a;
-              font-size: 18px;
-              font-weight: bold;
-              border-radius: 8px;
-              padding: 4px 18px;
-              margin-bottom: 2px;
-              .custom-sku-num {
-                font-size: 20px;
-                font-weight: 900;
-                margin-left: 4px;
-              }
-            }
-          }
-
-          .order-status-row {
-            width: 100%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 12px;
-            margin: 8px 0 0 0;
-            .order-status-tag {
-              font-size: 16px;
-              font-weight: bold;
-              padding: 6px 22px;
-              border-radius: 20px;
-              background: linear-gradient(90deg, #f0f9ff 60%, #e0f7fa 100%);
-              color: #409eff;
-              border: none;
-              box-shadow: 0 2px 8px rgba(64,158,255,0.08);
-              letter-spacing: 1px;
-            }
-            .shipping-info-btn-inline {
-              display: flex;
-              align-items: center;
-              .shipping-detail-btn {
-                background: linear-gradient(90deg, #409eff 60%, #66b1ff 100%);
-                color: #fff;
-                font-size: 16px;
-                font-weight: 600;
-                border: none;
-                border-radius: 22px;
-                padding: 0 20px;
-                height: 40px;
-                box-shadow: 0 2px 8px rgba(64,158,255,0.10);
-                display: flex;
-                align-items: center;
-                transition: background 0.2s, box-shadow 0.2s;
-                .el-icon {
-                  font-size: 18px;
-                }
-                &:hover, &:active {
-                  background: linear-gradient(90deg, #337ecc 60%, #409eff 100%);
-                  box-shadow: 0 4px 16px rgba(64,158,255,0.18);
-                  color: #fff;
-                }
-              }
-            }
-          }
-        }
-
-        .image-section {
-          display: flex;
-          justify-content: center;
-          padding: 16px 0;
-          border-bottom: 1px solid #ebeef5;
-
-          .image-list {
-            display: flex;
-            gap: 12px;
-            overflow-x: auto;
-            padding-bottom: 8px;
-            -webkit-overflow-scrolling: touch;
-
-            &::-webkit-scrollbar {
-              display: none;
-            }
-
-            .image-item {
-              flex: 0 0 auto;
-              width: 200px;
-              height: 200px;
-              border-radius: 8px;
-              overflow: hidden;
-              border: 1px solid #e4e7ed;
-
-              .el-image {
-                width: 100%;
-                height: 100%;
-              }
-            }
-          }
-        }
-
-        .order-details {
-          padding: 16px;
-
-          .detail-section {
-            margin-bottom: 16px;
-
-            .section-title {
-              font-size: 14px;
-              font-weight: 600;
-              color: #303133;
-              margin-bottom: 8px;
-            }
-
-            .detail-item {
-              display: flex;
-              align-items: flex-start;
-              margin-bottom: 8px;
-
-              .label {
-                font-size: 14px;
-                color: #909399;
-                margin-right: 8px;
-                flex-shrink: 0;
-                min-width: 80px;
-              }
-
-              .value {
-                font-size: 14px;
-                color: #303133;
-                flex: 1;
-                word-break: break-all;
-              }
-
-              &.highlight {
-                .value {
-                  color: #e6a23c;
-                  font-weight: 600;
-                }
-              }
-            }
-          }
-
-          .print-action {
-            display: flex;
-            justify-content: center;
-            margin-top: 16px;
-          }
-        }
-      }
-    }
+  .upload-hint {
+    margin-top: 16px;
+    color: #909399;
+    font-size: 14px;
+    text-align: center;
   }
+}
 
-  .error-section {
-    padding: 64px 20px 20px;
-    min-height: 100vh;
+.result-section {
+  padding: 64px 20px 20px;
+  min-height: 100vh;
+
+  .action-bar {
+    position: fixed;
+    top: 44px;
+    left: 0;
+    right: 0;
+    padding: 10px;
+    background-color: #232323;
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: space-between;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+    z-index: 99;
 
-    .error-card {
-      background-color: #fff;
+    .result-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: #fff;
+    }
+  }
+
+  .result-content {
+    padding-top: 60px;
+
+    .result-card {
+      background-color: #232323;
       border-radius: 12px;
       padding: 24px;
       box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
-      width: 100%;
-      max-width: 300px;
 
-      .error-header {
+      .result-header {
         display: flex;
+        flex-direction: column;
         align-items: center;
-        margin-bottom: 16px;
+        padding: 16px 0 8px 0;
+        border-bottom: 1px solid #333;
 
-        .error-icon {
+        .result-icon {
           font-size: 24px;
-          color: #f56c6c;
+          color: #67c23a;
           margin-right: 8px;
         }
 
-        .error-text {
+        .result-text {
           font-size: 18px;
           font-weight: 600;
-          color: #f56c6c;
+          color: #67c23a;
         }
       }
 
-      .error-message {
-        font-size: 14px;
-        color: #606266;
-        margin-bottom: 20px;
-        line-height: 1.5;
+      .barcode-result {
+        margin-bottom: 24px;
+
+        .barcode-label {
+          font-size: 14px;
+          color: #909399;
+          margin-bottom: 8px;
+        }
+
+        .barcode-value {
+          font-size: 20px;
+          font-weight: 600;
+          color: #fff;
+          word-break: break-all;
+          padding: 12px;
+          background-color: #18191A;
+          border-radius: 8px;
+          border: 1px solid #333;
+        }
       }
 
-      .error-actions {
+      .result-actions {
+        display: flex;
+        justify-content: center;
+
         .el-button {
-          width: 100%;
+          width: 200px;
           height: 44px;
           border-radius: 22px;
           font-size: 16px;
+
+          .el-icon {
+            margin-right: 8px;
+          }
         }
       }
     }
   }
 }
 
-.card-block {
-  background: #fff;
-  border-radius: 12px;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.04);
-  margin-bottom: 18px;
-  padding: 18px 14px 10px 14px;
-  .section-title {
-    font-size: 16px;
-    font-weight: 700;
-    color: #409eff;
-    margin-bottom: 12px;
-    letter-spacing: 1px;
-  }
-  .detail-item {
+.search-results {
+  padding: 10px 10px 10px;
+  min-height: 100vh;
+
+  .action-bar {
+    position: fixed;
+    top: 44px;
+    left: 0;
+    right: 0;
+    padding: 10px;
+    background-color: #232323;
     display: flex;
-    align-items: flex-start;
-    margin-bottom: 8px;
-    .label {
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+    z-index: 99;
+
+    .result-count {
       font-size: 14px;
-      color: #909399;
-      min-width: 80px;
-      font-weight: 500;
+      color: #aaa;
     }
-    .value {
-      font-size: 14px;
-      color: #303133;
-      flex: 1;
-      word-break: break-all;
+  }
+
+  .message-list {
+    padding: 60px 0 0 0;
+
+    .message-item {
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      background: #232323;
+      border-radius: 16px;
+      margin: 24px auto 0 auto;
+      padding: 16px 20px;
+      max-width: 400px;
+      box-sizing: border-box;
+
+      .top-flex {
+        display: flex;
+        flex-direction: row;
+        align-items: flex-start;
+        width: 100%;
+      }
+
+      .avatar-section {
+        .avatar {
+          width: 48px;
+          height: 48px;
+          border-radius: 50%;
+          object-fit: cover;
+        }
+      }
+
+      .content-section {
+        flex: 1;
+        margin-left: 14px;
+        .top-row {
+          display: flex;
+          justify-content: space-between;
+        }
+        .middle-row {
+          margin: 4px 0;
+          .group-tag {
+            background: #2d2d2d;
+            color: #f56c6c;
+            border: none;
+            margin-right: 4px;
+          }
+        }
+        .bottom-row {
+          .sub-info {
+            color: #aaa;
+            font-size: 13px;
+            margin-right: 12px;
+          }
+        }
+      }
+
+      .main-title {
+        color: #fff;
+        font-weight: bold;
+        font-size: 18px;
+      }
+
+      .sub-info {
+        color: #aaa;
+        font-size: 15px;
+      }
+
+      .time {
+        color: #888;
+        font-size: 13px;
+      }
+
+      .picking-progress-list {
+        width: 100%;
+        margin-top: 12px;
+        .picking-progress-item {
+          margin-bottom: 6px;
+          .progress-bar-wrap {
+            position: relative;
+            .picking-progress-bar {
+              margin: 0;
+              --el-progress-bar-height: 6px;
+              .el-progress-bar__outer {
+                background: #444 !important;
+                border-radius: 4px !important;
+              }
+              .el-progress-bar__inner {
+                border-radius: 4px !important;
+              }
+              .el-progress--exception .el-progress-bar__inner {
+                background: #f56c6c !important;
+              }
+              .el-progress--success .el-progress-bar__inner {
+                background: #67c23a !important;
+              }
+            }
+            .progress-status-text {
+              position: absolute;
+              right: 0;
+              top: -18px;
+              font-size: 13px;
+              color: #bbb;
+              font-weight: 500;
+            }
+          }
+          .picking-progress-status {
+            font-size: 13px;
+            color: #bbb;
+            margin-left: 2px;
+            margin-bottom: 2px;
+          }
+        }
+      }
     }
   }
 }
 
-.picking-progress-list {
-  width: 100%;
-  margin: 10px 0 0 0;
+.error-section {
+  padding: 64px 20px 20px;
+  min-height: 100vh;
   display: flex;
-  flex-direction: column;
-  gap: 10px;
   align-items: center;
-  .picking-progress-item {
-    width: 92%;
-    background: #f8fafd;
-    border-radius: 10px;
-    box-shadow: 0 2px 8px rgba(64,158,255,0.06);
-    padding: 10px 12px 8px 12px;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    .picking-progress-title {
-      font-size: 15px;
-      color: #409eff;
-      font-weight: 600;
-      margin-bottom: 4px;
+  justify-content: center;
+
+  .error-card {
+    background-color: #232323;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+    width: 100%;
+    max-width: 300px;
+
+    .error-header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 16px;
+
+      .error-icon {
+        font-size: 24px;
+        color: #f56c6c;
+        margin-right: 8px;
+      }
+
+      .error-text {
+        font-size: 18px;
+        font-weight: 600;
+        color: #f56c6c;
+      }
     }
-    .picking-progress-bar {
-      width: 100%;
-      margin-bottom: 4px;
+
+    .error-message {
+      font-size: 14px;
+      color: #aaa;
+      margin-bottom: 20px;
+      line-height: 1.5;
     }
-    .picking-progress-status {
-      font-size: 13px;
-      color: #67c23a;
-      font-weight: 600;
-      margin-left: 2px;
-    }
-    .el-progress--exception .el-progress-bar__inner {
-      background: #f56c6c !important;
-    }
-    .el-progress--success .el-progress-bar__inner {
-      background: #67c23a !important;
+
+    .error-actions {
+      .el-button {
+        width: 100%;
+        height: 44px;
+        border-radius: 22px;
+        font-size: 16px;
+      }
     }
   }
 }
 </style>
+
 
 
