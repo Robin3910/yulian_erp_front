@@ -246,7 +246,7 @@
                 <template #default="{ row }">
                   <div class="flex flex-wrap" v-if="row.customImageUrls">
                     <div v-for="(item, index) in row.customImageUrls.split(',')" :key="index" class="ml-2">
-                      <el-image class="w-60px h-60px" :hide-on-click-modal="true" :preview-teleported="true" :src="item"
+                      <el-image class="w-60px h-60px" :hide-on-click-modal="true" :preview-teleported="true" :src="item + '?x-oss-process=image/resize,w_200'"
                         :preview-src-list="[item]" lazy :initial-index="0" fit="cover" loading="lazy" />
                     </div>
                   </div>

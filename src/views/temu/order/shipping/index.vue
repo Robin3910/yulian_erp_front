@@ -1702,7 +1702,7 @@ const handlerPrintPickList = () => {
               .slice(0, 4)
               .map(
                 (url) => `
-                      <img src="${url}" style="width: 35px; height: 35px; object-fit: contain; border: 1px solid #ddd;">
+                      <img src="${url+ '?x-oss-process=image/resize,w_200'}" style="width: 35px; height: 35px; object-fit: contain; border: 1px solid #ddd;">
                     `
               )
               .join('')}
@@ -1720,7 +1720,7 @@ const handlerPrintPickList = () => {
                 <div>
                   <strong>合成预览：</strong>
                   <div style="margin-top: 4px;">
-                    <img src="${item.effectiveImgUrl}" style="width: 45px; height: 45px; object-fit: contain; border: 1px solid #ddd;">
+                    <img src="${item.effectiveImgUrl+ '?x-oss-process=image/resize,w_200'}" style="width: 45px; height: 45px; object-fit: contain; border: 1px solid #ddd;">
                   </div>
                 </div>
                 `

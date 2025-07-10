@@ -29,7 +29,7 @@
               <el-form-item label="定制图片：" class="mb-2 cursor-pointer">
                 <div class="text-left flex" v-if="item.customImageUrls">
                   <div v-for="(_item, _index) in item.customImageUrls.split(',')" :key="_index" class="mr-1">
-                    <el-image class="w-10 h-10" :hide-on-click-modal="true" :preview-teleported="true" :src="_item"
+                    <el-image class="w-10 h-10" :hide-on-click-modal="true" :preview-teleported="true" :src="_item+ '?x-oss-process=image/resize,w_200'"
                       :preview-src-list="[_item]" />
                   </div>
                 </div>

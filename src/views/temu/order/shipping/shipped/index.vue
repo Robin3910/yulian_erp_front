@@ -308,7 +308,7 @@
           <template #default="{ row }">
             <div class="custom-images-container" v-if="row.customImageUrls">
               <div v-for="(item, index) in row.customImageUrls.split(',')" :key="index" class="image-item">
-                <el-image :hide-on-click-modal="true" :preview-teleported="true" :src="item" :preview-src-list="[item]"
+                <el-image :hide-on-click-modal="true" :preview-teleported="true" :src="item+ '?x-oss-process=image/resize,w_200'" :preview-src-list="[item]"
                   style="width: 60px; height: 60px" fit="cover" loading="lazy" :initial-index="0" :preview="false" />
               </div>
             </div>
@@ -329,7 +329,7 @@
         <el-table-column label="合成预览图" prop="effectiveImgUrl" align="center" min-width="110">
           <template #default="{ row }">
             <el-image v-if="row.effectiveImgUrl" :hide-on-click-modal="true" :preview-teleported="true"
-              :src="row.effectiveImgUrl" :preview-src-list="[row.effectiveImgUrl]" style="width: 80px; height: 80px"
+              :src="row.effectiveImgUrl+ '?x-oss-process=image/resize,w_200'" :preview-src-list="[row.effectiveImgUrl]" style="width: 80px; height: 80px"
               fit="cover" loading="lazy" :initial-index="0" :preview="false" />
             <span v-else>-</span>
           </template>
