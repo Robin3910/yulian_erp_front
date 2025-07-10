@@ -472,7 +472,7 @@ const addPdfToMerged = async (mergedPdf: PDFDocument, url: string) => {
 const totalPackages = computed(() => {
   const uniquePackages = new Set(
     props.shippingData.orderNoList?.flatMap(group => 
-      group.orderList.map(order => `${order.skc}_${order.sku}`)
+      group.orderList.map(order => `${group.orderNo}_${order.skc}_${order.sku}`)
     ) || []
   )
   return uniquePackages.size

@@ -312,9 +312,11 @@ const getProductCount = (row: any) => {
 
 // 获取总包裹数量
 const getTotalPackageCount = () => {
+  // 结合订单号、SKC、SKU，确保唯一性
   const uniquePackages = new Set(
-    formData.orders.map(item => `${item.skc}_${item.sku}`)
+    formData.orders.map(item => `${item.orderNo}_${item.skc}_${item.sku}`)
   )
+  console.log(JSON.stringify(Array.from(uniquePackages)))
   return uniquePackages.size
 }
 
