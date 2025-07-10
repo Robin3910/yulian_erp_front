@@ -280,8 +280,25 @@ const filterOrderQuantity = (list: any[]) => {
 
     // 特殊处理宣传单类目
     if (productCategoryName.includes('宣传单')) {
-      item.quantity = 1 * originalQuantity
-      return
+      // 尝试从类目名称中提取张数信息，格式如"宣传单A5-200张"
+      const categoryMatch = item.categoryName && item.categoryName.match(/宣传单[A|a]\d+-(\d+)张/);
+      if (categoryMatch) {
+        const sheetQuantity = parseInt(categoryMatch[1], 10);
+        item.quantity = sheetQuantity * originalQuantity;
+        return;
+      }
+      
+      // 尝试从属性描述中提取数量信息，格式如"A5-200PCS"
+      const propertyMatch = properties.match(/[A|a]\d+-(\d+)pcs/i);
+      if (propertyMatch) {
+        const propertyQuantity = parseInt(propertyMatch[1], 10);
+        item.quantity = propertyQuantity * originalQuantity;
+        return;
+      }
+      
+      // 如果没有匹配到具体数量，则使用默认值1
+      item.quantity = 1 * originalQuantity;
+      return;
     }
 
     // 特殊处理 Text 开头的情况
@@ -329,6 +346,17 @@ const filterOrderQuantity = (list: any[]) => {
 
     // 针对LeZdz店铺的特殊处理逻辑
     if (shopName.includes("LeZdz")) {
+      // 当属性描述包含"Custom Photo & Text"或"Double-sided Photos"时，从产品名称中提取pcs前面的数字
+      if (properties.toLowerCase().includes("custom photo & text") || properties.toLowerCase().includes("double-sided photos")) {
+        // 匹配产品名称中形如"6pcs Personalized"的格式
+        const pcsMatch = productTitle.match(/^(\d+)pcs\s+/i);
+        if (pcsMatch) {
+          const pcsQuantity = parseInt(pcsMatch[1], 10);
+          item.quantity = pcsQuantity * originalQuantity;
+          return;
+        }
+      }
+      
       // 匹配产品名称中形如"定制4件"的格式
       const customPieceMatch = productTitle.match(/定制(\d+)件/i);
       if (customPieceMatch) {
@@ -355,6 +383,12 @@ const filterOrderQuantity = (list: any[]) => {
 
       // 当LeZdz店铺的属性描述包含"g Jar Label"或"kg Jar Label"格式时，使用官网数量
       if (properties.match(/\d+g jar label/i) || properties.match(/\d+kg jar label/i)) {
+        item.quantity = originalQuantity;
+        return;
+      }
+      
+      // 当属性描述包含"Font size"时，使用官网数量，避免将字体大小误认为是制作数量
+      if (properties.match(/font\s+size\s+\d+/i)) {
         item.quantity = originalQuantity;
         return;
       }
