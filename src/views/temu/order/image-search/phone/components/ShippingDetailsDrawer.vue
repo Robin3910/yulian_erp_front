@@ -42,11 +42,7 @@
               />
             </div>
           </div>
-          <div class="info-item">
-            <el-button type="primary" plain @click="handlePrintAll">
-              <el-icon><Printer /></el-icon>
-              打印全部
-            </el-button>
+          <div class="info-item"> 
           </div>
         </div>
       </div>
@@ -55,89 +51,37 @@
       <div class="order-list">
         <div v-for="(orderGroup, groupIndex) in shippingData.orderNoList" :key="groupIndex">
           <div v-for="(order, orderIndex) in orderGroup.orderList" :key="orderIndex" class="order-item">
-            <!-- 订单头部 -->
-            <div class="order-header">
-              <div class="order-basic-info">
-                <div class="order-number">
-                  <span class="label">订单号：</span>
-                  <span class="value">{{ orderGroup.orderNo }}</span>
-                </div>
-                <div class="order-status">
-                  <el-tag :type="getOrderStatusType(order.orderStatus)">
-                    {{ getOrderStatusText(order.orderStatus) }}
-                  </el-tag>
-                </div>
-              </div>
-            </div>
-
             <!-- 订单内容 -->
             <div class="order-content">
               <div class="content-wrapper">
                 <!-- 重要信息 -->
                 <div class="important-info">
                   <div class="info-item custom-sku">
-                    <span class="label">定制SKU：</span>
                     <span class="value" style="font-size: 30px;font-weight: bold; color: var(--el-color-primary);">
                       {{ order.customSku }}
                     </span>
                   </div>
-                  <div class="info-item sku-info">
-                    <span class="label">SKU：</span>
-                    <span class="value">{{ order.sku }}</span>
-                    <span class="label">SKC：</span>
-                    <span class="value">{{ order.skc }}</span>
-                  </div>
                   <div class="info-item quantity-info">
                     <div class="quantity-group">
-                      <span class="label">官网数量：</span>
+                      <span class="label">官网：</span>
                       <span class="value">{{ order.originalQuantity }}</span>
                     </div>
                     <div class="quantity-group">
-                      <span class="label">制作数量：</span>
+                      <span class="label">制作：</span>
                       <span class="value">{{ order.quantity }}</span>
                     </div>
+                    <div class="quantity-group">
+                      <span class="label">属性：</span>
+                      <span class="value">{{ order.productProperties }}</span>
+                    </div>
+                  </div>
+                  <div class="info-item custom-text" v-if="order.customTextList && order.customTextList.trim() !== ','">
+                    <span class="label">定制文字：{{ order.customTextList }}</span>
                   </div>
                 </div>
-
-                <!-- 商品信息 -->
-                <div class="product-info">
-                  <div class="info-item">
-                    <span class="label">标题：</span>
-                    <span class="value">{{ order.productTitle }}</span>
-                  </div>
-                  <div class="info-item">
-                    <span class="label">属性：</span>
-                    <span class="value">{{ order.productProperties }}</span>
-                  </div>
-                </div>
-
-                <!-- 定制信息 -->
-                <div class="custom-info" v-if="order.customTextList">
-                  <div class="info-item">
-                    <span class="label">定制文字：</span>
-                    <span class="value">{{ order.customTextList }}</span>
-                  </div>
-                </div>
-
                 <!-- 图片展示 -->
                 <div class="image-section">
                   <div class="image-group" v-if="order.customImageUrls">
-                    <div
-                      v-for="(item, imgIndex) in order.customImageUrls.split(',')"
-                      :key="imgIndex"
-                      class="image-item"
-                    >
-                      <el-image
-                        :hide-on-click-modal="true"
-                        :preview-teleported="true"
-                        :src="item"
-                        :preview-src-list="[item]"
-                        style="width: 100%; height: 300px"
-                        fit="cover"
-                        loading="lazy"
-                        :initial-index="0"
-                      />
-                    </div>
                     <el-image
                       v-if="order.effectiveImgUrl"
                       :hide-on-click-modal="true"
@@ -150,19 +94,6 @@
                       :initial-index="0"
                     />
                   </div>
-                </div>
-
-                <!-- 打印按钮 -->
-                <div class="print-buttons">
-                  <el-button
-                    type="primary"
-                    plain
-                    :disabled="!order.complianceGoodsMergedUrl"
-                    @click="handlePrint(order.complianceGoodsMergedUrl)"
-                  >
-                    <el-icon><Printer /></el-icon>
-                    打印条码+合规单
-                  </el-button>
                 </div>
               </div>
             </div>
@@ -190,10 +121,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, nextTick } from 'vue'
 import { formatDate } from '@/utils/formatTime'
-import { Printer, Van } from '@element-plus/icons-vue'
-import { ElMessage, ElNotification, ElMessageBox } from 'element-plus'
-import printJS from 'print-js'
-import { PDFDocument } from 'pdf-lib'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import type { ShippingOrder } from '@/api/temu/order/types'
 import { OrderApi } from '@/api/temu/order'
 
@@ -225,199 +153,8 @@ watch(() => visible.value, (newVal) => {
   emit('update:modelValue', newVal)
 })
 
-// 获取订单状态类型
-const getOrderStatusType = (status: number): 'success' | 'warning' | 'info' | 'primary' | 'danger' => {
-  switch (status) {
-    case 0: return 'info'     // 待下单
-    case 1: return 'primary'  // 已下单待送产
-    case 2: return 'warning'  // 已送产待生产
-    case 3: return 'primary'  // 已生产待发货
-    case 4: return 'success'  // 已发货
-    default: return 'info'
-  }
-}
-
-// 获取订单状态文本
-const getOrderStatusText = (status: number): string => {
-  switch (status) {
-    case 0: return '待下单'
-    case 1: return '已下单待送产'
-    case 2: return '已送产待生产'
-    case 3: return '已生产待发货'
-    case 4: return '已发货'
-    default: return '未知状态'
-  }
-}
-
 const handleClose = () => {
   emit('update:modelValue', false)
-}
-
-// 打印全部功能
-const handlePrintAll = async () => {
-  try {
-    // 获取所有订单
-    const allOrders = props.shippingData.orderNoList?.flatMap(group => group.orderList) || [];
-
-    // 按订单号分组（orderNoList 已经是分组结构）
-    const orderGroups = props.shippingData.orderNoList || [];
-
-    // 创建一个新的PDF文档
-    const mergedPdf = await PDFDocument.create();
-    let successCount = 0;
-    let failCount = 0;
-
-    // 首先处理加急单（只打印一次）
-    const urgentUrl = props.shippingData.orderNoList?.[0]?.expressOutsideImageUrl;
-    if (urgentUrl) {
-      const processedUrgentUrl = urgentUrl.startsWith('@')
-        ? urgentUrl.substring(1)
-        : urgentUrl;
-      try {
-        await addPdfToMerged(mergedPdf, processedUrgentUrl);
-      } catch (error) {
-        console.error('加急单打印失败:', error);
-        failCount++;
-      }
-    }
-
-    // 检查是否有订单的合并文件为空
-    const ordersWithoutMerged = allOrders.filter(
-      (order) => !order.complianceGoodsMergedUrl
-    );
-    if (ordersWithoutMerged.length > 0) {
-      // 按店铺分组并去重SKC
-      const groupedByShop = ordersWithoutMerged.reduce((acc, order) => {
-        const shopName = props.shippingData.shopName || '未知店铺';
-        if (!acc[shopName]) {
-          acc[shopName] = new Set();
-        }
-        if (order.skc) {
-          acc[shopName].add(order.skc);
-        }
-        return acc;
-      }, {} as Record<string, Set<string>>);
-
-      const missingInfo = Object.entries(groupedByShop)
-        .map(
-          ([shopName, skcs]) => `
-          <div style="margin-bottom: 16px;">
-            <div style="color: #606266; font-weight: bold; margin-bottom: 8px;">${shopName}</div>
-            <div style="padding-left: 16px;">
-              ${Array.from(skcs)
-                .map(
-                  (skc) => `
-                <div style="color: #409EFF; margin-bottom: 4px;">
-                  ${skc}
-                </div>
-              `
-                )
-                .join('')}
-            </div>
-          </div>
-        `
-        )
-        .join('');
-
-      ElNotification({
-        title: '无法批量打印',
-        message: `
-          <div style="margin-bottom: 10px; color: #303133;">以下SKC缺少合并文件，请联系相关人员及时补充：</div>
-          <div style="max-height: 300px; overflow-y: auto; padding-right: 10px;">${missingInfo}</div>
-        `,
-        type: 'warning',
-        duration: 0,
-        dangerouslyUseHTMLString: true,
-        offset: 60
-      });
-      return;
-    }
-
-    // 按顺序处理每个订单组：先物流面单，再条码+合规单
-    for (const orderGroup of orderGroups) {
-      try {
-        // 1. 打印物流面单（只打印一次）
-        if (orderGroup.expressImageUrl) {
-          const expressUrl = orderGroup.expressImageUrl.startsWith('@')
-            ? orderGroup.expressImageUrl.substring(1)
-            : orderGroup.expressImageUrl;
-          await addPdfToMerged(mergedPdf, expressUrl);
-        }
-
-        // 2. 打印该组所有订单的条码+合规单（根据官网数量 originalQuantity 打印）
-        for (const order of orderGroup.orderList) {
-          if (order.complianceGoodsMergedUrl) {
-            const mergedUrl = order.complianceGoodsMergedUrl.startsWith('@')
-              ? order.complianceGoodsMergedUrl.substring(1)
-              : order.complianceGoodsMergedUrl;
-            const copies = order.originalQuantity || 1;
-            for (let i = 0; i < copies; i++) {
-              await addPdfToMerged(mergedPdf, mergedUrl);
-            }
-          }
-        }
-        successCount++;
-      } catch (error) {
-        console.error(`处理订单组 ${orderGroup.orderNo} 失败:`, error);
-        failCount++;
-      }
-    }
-
-    // 如果有成功合并的PDF，则打印
-    if (mergedPdf.getPageCount() > 0) {
-      const mergedPdfBytes = await mergedPdf.save();
-      const mergedPdfBlob = new Blob([mergedPdfBytes], { type: 'application/pdf' });
-      const mergedPdfUrl = URL.createObjectURL(mergedPdfBlob);
-
-      printJS({
-        printable: mergedPdfUrl,
-        type: 'pdf',
-        showModal: true
-      });
-
-      // 清理资源
-      setTimeout(() => {
-        URL.revokeObjectURL(mergedPdfUrl);
-      }, 10000);
-    }
-
-    // 显示处理结果
-    if (failCount > 0) {
-      ElMessage.warning(`成功处理${successCount}个订单组，${failCount}个订单组处理失败`);
-    } else {
-      ElMessage.success(`成功处理${successCount}个订单组`);
-    }
-  } catch (error) {
-    console.error('打印全部失败:', error);
-    ElMessage.error('打印全部失败：' + (error instanceof Error ? error.message : '未知错误'));
-  }
-};
-
-// 添加辅助函数用于将PDF添加到合并文档中
-const addPdfToMerged = async (mergedPdf: PDFDocument, url: string) => {
-  try {
-    if (url.toLowerCase().endsWith('.pdf')) {
-      const response = await fetch(url)
-      if (!response.ok) {
-        throw new Error(`加载PDF失败: ${url}`)
-      }
-      const pdfBytes = await response.arrayBuffer()
-      const pdf = await PDFDocument.load(pdfBytes)
-      const copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices())
-      copiedPages.forEach((page) => {
-        mergedPdf.addPage(page)
-      })
-    } else {
-      // 如果是图片，直接使用print-js打印
-      printJS({
-        printable: url,
-        type: 'image',
-        showModal: true
-      })
-    }
-  } catch (error) {
-    throw new Error(`处理文件失败: ${url}`)
-  }
 }
 
 // 计算总包裹数
@@ -463,36 +200,6 @@ const progressColor = (percentage: number) => {
   if (percentage < 30) return '#F56C6C'
   if (percentage < 70) return '#E6A23C'
   return '#67C23A'
-}
-
-// 打印条码+合规单
-const handlePrint = async (url: string) => {
-  if (!url) {
-    ElMessage.error('打印失败：未找到打印文件')
-    return
-  }
-
-  try {
-    const printUrl = url.startsWith('@') ? url.substring(1) : url
-    const isPDF = printUrl.toLowerCase().endsWith('.pdf')
-
-    if (isPDF) {
-      printJS({
-        printable: printUrl,
-        type: 'pdf',
-        showModal: true
-      })
-    } else {
-      printJS({
-        printable: printUrl,
-        type: 'image',
-        showModal: true
-      })
-    }
-  } catch (error) {
-    console.error('打印错误:', error)
-    ElMessage.error('打印失败：' + (error instanceof Error ? error.message : '未知错误'))
-  }
 }
 
 const shipLoading = ref(false)
@@ -744,3 +451,4 @@ const handleShip = async () => {
   }
 }
 </style> 
+
