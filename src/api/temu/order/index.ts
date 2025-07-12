@@ -102,4 +102,7 @@ export const OrderApi = {
   getUrgentUnshippedCount: async () => {
     return await request.get({ url: `/temu/order-shipping/count` })
   },
+  getOrderSkuPage: async (params: any) => {
+    return await request.get({ url: `/temu/order/order-sku-page`, params })
+  },
 }
