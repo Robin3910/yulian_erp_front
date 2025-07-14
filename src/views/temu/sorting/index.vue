@@ -43,7 +43,7 @@
             @click="selectSequence(item)">
             <div class="sequence-info">
               <span class="sequence-number">{{ item.sortingSequence }}（{{ formatDateSafe(item.bookingTime, 'YYYY-MM-DD')
-                }}）</span>
+              }}）</span>
               <div class="order-count">/{{ item.orders?.length || 0 }}单</div>
             </div>
           </div>
@@ -74,7 +74,7 @@
             </el-table-column>
 
             <!-- 类名 -->
-            <el-table-column label="类名" align="center" min-width="120">
+            <el-table-column label="类目" align="center" min-width="120">
               <template #default="{ row }">
                 <span>{{ row.categoryName || '-' }}</span>
               </template>
@@ -114,11 +114,11 @@
             </el-table-column>
 
             <!-- 合成预览图 -->
-            <el-table-column label="合成预览图" align="center" min-width="110">
+            <el-table-column label="合成预览图" align="center" min-width="360">
               <template #default="{ row }">
                 <el-image v-if="row.effectiveImgUrl" :hide-on-click-modal="true" :preview-teleported="true"
-                  :src="row.effectiveImgUrl" :preview-src-list="[row.effectiveImgUrl]" style="width: 80px; height: 80px"
-                  fit="cover" loading="lazy" :initial-index="0" :preview="false" />
+                  :src="row.effectiveImgUrl" :preview-src-list="[row.effectiveImgUrl]"
+                  style="width: 320px; height: 320px" fit="cover" loading="lazy" :initial-index="0" :preview="false" />
                 <span v-else>-</span>
               </template>
             </el-table-column>
