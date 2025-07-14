@@ -3,20 +3,43 @@
     <el-card>
       <el-form :model="queryParams" ref="queryFormRef" :inline="true" label-width="100px">
         <el-row :gutter="20">
-          <el-col :span="24" :lg="8">
-            <el-form-item label="物流序号" prop="logisticsNo">
-              <el-input v-model="queryParams.logisticsNo" placeholder="请输入物流序号" clearable />
+          <el-col :span="24" :lg="6">
+            <el-form-item label="店铺" prop="shopId" class="w-full">
+              <el-select filterable v-model="queryParams.shopId" placeholder="请选择店铺" clearable>
+                <el-option v-for="(item, index) in shopList" :key="index" :label="item.shopName" :value="item.shopId" />
+              </el-select>
             </el-form-item>
           </el-col>
-          <el-col :span="24" :lg="8">
+          <el-col :span="24" :lg="6">
+            <el-form-item label="物流单号" prop="trackingNumber" class="w-full">
+              <el-input v-model="queryParams.trackingNumber" placeholder="请输入物流单号" clearable
+                @keyup.enter="handleQuery" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="24" :lg="6">
+            <el-form-item label="订单编号" prop="orderNo" class="w-full">
+              <el-input v-model="queryParams.orderNo" placeholder="请输入订单编号" clearable @keyup.enter="handleQuery" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="24" :lg="6">
+            <el-form-item label="定制SKU" prop="customSku" class="w-full">
+              <el-input v-model="queryParams.customSku" placeholder="请输入定制SKU" clearable @keyup.enter="handleQuery" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="24" :lg="6">
+            <el-form-item label="物流序号" prop="logisticsNo" class="w-full">
+              <el-input v-model="queryParams.logisticsNo" placeholder="请输入物流序号" clearable @keyup.enter="handleQuery" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="24" :lg="6">
             <el-form-item label="物流创建时间" prop="logisticsTime">
               <el-date-picker v-model="queryParams.logisticsTime" type="daterange" range-separator="至"
                 start-placeholder="开始日期" end-placeholder="结束日期" value-format="YYYY-MM-DD" />
             </el-form-item>
           </el-col>
-          <el-col :span="24" :lg="4">
+          <el-col :span="24" :lg="6">
             <el-form-item>
-              <el-button type="primary" @click="onSearch">搜索</el-button>
+              <el-button type="primary" @click="handleQuery">搜索</el-button>
               <el-button @click="resetQuery">重置</el-button>
             </el-form-item>
           </el-col>
@@ -81,11 +104,17 @@
 import { ref, onMounted } from 'vue'
 import { Close } from '@element-plus/icons-vue'
 import { OrderApi } from '@/api/temu/order'
+import { TemuCommonApi } from '@/api/temu/common'
 
 const queryParams = ref({
+  shopId: '',
+  trackingNumber: '',
+  orderNo: '',
+  customSku: '',
   logisticsNo: '',
   logisticsTime: []
 })
+const shopList = ref<{ shopId: string | number, shopName: string }[]>([])
 const displayList = ref<any[]>([])
 const loading = ref(false)
 const pageNo = ref(1)
@@ -117,10 +146,13 @@ function formatDateSafe(timestamp: number | null | undefined, format: string) {
   }
 }
 
+async function getShopList() {
+  const data = await TemuCommonApi.getShopList()
+  shopList.value = data.list || []
+}
+
 async function handleQuery() {
-  console.log('handleQuery 被调用')
   loading.value = true
-  // 每次查询前重置右侧详情
   selectedId.value = null
   selectedOrderNoList.value = []
   selectedLogistics.value = null
@@ -130,25 +162,41 @@ async function handleQuery() {
       start = queryParams.value.logisticsTime[0] || ''
       end = queryParams.value.logisticsTime[1] || ''
       if (end) {
-        // 结束日期+1天，确保包含当天所有数据
         const endDate = new Date(end)
         endDate.setDate(endDate.getDate() + 1)
-        end = endDate.toISOString().slice(0, 10) // 'YYYY-MM-DD'
+        end = endDate.toISOString().slice(0, 10)
       }
     }
     const params = {
+      shopId: queryParams.value.shopId,
+      trackingNumber: queryParams.value.trackingNumber,
+      orderNo: queryParams.value.orderNo,
+      customSku: queryParams.value.customSku,
       dailySequence: queryParams.value.logisticsNo,
       createTime: start && end ? [start, end] : [],
       pageNo: pageNo.value,
       pageSize: pageSize.value
     }
-    console.log('接口参数:', params)
     const res = await OrderApi.getShippingOrderPage(params)
-    console.log('接口原始返回:', res)
-    displayList.value = Array.isArray(res.list) ? [...res.list] : []
+    let list = Array.isArray(res.list) ? [...res.list] : []
+
+    // customSku前端过滤
+    if (queryParams.value.customSku) {
+      const sku = queryParams.value.customSku
+      list = list
+        .map(item => {
+          // 过滤每个orderNoList下的orderList
+          const filteredOrderNoList = (item.orderNoList || []).map(orderNoObj => {
+            const filteredOrderList = (orderNoObj.orderList || []).filter(order => order.customSku === sku)
+            return { ...orderNoObj, orderList: filteredOrderList }
+          }).filter(orderNoObj => orderNoObj.orderList.length > 0)
+          return { ...item, orderNoList: filteredOrderNoList }
+        })
+        .filter(item => item.orderNoList && item.orderNoList.length > 0)
+    }
+
+    displayList.value = list
     total.value = res.total || 0
-    console.log('最终 displayList.value:', displayList.value)
-    // 默认选中第一个
     if (displayList.value.length) selectSequence(displayList.value[0])
   } finally {
     loading.value = false
@@ -158,7 +206,6 @@ async function handleQuery() {
 function selectSequence(item: any) {
   selectedId.value = item.id
   selectedLogistics.value = item
-  // 合并所有 orderNoList 下的 orderList
   const allOrders: any[] = []
   if (Array.isArray(item.orderNoList)) {
     item.orderNoList.forEach((orderNoObj: any) => {
@@ -167,7 +214,6 @@ function selectSequence(item: any) {
       }
     })
   }
-  // 对 sortingSequence+bookingTime 去重
   const uniqueOrders: any[] = []
   const seen = new Set()
   for (const order of allOrders) {
@@ -178,8 +224,6 @@ function selectSequence(item: any) {
     }
   }
   selectedOrderNoList.value = uniqueOrders
-  console.log('当前选中物流:', item)
-  console.log('右侧中包序号数据 selectedOrderNoList:', selectedOrderNoList.value)
 }
 
 function handlePageChange(val: number) {
@@ -191,12 +235,12 @@ function handleSizeChange(val: number) {
   pageNo.value = 1
   handleQuery()
 }
-function onSearch() {
-  pageNo.value = 1
-  handleQuery()
-}
 function resetQuery() {
   queryParams.value = {
+    shopId: '',
+    trackingNumber: '',
+    orderNo: '',
+    customSku: '',
     logisticsNo: '',
     logisticsTime: []
   }
@@ -204,6 +248,7 @@ function resetQuery() {
   handleQuery()
 }
 onMounted(() => {
+  getShopList()
   handleQuery()
 })
 </script>
