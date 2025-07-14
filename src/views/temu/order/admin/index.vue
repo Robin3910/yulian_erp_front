@@ -94,6 +94,7 @@
                     <el-button type="primary" plain>批次生成</el-button>
                   </template>
                 </el-popconfirm>
+                <el-button type="success" @click="openConfirmedSkuList">查看已确认SKU</el-button>
               </el-form-item>
             </el-col>
           </el-row>
@@ -439,6 +440,13 @@
     <CustomImageUploader :orderId="selectedOrder?.id" :customImageUrls="selectedOrder?.customImageUrls || ''"
       @saved="onCustomImageSaved" />
   </el-dialog>
+  <!-- 已确认SKU列表弹窗 -->
+  <ConfirmedSkuListPopup
+    v-model="confirmedSkuListVisible"
+    :visible="confirmedSkuListVisible"
+    @visible-event="handleConfirmedSkuListClose"
+    @confirm="getList"
+  />
 </template>
 
 <script setup lang="ts">
@@ -455,6 +463,7 @@ import { OrderBatchApi } from '@/api/temu/order-batch'
 import OrderRemarkPopup from '@/views/temu/order/admin/components/OrderRemarkPopup.vue'
 import { Upload, Edit } from '@element-plus/icons-vue'
 import CustomImageUploader from './components/CustomImageUploader.vue'
+import ConfirmedSkuListPopup from './components/ConfirmedSkuListPopup.vue'
 
 /** 订单 列表 */
 defineOptions({ name: 'TemuOrderAdmin' })
@@ -479,6 +488,19 @@ const orderRemarkPopup = useTemplateRef('orderRemarkPopup')
 // 定制图片上传相关
 const customImageUploaderVisible = ref(false)
 const selectedOrder = ref<any>(null)
+
+// 已确认SKU列表相关
+const confirmedSkuListVisible = ref(false)
+
+// 打开已确认SKU列表弹窗
+const openConfirmedSkuList = () => {
+  confirmedSkuListVisible.value = true
+}
+
+// 处理已确认SKU列表弹窗关闭
+const handleConfirmedSkuListClose = () => {
+  confirmedSkuListVisible.value = false
+}
 
 // 获取订单状态类型
 const getOrderStatusType = (
@@ -524,7 +546,7 @@ const queryParams = reactive({
   orderNo: undefined,
   productTitle: undefined,
   orderStatus: undefined,
-  sku: undefined,
+  sku: undefined as string | undefined,
   skc: undefined,
   salePrice: undefined,
   customSku: undefined as string | undefined,
@@ -551,23 +573,37 @@ const getList = async () => {
   tableRef && tableRef.value && tableRef.value.clearSelection()
   loading.value = true
   try {
-    // 新增：处理定制SKU多关键词
+    // 处理定制SKU和SKU的多关键词
     let customSkuList: string[] | undefined = undefined;
+    let skuList: string[] | undefined = undefined;
+    
     if (queryParams.customSku && typeof queryParams.customSku === 'string') {
       const trimmed = queryParams.customSku.trim();
       if (trimmed) {
         customSkuList = trimmed.split(/\s+/);
       }
     }
+    
+    if (queryParams.sku && typeof queryParams.sku === 'string') {
+      const trimmed = queryParams.sku.trim();
+      if (trimmed) {
+        skuList = trimmed.split(/\s+/);
+      }
+    }
+
     const data = await OrderApi.getOrderPageByAdmin({
       ...queryParams,
       customSkuList,
-      customSku: undefined // 避免传递原有的单个 customSku 字段
+      skuList,
+      customSku: undefined, // 避免传递原有的单个 customSku 字段
+      sku: undefined // 避免传递原有的单个 sku 字段
     })
     const { totalPrice } = await OrderApi.getAdminOrderAmountStatistics({
       ...queryParams,
       customSkuList,
-      customSku: undefined
+      skuList,
+      customSku: undefined,
+      sku: undefined
     })
     orderTotalPrice.value = totalPrice
     list.value = data.list

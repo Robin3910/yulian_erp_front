@@ -193,6 +193,19 @@
                   <!-- ¥{{ _.round(calculateUnitPrice(item) * item.quantity, 6).toFixed(2) || '0.00' }} -->
                 </div>
               </el-form-item>
+              
+              <!-- SKU确认按钮 -->
+              <el-form-item label="SKU确认：" class="mb-2 cursor-pointer">
+                <div class="text-left">
+                  <el-button 
+                    type="success" 
+                    :disabled="item.skuConfirmed"
+                    @click="handleConfirmSku(item)"
+                  >
+                    {{ item.skuConfirmed ? '已确认' : '确认该SKU' }}
+                  </el-button>
+                </div>
+              </el-form-item>
             </div>
           </div>
           <el-divider />
@@ -225,8 +238,10 @@
 import { ref } from 'vue'
 import { OrderApi } from '@/api/temu/order'
 import { rulePrice, RulePriceByNumber, RulePriceByLayout } from '@/api/temu/product-category'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import _ from 'lodash'
+import { SkuConfirmationApi } from '@/api/temu/sku-confirmation'
+import ConfirmedSkuListPopup from './ConfirmedSkuListPopup.vue'
 // ##########################变量区###################################################
 
 const formEl = useTemplateRef('formRef')
@@ -657,10 +672,13 @@ const calculateUnitPrice = computed(() => {
   }
 })
 // 传入订单数据
-const setOrderList = (list: any[]) => {
+const setOrderList = async (list: any[]) => {
   let newList = _.cloneDeep(list)
   filterOrderQuantity(newList)
   formData.orderList = newList
+  
+  // 检查SKU确认状态
+  await checkSkuConfirmation(formData.orderList)
 }
 const props = defineProps({
   visible: {
@@ -673,6 +691,7 @@ const loading = ref(false)
 const formData = reactive({
   orderList: [] as any[]
 })
+const confirmedSkuListVisible = ref(false)
 
 const handleClose = () => {
   dialogVisible.value = false
@@ -721,6 +740,55 @@ watch(dialogVisible, (val) => {
     emit('visible-event', false)
   }
 })
+// SKU确认相关方法
+const handleConfirmSku = (item: any) => {
+  ElMessageBox.confirm('确认将该SKU标记为已确认状态吗？', '确认', {
+    confirmButtonText: '确认',
+    cancelButtonText: '取消',
+    type: 'warning'
+  }).then(async () => {
+    try {
+      await SkuConfirmationApi.confirm({ orderId: item.id })
+      ElMessage.success('SKU确认成功')
+      item.skuConfirmed = true
+    } catch (error) {
+      ElMessage.error('SKU确认失败')
+    }
+  }).catch(() => {})
+}
+
+// 打开已确认SKU列表弹窗
+const openConfirmedSkuList = () => {
+  confirmedSkuListVisible.value = true
+}
+
+// 处理已确认SKU列表弹窗关闭
+const handleConfirmedSkuListClose = () => {
+  confirmedSkuListVisible.value = false
+}
+
+// 检查SKU是否已确认
+const checkSkuConfirmation = async (orderList: any[]) => {
+  for (const item of orderList) {
+    if (item.shopId && item.sku) {
+      try {
+        const result = await SkuConfirmationApi.checkConfirmation({
+          shopId: item.shopId,
+          sku: item.sku
+        })
+        item.skuConfirmed = !!result
+      } catch (error) {
+        console.error('检查SKU确认状态失败', error)
+        item.skuConfirmed = false
+      }
+    } else {
+      item.skuConfirmed = false
+    }
+  }
+}
+
+// 检查SKU确认状态方法已合并到setOrderList中
+
 // 组件对外暴露方法
 defineExpose({
   setOrderList
@@ -728,3 +796,11 @@ defineExpose({
 </script>
 
 <style scoped lang="scss"></style>
+
+<!-- 已确认SKU列表弹窗 -->
+<ConfirmedSkuListPopup
+  v-model="confirmedSkuListVisible"
+  :visible="confirmedSkuListVisible"
+  @visible-event="handleConfirmedSkuListClose"
+  @confirm="checkSkuConfirmation(formData.orderList)"
+/>
