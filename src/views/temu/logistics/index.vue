@@ -35,7 +35,7 @@
             :class="{ active: selectedId === item.id }" @click="selectSequence(item)">
             <div class="sequence-info">
               <span class="sequence-number">{{ item.dailySequence }}（{{ formatDateSafe(item.createTime, 'YYYY-MM-DD')
-              }}）</span>
+                }}）</span>
             </div>
           </div>
         </div>
@@ -63,16 +63,17 @@
             <el-table-column label="中包序号" min-width="180" align="center">
               <template #default="{ row }">
                 <span class="sequence-number">{{ row.sortingSequence }}（{{ formatDateSafe(row.bookingTime, 'YYYY-MM-DD')
-                  }}）</span>
+                }}）</span>
               </template>
             </el-table-column>
           </el-table>
         </div>
       </div>
     </div>
-    <el-pagination :current-page="pageNo" :page-size="pageSize" :total="total" :page-sizes="[10, 20, 50, 100]"
-      layout="total, sizes, prev, pager, next, jumper" @current-change="handlePageChange"
-      @size-change="handleSizeChange" style="margin-top: 20px; justify-content: flex-end; display: flex;" />
+    <el-pagination v-model:current-page="pageNo" v-model:page-size="pageSize" :total="total"
+      :page-sizes="[10, 20, 50, 100]" layout="total, sizes, prev, pager, next, jumper"
+      @current-change="handlePageChange" @size-change="handleSizeChange"
+      style="margin-top: 20px; justify-content: flex-end; display: flex;" />
   </div>
 </template>
 
