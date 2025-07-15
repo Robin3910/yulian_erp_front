@@ -22,6 +22,9 @@ export interface OrderResult {
   dailySequence?: number
   shippingTime?: number
   isCompleteProducerTask?: number
+  sortingSequence?: number
+  bookingTime?: number
+  goodsSnNo?: String
 }
 
 export interface OrderNoGroup {

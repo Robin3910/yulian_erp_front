@@ -79,60 +79,77 @@
         </el-button>
         <span class="result-count">找到 {{ searchResults.length }} 个结果</span>
       </div>
-
       <!-- 结果列表 -->
       <div class="message-list">
-        <div v-for="(order, index) in sortedResults" :key="order.orderNo || index" class="message-item">
-          <div class="top-flex">
-            <div class="avatar-section">
-              <el-image
-                :src="order.effectiveImgUrl || defaultAvatar"
-                :preview-src-list="order.effectiveImgUrl ? [order.effectiveImgUrl] : [defaultAvatar]"
-                fit="cover"
-                class="avatar"
-              />
+        <div
+          v-for="(order, index) in filteredResults"
+          :key="order.orderNo || index"
+          class="message-item"
+        >
+          <!-- 内容卡片 -->
+          <div class="content-section">
+            <div class="top-row">
+              <span class="main-title">中包：{{ order.sortingSequence || '--' }}</span>
             </div>
-            <div class="content-section">
-              <div class="top-row">
-                <span class="main-title">
-                  {{ order.dailySequence || '--' }}<span v-if="'sortingSequence' in order && order.sortingSequence != null">-{{ order.sortingSequence }}</span>
+            <div class="bottom-row">
+              <span class="main-title" style="color: #409EFF;">{{ order.customSku }}</span>
+            </div>
+            <div class="bottom-row">
+              <span class="sub-info">
+                官网 <span :class="['highlight-value', order.originalQuantity > 1 ? 'highlight-strong' : '']">{{ order.originalQuantity }}</span>
+                &nbsp;&nbsp;&nbsp;制作 <span class="highlight-value">{{ order.quantity }}</span>
+                <span style="margin-left: 18px;">
+                  属性 <span class="highlight-value">{{ order.productProperties }}</span>
                 </span>
-                <span class="time">{{ formatDate(order.shippingTime) }}</span>
-              </div>
-              <div class="middle-row">
-                <span class="sub-info">顺丰单号 {{ order.trackingNumber }}</span>
-              </div>
-              <div class="bottom-row">
-                <span class="sub-info">定制SKU {{ order.customSku }}</span>
-              </div>
-              <div class="bottom-row">
-                <span class="sub-info">官网 {{ order.originalQuantity }}&nbsp;&nbsp;&nbsp;制作 {{ order.quantity }}</span>
-              </div>
+              </span>
+            </div>
+            <div class="bottom-row" v-if="order.customTextList && !(order.customTextList.length === 1 && order.customTextList === ',')">
+              <span class="custom-text-label">定制文字</span>
+              <span class="highlight-value">{{ order.customTextList }}</span>
             </div>
           </div>
-          <div v-if="shippingData && shippingData.orderNoList && shippingData.orderNoList.length" class="picking-progress-list">
-            <div
-              v-for="orderGroup in shippingData.orderNoList"
-              :key="orderGroup.orderNo"
-              class="picking-progress-item">
-              <div class="progress-bar-wrap">
-                <el-progress
-                  :percentage="orderGroup.orderList.length > 0
-                    ? Math.round(orderGroup.orderList.filter(item => item.isCompleteProducerTask === 1).length / orderGroup.orderList.length * 100)
-                    : 0"
-                  :status="orderGroup.orderList.length > 0 && orderGroup.orderList.filter(item => item.isCompleteProducerTask === 1).length === orderGroup.orderList.length ? 'success' : 'exception'"
-                  :stroke-width="6"
-                  :show-text="false"
-                  class="picking-progress-bar"
-                />
-                <span class="progress-status-text">
-                  {{ orderGroup.orderList.filter(item => item.isCompleteProducerTask === 1).length }}/{{ orderGroup.orderList.length }}
-                </span>
-              </div>
-              <div class="picking-progress-status">
-                {{ orderGroup.orderList.length > 0 && orderGroup.orderList.filter(item => item.isCompleteProducerTask === 1).length === orderGroup.orderList.length ? '拣货完成' : '拣货中' }}
-              </div>
-            </div>
+          <!-- 头像卡片 -->
+          <div class="avatar-card">
+            <el-image
+              :src="order.effectiveImgUrl || defaultAvatar"
+              :preview-src-list="order.effectiveImgUrl ? [order.effectiveImgUrl] : [defaultAvatar]"
+              fit="cover"
+              class="avatar-large"
+            />
+          </div>
+          <!-- 按钮组移动到图片下方 -->
+          <div class="button-group">
+            <el-button
+              type="primary"
+              size="small"
+              @click="handleViewAllOrders(order)"
+              class="order-btn"
+            >
+              <el-icon class="order-icon">
+                <Document />
+              </el-icon>
+              查看中包
+            </el-button>
+            <el-button
+              v-if="order.trackingNumber"
+              type="success"
+              size="small"
+              @click="showShippingDetail(order)"
+              class="shipping-btn"
+            >
+              <el-icon class="shipping-icon">
+                <Van />
+              </el-icon>
+              查看物流
+            </el-button>
+          </div>
+          <!-- 卡片最下方加提示 -->
+          <div
+            v-if="order.trackingNumber == null"
+            class="no-tracking-tip"
+            style="margin-top: 12px; color: #e6a23c; font-size: 14px; text-align: left;"
+          >
+            当前订单暂未同步物流信息
           </div>
         </div>
       </div>
@@ -172,21 +189,33 @@
       text="识别并查询中..."
       background="rgba(24, 25, 26, 0.9)"
     />
+
+    <!-- 全部订单弹窗 -->
+    <OrderListDrawer
+      v-model="showAllOrdersDialog"
+      :searchResults="filteredOrdersForDialog"
+      :seq="seq"
+      :date="date"
+      :defaultAvatar="defaultAvatar"
+      :activeOrderIndex="activeOrderIndex"
+      :formatDate="formatDate"
+      @update:active-order-index="val => activeOrderIndex = val"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import { ElMessage } from 'element-plus';
-import { Camera, Picture, Back, SuccessFilled, WarningFilled, CopyDocument } from '@element-plus/icons-vue';
+import { Camera, Picture, Back, SuccessFilled, WarningFilled, CopyDocument, Van, Document } from '@element-plus/icons-vue';
 import Quagga from 'quagga';
 import { BrowserMultiFormatReader } from '@zxing/library';
 import BarcodeCameraView from './components/BarcodeCameraView.vue';
 import { searchByBarcode } from '@/api/temu/image-search';
 import { OrderApi } from '@/api/temu/order';
 import type { OrderResult, ShippingOrder } from '@/api/temu/order/types';
-import printJS from 'print-js';
 import ShippingDetailsDrawer from '../../image-search/phone/components/ShippingDetailsDrawer.vue';
+import OrderListDrawer from './components/OrderListDrawer.vue';
 
 const defaultAvatar = 'https://img.yzcdn.cn/vant/cat.jpeg';
 
@@ -200,6 +229,10 @@ const searchResults = ref<OrderResult[]>([]);
 const shippingData = ref<ShippingOrder | null>(null);
 const shippingDrawerVisible = ref(false);
 let fileRaw: File | null = null;
+const showAllOrdersDialog = ref(false);
+const activeOrderIndex = ref(-1); // 默认无高亮
+const currentClickedOrder = ref<OrderResult | null>(null); // 新增：当前点击的订单
+const shippingCache = ref<Record<string, ShippingOrder | null>>({});
 
 
 // 按物流序号排序的结果
@@ -216,6 +249,48 @@ const sortedResults = computed(() => {
     }
   });
 });
+
+// 新增 filteredResults 计算属性
+const filteredResults = computed(() => {
+  if (!result.value) return [];
+  return searchResults.value.filter(order => order.goodsSnNo === result.value);
+});
+
+// 新增：根据当前点击订单过滤的订单列表
+const filteredOrdersForDialog = computed(() => {
+  if (!currentClickedOrder.value) return [];
+  return searchResults.value.filter(order => 
+    order.orderNo === currentClickedOrder.value?.orderNo && 
+    order.sku === currentClickedOrder.value?.sku
+  );
+});
+
+const pickedCount = computed(() => searchResults.value.filter(item => item.isCompleteProducerTask === 1).length);
+const totalCount = computed(() => searchResults.value.length);
+const pickingPercent = computed(() => totalCount.value === 0 ? 0 : Math.round((pickedCount.value / totalCount.value) * 100));
+
+// 弹窗标题：中包X 全部订单 Y个
+const allOrdersDialogTitle = computed(() => {
+  const seq = currentClickedOrder.value?.sortingSequence || '--';
+  return `中包${seq} 共 ${filteredOrdersForDialog.value.length}个订单`;
+});
+
+// 标题相关
+const seq = computed(() => currentClickedOrder.value?.sortingSequence || '--');
+const date = computed(() => {
+  const ts = currentClickedOrder.value?.bookingTime;
+  if (!ts) return '';
+  const d = new Date(ts);
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${mm}-${dd}`;
+});
+
+// 新增：处理查看中包详情点击
+const handleViewAllOrders = (order: OrderResult) => {
+  currentClickedOrder.value = order;
+  showAllOrdersDialog.value = true;
+};
 
 // 开始相机拍照
 const handleStartCamera = () => {
@@ -239,6 +314,8 @@ const resetImage = () => {
   result.value = null;
   error.value = null;
   searchResults.value = [];
+  shippingData.value = null;
+  currentClickedOrder.value = null; // 清空当前点击的订单
 };
 
 // 重置结果
@@ -246,11 +323,13 @@ const resetResult = () => {
   result.value = null;
   error.value = null;
   searchResults.value = [];
+  currentClickedOrder.value = null; // 清空当前点击的订单
 };
 
 // 重置搜索
 const resetSearch = () => {
   searchResults.value = [];
+  currentClickedOrder.value = null; // 清空当前点击的订单
   resetImage();
 };
 
@@ -307,29 +386,28 @@ const searchOrderByBarcode = async () => {
   try {
     const response = await searchByBarcode(result.value);
     searchResults.value = response;
-    if (searchResults.value.length > 0 && searchResults.value[0].trackingNumber) {
-      try {
-        const shippingRes = await OrderApi.getShippingOrderPage({
-          trackingNumber: searchResults.value[0].trackingNumber,
-          pageNo: 1,
-          pageSize: 10
-        });
-        if (shippingRes.list && shippingRes.list.length > 0) {
-          shippingData.value = shippingRes.list[0];
-        }
-      } catch (err) {
-        console.error('自动查物流详情失败', err);
+    // 检查 trackingNumber
+    if (!searchResults.value.length || !searchResults.value[0].trackingNumber) {
+      shippingData.value = null;
+      ElMessage.warning('该订单暂无物流信息');
+    } else {
+      const tn = searchResults.value[0].trackingNumber;
+      // 直接请求，不再使用缓存
+      const shippingRes = await OrderApi.getShippingOrderPage({
+        trackingNumber: tn,
+        pageNo: 1,
+        pageSize: 10
+      });
+      if (shippingRes.list && shippingRes.list.length > 0) {
+        shippingData.value = shippingRes.list[0];
+      } else {
+        shippingData.value = null;
       }
     }
-    if (searchResults.value.length === 0) {
-      ElMessage.warning('未找到相关订单');
-    } else {
-      ElMessage.success(`找到 ${searchResults.value.length} 个相关订单`);
-    }
+    loading.value = false;
   } catch (error) {
     ElMessage.error('查询订单失败，请重试');
-    console.error('Barcode search error:', error);
-  } finally {
+    shippingData.value = null;
     loading.value = false;
   }
 };
@@ -432,14 +510,38 @@ async function zoomImage(imageDataUrl: string, scale = 2): Promise<string> {
 
 function formatDate(ts?: number) {
   if (!ts) return '';
-  const date = new Date(ts);
+  const date = new Date(ts)
   const mm = String(date.getMonth() + 1).padStart(2, '0');
   const dd = String(date.getDate()).padStart(2, '0');
   return `${mm}-${dd}`;
 }
+
+const showShippingDetail = async (order: OrderResult) => {
+  const tn = order.trackingNumber;
+  if (!tn) {
+    ElMessage.warning('该订单暂无物流信息');
+    return;
+  }
+  // 直接请求，不再使用缓存
+  const shippingRes = await OrderApi.getShippingOrderPage({
+    trackingNumber: tn,
+    pageNo: 1,
+    pageSize: 10
+  });
+  if (shippingRes.list && shippingRes.list.length > 0) {
+    shippingData.value = shippingRes.list[0];
+    shippingDrawerVisible.value = true;
+  } else {
+    ElMessage.warning('该订单暂无物流信息');
+  }
+};
+
 </script>
 
 <style lang="scss" scoped>
+:deep(.el-drawer__body) {
+  padding-top: 0px !important; /* 你想要的间距 */
+}
 .mobile-barcode-reader {
   background: #f5f7fa;
   min-height: 100vh;
@@ -666,7 +768,7 @@ function formatDate(ts?: number) {
         .avatar {
           width: 48px;
           height: 48px;
-          border-radius: 50%;
+          border-radius: 8px; // 或 0，8px更美观
           object-fit: cover;
         }
       }
@@ -716,7 +818,17 @@ function formatDate(ts?: number) {
         width: 100%;
         margin-top: 12px;
         .picking-progress-item {
-          margin-bottom: 6px;
+          position: relative;
+          margin-bottom: 12px;
+
+          .sorting-sequence-label {
+            position: absolute;
+            left: 0;
+            top: -18px;
+            font-size: 13px;
+            color: #bbb;
+            font-weight: 500;
+          }
           .progress-bar-wrap {
             position: relative;
             .picking-progress-bar {
@@ -806,6 +918,451 @@ function formatDate(ts?: number) {
       }
     }
   }
+}
+
+.picking-progress-item {
+  position: relative;
+  margin-bottom: 24px;
+
+  .sorting-sequence-label {
+    position: absolute;
+    left: 0;
+    top: -18px;
+    font-size: 13px;
+    color: #bbb;
+    font-weight: 500;
+  }
+  .progress-status-text {
+    position: absolute;
+    right: 0;
+    top: -18px;
+    font-size: 13px;
+    color: #bbb;
+    font-weight: 500;
+  }
+}
+
+.no-tracking-tip {
+  margin-top: 12px;
+  color: #e6a23c;
+  font-size: 14px;
+  text-align: left;
+  font-weight: 500;
+}
+
+.order-dialog-list {
+  max-height: 70vh;
+  overflow-y: auto;
+  padding: 8px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.order-dialog-card {
+  background: #232323;
+  border-radius: 14px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+  padding: 16px 18px 12px 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  transition: box-shadow 0.2s;
+  position: relative;
+}
+.order-dialog-card:hover {
+  box-shadow: 0 4px 24px rgba(0,0,0,0.16);
+}
+// 弹窗标题样式
+.order-dialog-title-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 4px 0 2px 0;
+}
+.order-dialog-title-main {
+  font-size: 22px;
+  font-weight: bold;
+  color: #232323;
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+}
+.order-dialog-title-strong {
+  color: #232323;
+  font-size: 22px;
+  font-weight: 700;
+}
+.order-dialog-title-count {
+  color: #409EFF;
+  font-size: 16px;
+  font-weight: 500;
+  margin-left: 8px;
+}
+// 优化拣货标签样式
+.order-dialog-tag-wrap {
+  position: absolute;
+  right: 18px;
+  top: 14px;
+  z-index: 2;
+  .el-tag {
+    font-size: 14px;
+    padding: 0 12px;
+    border: none;
+    font-family: 'Microsoft YaHei', '微软雅黑', Arial, sans-serif;
+  }
+  .el-tag--success {
+    background: #67c23a !important;
+    color: #fff !important;
+  }
+  .el-tag--info {
+    background: #f56c6c !important;
+    color: #fff !important;
+  }
+}
+.order-dialog-top-flex {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  width: 100%;
+}
+.order-dialog-avatar-section {
+  .order-dialog-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 8px;
+    object-fit: cover;
+  }
+}
+.order-dialog-content-section {
+  flex: 1;
+  margin-left: 14px;
+  .order-dialog-top-row {
+    display: flex;
+    justify-content: space-between;
+  }
+  .order-dialog-middle-row {
+    margin: 4px 0;
+  }
+  .order-dialog-bottom-row {
+    .order-dialog-sub-info {
+      color: #aaa;
+      font-size: 13px;
+      margin-right: 12px;
+    }
+  }
+}
+.order-dialog-main-title {
+  color: #fff;
+  font-weight: bold;
+  font-size: 18px;
+}
+.order-dialog-sub-info {
+  color: #aaa;
+  font-size: 15px;
+}
+.order-dialog-time {
+  color: #888;
+  font-size: 13px;
+}
+.order-dialog-sku {
+  color: #fff;
+  font-size: 18px;
+  font-weight: bold;
+  margin-right: 12px;
+}
+.order-dialog-card-multi {
+  /* 只保留多件标识，不加背景和边框 */
+  position: relative;
+  /* 其他高亮样式去掉 */
+}
+
+.order-dialog-card-multi::before {
+  content: '多件';
+  position: absolute;
+  left: -2px;
+  top: -12px;
+  background: #ff9800;
+  color: #fff;
+  font-size: 12px;
+  font-weight: bold;
+  padding: 2px 10px;
+  border-radius: 8px 8px 8px 0;
+  z-index: 3;
+  font-family: 'Microsoft YaHei', '微软雅黑', Arial, sans-serif;
+}
+.order-dialog-card-active {
+  border: 2px solid #409EFF;
+  background: #fff; /* 改为白色 */
+  box-shadow: 0 4px 24px rgba(64, 158, 255, 0.10);
+}
+/* 普通卡片内容字体为浅色 */
+.order-dialog-sku,
+.order-dialog-sub-info,
+.order-dialog-time {
+  color: #fff;
+}
+
+/* 高亮卡片内容字体为深色 */
+.order-dialog-card-active .order-dialog-sku,
+.order-dialog-card-active .order-dialog-sub-info,
+.order-dialog-card-active .order-dialog-time {
+  color: #232323 !important;
+  text-shadow: none;
+}
+:deep(.el-drawer__header) {
+  padding: 0px 16px 0 16px !important;
+  min-height: 0 !important;
+  margin-bottom: 0 !important;
+  height: auto !important;
+  display: block;
+  
+}
+.search-results{
+    padding: 0px 0px 0px;
+    min-height: 100vh;
+}
+.search-results .message-list{
+    padding: 0px 0 0 0;
+}
+.search-results .message-list .message-item {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    background: linear-gradient(135deg, #232323 80%, #2d2d2d 100%);
+    border-radius: 16px;
+    margin: 7px auto 0 auto;
+    padding: 16px 20px;
+    max-width: 400px;
+    box-sizing: border-box;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.18), 0 1.5px 6px rgba(64,158,255,0.08);
+    border: 1.5px solid rgba(255,255,255,0.08);
+    transition: box-shadow 0.2s, border 0.2s;
+}
+.search-results .message-list .message-item:hover {
+  box-shadow: 0 8px 32px rgba(64,158,255,0.18), 0 2px 8px rgba(0,0,0,0.18);
+  border: 1.5px solid #409EFF;
+  z-index: 2;
+}
+.button-group {
+  display: flex;
+  flex-direction: row;      // 横向排列
+  gap: 8px;                 // 按钮间距
+  width: 100%;
+  max-width: 220px;         // 可根据实际调整
+  margin: 12px auto 0 auto; // 居中并与图片有间距
+  .el-button {
+    flex: 1 1 0;
+    width: auto;
+    font-size: 14px;
+    border-radius: 16px;
+    height: 34px;
+    padding: 0 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    min-width: 0;
+  }
+  .order-icon,
+  .shipping-icon {
+    font-size: 16px;
+    margin-right: 4px;
+    display: flex;
+    align-items: center;
+  }
+  .shipping-btn {
+    background: #67c23a !important;
+    color: #fff !important;
+    border: none;
+    font-weight: 500;
+  }
+}
+.el-button+.el-button {
+    margin-left: 0px;
+}
+
+/* 新增头像卡片样式 */
+.avatar-card {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 0 auto 8px auto;
+  background: #232323;
+  border-radius: 16px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.18), 0 1.5px 6px rgba(64,158,255,0.08);
+  border: 1.5px solid rgba(255,255,255,0.08);
+  transition: box-shadow 0.2s, border 0.2s;
+  padding: 8px 0;         // 内边距缩小
+  max-width: 400px;
+  width: 100%;
+}
+.avatar-card:hover {
+  box-shadow: 0 8px 32px rgba(64,158,255,0.18), 0 2px 8px rgba(0,0,0,0.18);
+  border: 1.5px solid #409EFF;
+}
+.avatar-large {
+  width: 100%;            // 占满卡片
+  height: auto;           // 高度自适应
+  border-radius: 12px;
+  object-fit: contain;    // 保证完整显示
+  display: block;
+}
+//中包字体
+.search-results .message-list .message-item .main-title {
+    color: #fff;
+    font-weight: bold;
+    font-size: 25px;
+}
+//定制sku字体
+.search-results .message-list .message-item .content-section .bottom-row .sub-info[data-v-a0067421] {
+    color: #aaa;
+    font-size: 15px;
+    margin-right: 12px;
+}
+//日期字体
+.search-results .message-list .message-item .time[data-v-a0067421] {
+    color: #888;
+    font-size: 18px;
+}
+.search-results .message-list .message-item .time {
+  color: #888;
+  font-size: 18px;
+  margin-left: 12px;
+  white-space: nowrap;
+}
+.drawer-title-card {
+  background: #232323;
+  border-radius: 16px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+  padding: 14px 20px 8px 20px;
+  margin: 0;
+  width: 100vw;
+  position: relative;
+  left: 50%;
+  transform: translateX(-50%);
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  z-index: 10;
+}
+
+.drawer-title-row {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  justify-content: space-between;
+}
+
+.drawer-title-main-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex: 1;
+}
+
+.drawer-title-tracking-row {
+  margin-top: 2px;
+  font-size: 13px; // 缩小副标题字号
+  color: #409EFF;
+  font-weight: 500;
+  word-break: break-all;
+  width: 100%;
+  .tracking-number {
+    font-family: monospace;
+    color: #409EFF;
+    font-weight: bold;
+    margin-left: 4px;
+    font-size: 13px;
+  }
+}
+
+/* 复用ShippingDetailsDrawer卡片样式 */
+.message-item {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  background: #232323;
+  border-radius: 16px;
+  margin: 24px auto 0 auto;
+  padding: 16px 20px;
+  max-width: 400px;
+  box-sizing: border-box;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+  border: 1.5px solid rgba(255,255,255,0.08);
+  transition: box-shadow 0.2s, border 0.2s;
+}
+.message-item:hover {
+  box-shadow: 0 4px 24px rgba(64,158,255,0.10);
+  border: 1.5px solid #409EFF;
+  z-index: 2;
+}
+.content-section {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-bottom: 8px;
+}
+.top-row {
+  display: flex;
+  align-items: center;
+  .main-title {
+    color: #fff;
+    font-weight: bold;
+    font-size: 18px;
+  }
+}
+.bottom-row {
+  margin-bottom: 4px;
+  .main-title {
+    color: #409EFF;
+    font-weight: bold;
+    font-size: 18px;
+  }
+  .sub-info {
+    color: #aaa;
+    font-size: 15px;
+    margin-right: 12px;
+  }
+}
+.custom-text-label {
+  color: #aaa;
+  font-weight: 500;
+  margin-left: 0px;
+  margin-right: 2px;
+  font-size: 15px;
+}
+.highlight-value {
+  color: #fff;
+  font-weight: bold;
+  margin-left: 8px;
+  font-size: 17px;
+  letter-spacing: 1px;
+}
+.highlight-strong {
+  color: #ff9800;
+  font-weight: 900;
+  font-size: 20px;
+  text-shadow: 0 1px 4px rgba(255,152,0,0.12);
+}
+.avatar-card {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 0 auto 8px auto;
+  background: #232323;
+  border-radius: 16px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+  border: 1.5px solid rgba(255,255,255,0.08);
+  padding: 8px 0;
+  max-width: 400px;
+  width: 100%;
+}
+.avatar-large {
+  width: 100%;
+  height: auto;
+  border-radius: 12px;
+  object-fit: contain;
+  display: block;
 }
 </style>
 
