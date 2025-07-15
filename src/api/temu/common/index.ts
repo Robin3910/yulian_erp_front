@@ -19,6 +19,33 @@ export const TemuCommonApi = {
 
     return  data;
   },
+  // 分页查询店铺列表
+  getShopPage: async (params: {
+    pageNum: number;
+    pageSize: number;
+    shopName?: string;
+    platform?: string;
+  }) => {
+    return await request.get({ 
+      url: `/temu/common/temu-open-api/shopapi/page`,
+      params 
+    })
+  },
+  // 新增店铺
+  addShop: async (data: {
+    shopName: string;
+    shopId: string;
+    token: string;
+    owner: string;
+    platform: string;
+    appKey: string;
+    appSecret: string;
+  }) => {
+    return await request.post({ 
+      url: `/temu/common/temu-open-api/shopapi`,
+      data 
+    })
+  },
   //获取角色标识符关联的用户
   getUserListByRoleKey: async (roleCode: string) => {
     return await request.get({
