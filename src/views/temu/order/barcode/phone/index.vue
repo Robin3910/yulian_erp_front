@@ -214,7 +214,7 @@ import BarcodeCameraView from './components/BarcodeCameraView.vue';
 import { searchByBarcode } from '@/api/temu/image-search';
 import { OrderApi } from '@/api/temu/order';
 import type { OrderResult, ShippingOrder } from '@/api/temu/order/types';
-import ShippingDetailsDrawer from '../../image-search/phone/components/ShippingDetailsDrawer.vue';
+import ShippingDetailsDrawer from './components/ShippingDetailsDrawer.vue';
 import OrderListDrawer from './components/OrderListDrawer.vue';
 
 const defaultAvatar = 'https://img.yzcdn.cn/vant/cat.jpeg';
