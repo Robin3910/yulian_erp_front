@@ -22,7 +22,7 @@ export interface OrderResult {
   dailySequence?: number
   shippingTime?: number
   isCompleteProducerTask?: number
-  sortingSequence?: number
+  sortingSequence?: String
   bookingTime?: number
   goodsSnNo?: String
 }

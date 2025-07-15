@@ -88,9 +88,11 @@
         >
           <!-- 内容卡片 -->
           <div class="content-section">
-            <div class="top-row">
-              <span class="main-title">中包：{{ order.sortingSequence || '--' }}</span>
-            </div>
+            <div class="top-row" v-if="order.sortingSequence && order.sortingSequence !== '0'">
+                <span class="main-title">
+                  中包：{{ order.sortingSequence }}
+                </span>
+              </div>
             <div class="bottom-row">
               <span class="main-title" style="color: #409EFF;">{{ order.customSku }}</span>
             </div>
@@ -98,14 +100,38 @@
               <span class="sub-info">
                 官网 <span :class="['highlight-value', order.originalQuantity > 1 ? 'highlight-strong' : '']">{{ order.originalQuantity }}</span>
                 &nbsp;&nbsp;&nbsp;制作 <span class="highlight-value">{{ order.quantity }}</span>
-                <span style="margin-left: 18px;">
-                  属性 <span class="highlight-value">{{ order.productProperties }}</span>
-                </span>
+                <el-tooltip
+                  :content="order.productProperties"
+                  placement="bottom"
+                  effect="dark"
+                  trigger="click"
+                >
+                  <span
+                    class="product-properties-ellipsis"
+                    :title="order.productProperties"
+                    style="cursor: pointer; margin-left: 18px;"
+                  >
+                    属性 <span class="highlight-value">{{ truncateProductProperties(order.productProperties) }}</span>
+                  </span>
+                </el-tooltip>
               </span>
             </div>
             <div class="bottom-row" v-if="order.customTextList && !(order.customTextList.length === 1 && order.customTextList === ',')">
               <span class="custom-text-label">定制文字</span>
-              <span class="highlight-value">{{ order.customTextList }}</span>
+              <el-tooltip
+                :content="order.customTextList"
+                placement="bottom"
+                effect="dark"
+                trigger="click"
+              >
+                <span
+                  class="custom-text-ellipsis highlight-value"
+                  :title="order.customTextList"
+                  style="cursor: pointer;"
+                >
+                  {{ truncateCustomText(order.customTextList) }}
+                </span>
+              </el-tooltip>
             </div>
           </div>
           <!-- 头像卡片 -->
@@ -214,7 +240,7 @@ import BarcodeCameraView from './components/BarcodeCameraView.vue';
 import { searchByBarcode } from '@/api/temu/image-search';
 import { OrderApi } from '@/api/temu/order';
 import type { OrderResult, ShippingOrder } from '@/api/temu/order/types';
-import ShippingDetailsDrawer from './components/ShippingDetailsDrawer.vue';
+import ShippingDetailsDrawer from '@/views/temu/order/image-search/phone/components/ShippingDetailsDrawer.vue';
 import OrderListDrawer from './components/OrderListDrawer.vue';
 
 const defaultAvatar = 'https://img.yzcdn.cn/vant/cat.jpeg';
@@ -535,6 +561,15 @@ const showShippingDetail = async (order: OrderResult) => {
     ElMessage.warning('该订单暂无物流信息');
   }
 };
+
+function truncateProductProperties(val: string) {
+  if (!val) return '';
+  return val.length > 13 ? val.slice(0, 13) + '...' : val;
+}
+function truncateCustomText(val: string) {
+  if (!val) return '';
+  return val.length > 15 ? val.slice(0, 15) + '...' : val;
+}
 
 </script>
 
@@ -1363,6 +1398,22 @@ const showShippingDetail = async (order: OrderResult) => {
   border-radius: 12px;
   object-fit: contain;
   display: block;
+}
+.product-properties-ellipsis {
+  max-width: 170px;
+  display: inline-block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: bottom;
+}
+.custom-text-ellipsis {
+  max-width: 160px;
+  display: inline-block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: bottom;
 }
 </style>
 

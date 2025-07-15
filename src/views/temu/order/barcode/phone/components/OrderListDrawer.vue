@@ -53,7 +53,20 @@
               <span class="order-dialog-sub-info">官网 {{ order.originalQuantity }}&nbsp;&nbsp;&nbsp;制作 {{ order.quantity }}</span>
             </div>
             <div class="order-dialog-bottom-row">
-              <span class="order-dialog-sub-info">属性 {{ order.productProperties }}</span>
+              <el-tooltip
+                :content="order.productProperties"
+                placement="bottom"
+                effect="dark"
+                trigger="click"
+              >
+                <span
+                  class="product-properties-ellipsis order-dialog-sub-info"
+                  :title="order.productProperties"
+                  style="cursor: pointer;"
+                >
+                  属性 {{ truncateProductProperties(order.productProperties) }}
+                </span>
+              </el-tooltip>
             </div>
           </div>
         </div>
@@ -104,6 +117,10 @@ const totalQuantity = computed(() => {
 function truncateShopName(name: string) {
   if (!name) return '';
   return name.length > 15 ? name.slice(0, 15) + '...' : name;
+}
+function truncateProductProperties(val: string) {
+  if (!val) return '';
+  return val.length > 13 ? val.slice(0, 13) + '...' : val;
 }
 </script>
 
@@ -402,5 +419,13 @@ function truncateShopName(name: string) {
 }
 .close-btn:hover {
   color: #f56c6c;
+}
+.product-properties-ellipsis {
+  max-width: 140px;
+  display: inline-block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: bottom;
 }
 </style> 
