@@ -8,7 +8,8 @@
             <el-col :span="24" :lg="6">
               <el-form-item label="店铺" prop="shopId" class="w-full">
                 <el-select filterable v-model="queryParams.shopId" placeholder="请选择店铺" clearable multiple>
-                  <el-option v-for="(item, index) in shopList" :key="index" :label="item.shopName"
+                  <el-option
+v-for="(item, index) in shopList" :key="index" :label="item.shopName"
                     :value="item.shopId" />
                 </el-select>
               </el-form-item>
@@ -31,7 +32,8 @@
             <el-col :span="24" :lg="6">
               <el-form-item label="订单状态" prop="orderStatus" class="w-full">
                 <el-select v-model="queryParams.orderStatus" placeholder="请选择订单状态" clearable>
-                  <el-option v-for="dict in getStrDictOptions(DICT_TYPE.TEMU_ORDER_STATUS)" :key="dict.value"
+                  <el-option
+v-for="dict in getStrDictOptions(DICT_TYPE.TEMU_ORDER_STATUS)" :key="dict.value"
                     :label="dict.label" :value="dict.value" />
                 </el-select>
               </el-form-item>
@@ -39,7 +41,8 @@
             <el-col :span="24" :lg="6">
               <el-form-item label="有/无类目" prop="hasCategory" class="w-full">
                 <el-select filterable v-model="queryParams.hasCategory" placeholder="请选择" clearable>
-                  <el-option v-for="(item, index) in [{ label: '有', value: 1 }, { label: '无', value: 0 }]" :key="index"
+                  <el-option
+v-for="(item, index) in [{ label: '有', value: 1 }, { label: '无', value: 0 }]" :key="index"
                     :label="item.label" :value="item.value" />
                 </el-select>
               </el-form-item>
@@ -47,14 +50,16 @@
             <el-col :span="24" :lg="6">
               <el-form-item label="类目" prop="categoryId" class="w-full">
                 <el-select filterable v-model="queryParams.categoryId" placeholder="请选择类目" clearable multiple>
-                  <el-option v-for="(item, index) in categoryList" :key="index" :label="item.categoryName"
+                  <el-option
+v-for="(item, index) in categoryList" :key="index" :label="item.categoryName"
                     :value="item.id" />
                 </el-select>
               </el-form-item>
             </el-col>
             <el-col :span="24" :lg="6">
               <el-form-item label="创建时间" prop="bookingTime" class="w-full">
-                <el-date-picker v-model="queryParams.bookingTime" format="YYYY-MM-DD HH:mm"
+                <el-date-picker
+v-model="queryParams.bookingTime" format="YYYY-MM-DD HH:mm"
                   value-format="YYYY-MM-DD HH:mm:00" type="datetimerange" start-placeholder="开始日期"
                   end-placeholder="结束日期" :default-time="[new Date('1 00:00:00'), new Date('1 23:59:59')]" />
               </el-form-item>
@@ -67,7 +72,8 @@
             <el-col :span="24" :lg="6">
               <el-form-item label="是否返单" prop="isReturnOrder" class="w-full">
                 <el-select v-model="queryParams.isReturnOrder" placeholder="请选择是否返单" clearable>
-                  <el-option v-for="item in [
+                  <el-option
+v-for="item in [
                     { label: '是', value: 1 },
                     { label: '否', value: 0 }
                   ]" :key="item.value" :label="item.label" :value="item.value" />
@@ -147,7 +153,8 @@
     </div>
     <!-- 列表 -->
     <ContentWrap class="flex-1 overflow-hidden sticky-header">
-      <el-table v-loading="loading" :data="list" :stripe="true" :show-overflow-tooltip="true"
+      <el-table
+v-loading="loading" :data="list" :stripe="true" :show-overflow-tooltip="true"
         @selection-change="handleSelectionChange" row-key="id" ref="tableRef" height="calc(100vh - 280px)" fixed-header>
         <!--选择-->
         <el-table-column type="selection" width="55" align="center" reserve-selection fixed="left" />
@@ -157,6 +164,15 @@
             <div class="flex flex-col items-center">
               <div class="font-bold mb-2 flex items-center">
                 {{ row.orderNo }}
+               <!-- 返单标签 -->
+                <el-tag
+                  v-if="row.tag === '返单'"
+                  type="danger"
+                  size="small"
+                  class="ml-2"
+                >
+                  {{ row.tag }}
+                </el-tag>
               </div>
               <el-tag :type="getOrderStatusType(row.orderStatus)" class="status-tag" size="large">
                 {{ getOrderStatusText(row.orderStatus) }}
@@ -203,7 +219,8 @@
         <el-table-column label="产品图片" align="center" prop="productImgUrl" width="115">
           <template #default="{ row }">
             <div class="text-left">
-              <el-image class="w-80px h-80px" :hide-on-click-modal="true" :preview-teleported="true"
+              <el-image
+class="w-80px h-80px" :hide-on-click-modal="true" :preview-teleported="true"
                 :src="row.productImgUrl" :preview-src-list="[row.productImgUrl]" />
             </div>
           </template>
@@ -230,7 +247,8 @@
           <template #default="{ row }">
             <div class="text-center" v-if="row.orderStatus === 0">
               <el-select class="!w-[150px]" filterable v-model="row.categoryId" placeholder="请选择类目" clearable>
-                <el-option v-for="(item, index) in categoryList" :key="index" :label="item.categoryName"
+                <el-option
+v-for="(item, index) in categoryList" :key="index" :label="item.categoryName"
                   :value="item.id.toString()" />
               </el-select>
               <el-popconfirm title="是否更新类目?" placement="top-start" @confirm="handleUpdateCategory(row)">
@@ -255,9 +273,11 @@
           <template #default="{ row }">
             <div class="custom-image-container">
               <div class="flex flex-wrap justify-center items-center" v-if="row.customImageUrls">
-                <div v-for="(item, index) in row.customImageUrls.split(',')" :key="index"
+                <div
+v-for="(item, index) in row.customImageUrls.split(',')" :key="index"
                   class="image-item no-border flex items-center justify-center">
-                  <el-image class="w-60px h-60px object-contain" :hide-on-click-modal="true" :preview-teleported="true"
+                  <el-image
+class="w-60px h-60px object-contain" :hide-on-click-modal="true" :preview-teleported="true"
                     :src="item+ '?x-oss-process=image/resize,w_200'" :preview-src-list="[item]" />
                 </div>
               </div>
@@ -273,7 +293,8 @@
         <el-table-column label="合成预览" align="center" prop="effectiveImgUrl" min-width="120">
           <template #default="{ row }">
             <div class="text-left">
-              <el-image class="w-60px h-60px" v-if="row.effectiveImgUrl" :hide-on-click-modal="true"
+              <el-image
+class="w-60px h-60px" v-if="row.effectiveImgUrl" :hide-on-click-modal="true"
                 :preview-teleported="true" :preview-src-list="[row.effectiveImgUrl]" :src="row.effectiveImgUrl+ '?x-oss-process=image/resize,w_200'" />
             </div>
           </template>
@@ -345,14 +366,16 @@
           <template #default="{ row }">
             <div class="action-buttons">
               <!-- 待下单状态 -->
-              <el-button v-if="row.orderStatus === 0" size="small" type="primary" plain class="action-button"
+              <el-button
+v-if="row.orderStatus === 0" size="small" type="primary" plain class="action-button"
                 @click="handleSingleOrder(row)">
                 下单
               </el-button>
 
               <!-- 已下单待送产状态 -->
               <template v-if="row.orderStatus === 1">
-                <el-popconfirm title="确认是否修改当前订单状态为已送产待生产?" placement="left" popper-class="custom-popconfirm" @confirm="
+                <el-popconfirm
+title="确认是否修改当前订单状态为已送产待生产?" placement="left" popper-class="custom-popconfirm" @confirm="
                   handleUpdateRowStatus({
                     id: row.id,
                     orderStatus: 2
@@ -364,7 +387,8 @@
                     </el-button>
                   </template>
                 </el-popconfirm>
-                <el-popconfirm title="确认取消订单吗？回退到待下单状态" placement="left" popper-class="custom-popconfirm"
+                <el-popconfirm
+title="确认取消订单吗？回退到待下单状态" placement="left" popper-class="custom-popconfirm"
                   @confirm="handleCancelOrder(row)">
                   <template #reference>
                     <el-button size="small" type="info" plain class="action-button mt-2">取消订单</el-button>
@@ -374,7 +398,8 @@
 
               <!-- 已送产待生产状态 -->
               <template v-if="row.orderStatus === 2">
-                <el-popconfirm title="确认是否修改当前订单状态为已生产待发货?" placement="left" popper-class="custom-popconfirm" @confirm="
+                <el-popconfirm
+title="确认是否修改当前订单状态为已生产待发货?" placement="left" popper-class="custom-popconfirm" @confirm="
                   handleUpdateRowStatus({
                     id: row.id,
                     orderStatus: 3
@@ -386,7 +411,8 @@
                     </el-button>
                   </template>
                 </el-popconfirm>
-                <el-popconfirm title="确认取消订单吗？回退到待下单状态" placement="left" popper-class="custom-popconfirm"
+                <el-popconfirm
+title="确认取消订单吗？回退到待下单状态" placement="left" popper-class="custom-popconfirm"
                   @confirm="handleCancelOrder(row)">
                   <template #reference>
                     <el-button size="small" type="info" plain class="action-button mt-2">取消订单</el-button>
@@ -396,7 +422,8 @@
 
               <!-- 已生产待发货状态 -->
               <template v-if="row.orderStatus === 3">
-                <el-popconfirm title="确认是否修改当前订单状态为已发货?" placement="left" popper-class="custom-popconfirm" @confirm="
+                <el-popconfirm
+title="确认是否修改当前订单状态为已发货?" placement="left" popper-class="custom-popconfirm" @confirm="
                   handleUpdateRowStatus({
                     id: row.id,
                     orderStatus: 4
@@ -407,7 +434,8 @@
                     </el-button>
                   </template>
                 </el-popconfirm>
-                <el-popconfirm title="确认取消订单吗？回退到待下单状态" placement="left" popper-class="custom-popconfirm"
+                <el-popconfirm
+title="确认取消订单吗？回退到待下单状态" placement="left" popper-class="custom-popconfirm"
                   @confirm="handleCancelOrder(row)">
                   <template #reference>
                     <el-button size="small" type="info" plain class="action-button mt-2">取消订单</el-button>
@@ -420,14 +448,16 @@
         </el-table-column>
       </el-table>
       <!-- 分页 -->
-      <Pagination :total="total" v-model:page="queryParams.pageNo" v-model:limit="queryParams.pageSize"
+      <Pagination
+:total="total" v-model:page="queryParams.pageNo" v-model:limit="queryParams.pageSize"
         @pagination="getList" />
     </ContentWrap>
   </div>
   <!--状态修改确认弹窗-->
   <OrderStatusPopup ref="orderStatusPopup" @confirm="handleUpdateStatus" />
   <!--批量下单组件-->
-  <BatchOrderPopup ref="batchOrderPopup" @visible-event="
+  <BatchOrderPopup
+ref="batchOrderPopup" @visible-event="
     (v: boolean) => {
       batchOrderPopup = v
     }
@@ -435,9 +465,11 @@
   <!--修改备注-->
   <OrderRemarkPopup @confirm="handlerRemarkConfirm" ref="orderRemarkPopup" />
   <!-- 定制图片上传弹窗 -->
-  <el-dialog v-model="customImageUploaderVisible" title="定制图片上传" width="900px" top="5vh" center destroy-on-close
+  <el-dialog
+v-model="customImageUploaderVisible" title="定制图片上传" width="900px" top="5vh" center destroy-on-close
     :close-on-click-modal="false" :fullscreen="false">
-    <CustomImageUploader :orderId="selectedOrder?.id" :customImageUrls="selectedOrder?.customImageUrls || ''"
+    <CustomImageUploader
+:orderId="selectedOrder?.id" :customImageUrls="selectedOrder?.customImageUrls || ''"
       @saved="onCustomImageSaved" />
   </el-dialog>
   <!-- 已确认SKU列表弹窗 -->
