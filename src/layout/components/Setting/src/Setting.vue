@@ -247,7 +247,7 @@ const goToImgcodeScan = () => {
   </div>
 
   <div
-    class="fixed right-0 top-[calc(45%+120px)] h-40px w-40px cursor-pointer bg-[#67c23a] text-center leading-40px "
+    class="fixed right-0 top-[calc(45%+120px)] h-40px w-40px cursor-pointer bg-[#f5d742] text-center leading-40px "
     @click="goToImgcodeScan"
   >
     <Icon color="#fff" icon="ep:picture" />
