@@ -100,7 +100,7 @@
     </div>
   </el-drawer>
   <template v-if="String(shippingData.shippingStatus) === '0'">
-    <div style="position: fixed; left: 0; right: 0; bottom: 0; z-index: 9999; background: #fff; padding: 16px; box-shadow: 0 -2px 8px rgba(0,0,0,0.06);">
+    <div class="footer-bar">
       <el-button type="success" size="large" style="width: 100%;" @click="handleShip" :loading="shipLoading">
         <el-icon><Van /></el-icon>
         发货
@@ -108,7 +108,7 @@
     </div>
   </template>
   <template v-else-if="String(shippingData.shippingStatus) === '1'">
-    <div style="position: fixed; left: 0; right: 0; bottom: 0; z-index: 9999; background: #fff; padding: 16px; box-shadow: 0 -2px 8px rgba(0,0,0,0.06); display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 16px;">
+    <div class="footer-bar">
       <el-tag
         effect="plain"
         size="large"
@@ -780,7 +780,7 @@ defineExpose({
   background: #232323;
   border-radius: 0px;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
-  padding: 5px 20px 8px 20px;
+  padding: 0px 20px 8px 20px;
   margin: 0;
   width: 100vw;
   position: relative;
@@ -827,6 +827,21 @@ defineExpose({
   text-overflow: ellipsis;
   white-space: nowrap;
   vertical-align: bottom;
+}
+.footer-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 9999;
+  background: #fff;
+  padding: 3px 8px; // 你想要的行高
+  box-shadow: 0 -2px 8px rgba(0,0,0,0.06);
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
 }
 </style> 
 
