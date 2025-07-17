@@ -443,6 +443,9 @@ const handleViewShipping = async (row: any) => {
 </script>
 
 <style lang="scss" scoped>
+:deep(.el-drawer__body) {
+  padding-top: 0px !important; /* 你想要的间距 */
+}
 .mobile-image-search {
   min-height: 100vh;
   background-color: #f5f7fa;
@@ -668,5 +671,12 @@ const handleViewShipping = async (row: any) => {
     margin-top: 12px;
     text-align: right;
   }
+}
+:deep(.el-drawer__header) {
+  padding: 0px 16px 0 16px !important;
+  min-height: 0 !important;
+  margin-bottom: 0 !important;
+  height: auto !important;
+  display: block;
 }
 </style> 
