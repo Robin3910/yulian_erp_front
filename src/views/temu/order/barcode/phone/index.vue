@@ -261,7 +261,21 @@ const activeOrderIndex = ref(-1); // 默认无高亮
 const currentClickedOrder = ref<OrderResult | null>(null); // 新增：当前点击的订单
 const shippingCache = ref<Record<string, ShippingOrder | null>>({});
 
+const route = useRoute()
 
+onMounted(() => {
+  if (route.query.autoStart === 'true') {
+    handleStartCamera()
+  }
+})
+
+// 保持原有的全局事件监听（如果需要）
+onMounted(() => {
+  window.addEventListener('handleStartCamera', handleStartCamera)
+})
+onUnmounted(() => {
+  window.removeEventListener('handleStartCamera', handleStartCamera)
+})
 // 按物流序号排序的结果
 const sortedResults = computed(() => {
   return [...searchResults.value].sort((a, b) => {
