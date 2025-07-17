@@ -2091,7 +2091,7 @@ const handlerPrintPickList = () => {
               <div><strong>创建时间：</strong>${formatDateSafe(item.createTime, 'YYYY-MM-DD HH:mm:ss')}</div>
             </td>
             <td style="vertical-align: top; text-align: left;">
-              <div style="margin-bottom: 8px; font-weight: bold; font-size: 14px;">${item.customSku || '--'}</div>
+              <div style="margin-bottom: 4px; font-weight: bold; font-size: 14px;">${item.customSku || '--'}</div>
               <div style="display: flex; align-items: center; gap: 8px;">
                 <div style="white-space: pre-wrap; font-size: 12px;">${item.productProperties || '--'}</div>
                 ${item.productImgUrl ? `<img src="${item.productImgUrl}" style="width: 32px; height: 32px; object-fit: contain; border: 1px solid #ddd; margin-left: 4px;">` : ''}
@@ -2664,27 +2664,13 @@ const handlerPrintBatchAll = async () => {
         // 3. 处理每个订单编号
         for (const [orderNo, sameOrderItems] of ordersByOrderNo) {
           let pageIndex = 0; // 每个订单编号下的面单页索引
+          
           for (let i = 0; i < sameOrderItems.length; i++) {
             const orderItem = sameOrderItems[i];
-            if (orderItem.complianceGoodsMergedUrl) {
-              const url = orderItem.complianceGoodsMergedUrl.startsWith('@')
-                ? orderItem.complianceGoodsMergedUrl.substring(1)
-                : orderItem.complianceGoodsMergedUrl;
-              let response = await fetch(url);
-              if (response.ok) {
-                let pdfBytes = await response.arrayBuffer();
-                let pdf = await PDFDocument.load(pdfBytes);
-                let copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
-                const copies = orderItem.originalQuantity || 1;
-                for (let j = 0; j < copies; j++) {
-                  copiedPages.forEach(page => mergedPdf.addPage(page));
-                }
-              }
-            }
-            // 判断是否需要打印面单
-            const isLast = i === sameOrderItems.length - 1;
-            const nextSku = !isLast ? sameOrderItems[i + 1].sku : null;
-            if (isLast || orderItem.sku !== nextSku) {
+            const isFirst = i === 0;
+            const nextSku = !isFirst ? sameOrderItems[i - 1].sku : null;
+            // 第一个 或 SKU变化时打印面单            
+            if (isFirst || orderItem.sku !== nextSku) {
               if (orderItem.expressImageUrl) {
                 const printUrl = orderItem.expressImageUrl.startsWith('@')
                   ? orderItem.expressImageUrl.substring(1)
@@ -2701,8 +2687,26 @@ const handlerPrintBatchAll = async () => {
                 }
               }
             }
+
+            if (orderItem.complianceGoodsMergedUrl) {
+              const url = orderItem.complianceGoodsMergedUrl.startsWith('@')
+                ? orderItem.complianceGoodsMergedUrl.substring(1)
+                : orderItem.complianceGoodsMergedUrl;
+              let response = await fetch(url);
+              if (response.ok) {
+                let pdfBytes = await response.arrayBuffer();
+                let pdf = await PDFDocument.load(pdfBytes);
+                let copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
+                const copies = orderItem.originalQuantity || 1;
+                for (let j = 0; j < copies; j++) {
+                  copiedPages.forEach(page => mergedPdf.addPage(page));
+                }
+              }
+            }
+            
           }
         }
+
 
         // 4. 添加空白页作为分隔（如果不是最后一个物流单号）
         if ([...ordersByTracking.keys()].indexOf(trackingNumber) < ordersByTracking.size - 1) {
@@ -2712,6 +2716,8 @@ const handlerPrintBatchAll = async () => {
         successCount++
       } catch (error) {
         console.error(`处理物流单号 ${trackingNumber} 失败:`, error)
+        console.log(error);
+        
         failCount++
       }
     }
@@ -2977,8 +2983,8 @@ const handlerPrintBatchLabels = async () => {
           ordersByOrderNo.get(order.orderNo)?.push(order)
         })
 
-        // 4. 处理每个订单编号的面单
-        for (const [orderNo, sameOrderItems] of ordersByOrderNo) {
+         // 4. 处理每个订单编号的面单
+         for (const [orderNo, sameOrderItems] of ordersByOrderNo) {
           // 打印该订单编号的面单（只打印一次）
           const firstOrder = sameOrderItems[0]
           if (firstOrder.expressImageUrl) {
@@ -2998,6 +3004,7 @@ const handlerPrintBatchLabels = async () => {
             }
           }
         }
+
 
         // 5. 添加空白页作为分隔（如果不是最后一个物流单号）
         if ([...ordersByTracking.keys()].indexOf(trackingNumber) < ordersByTracking.size - 1) {

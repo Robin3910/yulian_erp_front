@@ -2074,29 +2074,16 @@ const handlerPrintBatchAll = async () => {
         })
 
         // 3. 处理每个订单编号
-         for (const [orderNo, sameOrderItems] of ordersByOrderNo) {
+           // 3. 处理每个订单编号
+        for (const [orderNo, sameOrderItems] of ordersByOrderNo) {
           let pageIndex = 0; // 每个订单编号下的面单页索引
+          
           for (let i = 0; i < sameOrderItems.length; i++) {
             const orderItem = sameOrderItems[i];
-            if (orderItem.complianceGoodsMergedUrl) {
-              const url = orderItem.complianceGoodsMergedUrl.startsWith('@')
-                ? orderItem.complianceGoodsMergedUrl.substring(1)
-                : orderItem.complianceGoodsMergedUrl;
-              let response = await fetch(url);
-              if (response.ok) {
-                let pdfBytes = await response.arrayBuffer();
-                let pdf = await PDFDocument.load(pdfBytes);
-                let copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
-                const copies = orderItem.originalQuantity || 1;
-                for (let j = 0; j < copies; j++) {
-                  copiedPages.forEach(page => mergedPdf.addPage(page));
-                }
-              }
-            }
-            // 判断是否需要打印面单
-            const isLast = i === sameOrderItems.length - 1;
-            const nextSku = !isLast ? sameOrderItems[i + 1].sku : null;
-            if (isLast || orderItem.sku !== nextSku) {
+            const isFirst = i === 0;
+            const nextSku = !isFirst ? sameOrderItems[i - 1].sku : null;
+            // 第一个 或 SKU变化时打印面单            
+            if (isFirst || orderItem.sku !== nextSku) {
               if (orderItem.expressImageUrl) {
                 const printUrl = orderItem.expressImageUrl.startsWith('@')
                   ? orderItem.expressImageUrl.substring(1)
@@ -2113,6 +2100,23 @@ const handlerPrintBatchAll = async () => {
                 }
               }
             }
+
+            if (orderItem.complianceGoodsMergedUrl) {
+              const url = orderItem.complianceGoodsMergedUrl.startsWith('@')
+                ? orderItem.complianceGoodsMergedUrl.substring(1)
+                : orderItem.complianceGoodsMergedUrl;
+              let response = await fetch(url);
+              if (response.ok) {
+                let pdfBytes = await response.arrayBuffer();
+                let pdf = await PDFDocument.load(pdfBytes);
+                let copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
+                const copies = orderItem.originalQuantity || 1;
+                for (let j = 0; j < copies; j++) {
+                  copiedPages.forEach(page => mergedPdf.addPage(page));
+                }
+              }
+            }
+            
           }
         }
 
