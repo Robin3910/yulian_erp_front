@@ -679,4 +679,7 @@ const handleViewShipping = async (row: any) => {
   height: auto !important;
   display: block;
 }
+.el-button+.el-button {
+    margin-left: 0px;
+}
 </style> 
