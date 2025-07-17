@@ -208,7 +208,7 @@ const goToBarcodeScan = () => {
   // 如果当前已经在条码识别页面，则直接触发相机启动
   if (currentRoute.path === targetPath) {
     // 触发全局事件来启动相机
-    window.dispatchEvent(new CustomEvent('startBarcodeCamera'))
+    window.dispatchEvent(new CustomEvent('handleStartCamera'))
   } else {
     // 如果不在条码识别页面，则跳转过去
     router.push(`${targetPath}?autoStart=true`)
@@ -228,6 +228,13 @@ const goToBarcodeScan = () => {
   <!-- 条码识别按钮 -->
   <div
     class="fixed right-0 top-[calc(45%+60px)] h-40px w-40px cursor-pointer bg-[#67c23a] text-center leading-40px"
+    @click="goToBarcodeScan"
+  >
+    <Icon color="#fff" icon="ep:camera" />
+  </div>
+
+  <div
+    class="fixed right-0 top-[calc(60%)-20px] h-40px w-40px cursor-pointer bg-[#67c23a] text-center leading-40px"
     @click="goToBarcodeScan"
   >
     <Icon color="#fff" icon="ep:camera" />

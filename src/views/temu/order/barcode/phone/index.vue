@@ -231,7 +231,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { ElMessage } from 'element-plus';
 import { Camera, Picture, Back, SuccessFilled, WarningFilled, CopyDocument, Van, Document } from '@element-plus/icons-vue';
 import Quagga from 'quagga';
@@ -242,6 +242,7 @@ import { OrderApi } from '@/api/temu/order';
 import type { OrderResult, ShippingOrder } from '@/api/temu/order/types';
 import ShippingDetailsDrawer from '@/views/temu/order/image-search/phone/components/ShippingDetailsDrawer.vue';
 import OrderListDrawer from './components/OrderListDrawer.vue';
+import { useRoute } from 'vue-router'
 
 const defaultAvatar = 'https://img.yzcdn.cn/vant/cat.jpeg';
 
@@ -323,6 +324,19 @@ const handleStartCamera = () => {
   resetImage();
   showCamera.value = true;
 };
+
+// 监听全局事件
+const handleGlobalStartCamera = () => {
+  handleStartCamera()
+}
+
+onMounted(() => {
+  window.addEventListener('handleStartCamera', handleGlobalStartCamera)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('handleStartCamera', handleGlobalStartCamera)
+})
 
 // 处理相机拍照结果
 const handleCameraCapture = async (file: File) => {
