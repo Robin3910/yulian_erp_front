@@ -10,8 +10,9 @@
         <el-form :model="filterForm" inline>
           <!-- 店铺 -->
           <el-form-item label="店铺">
-            <el-select filterable v-model="filterForm.shopId" placeholder="请选择店铺" clearable multiple>
-              <el-option v-for="(item, index) in shopList" :key="index" :label="item.shopName" :value="item.shopId" />
+            <el-select filterable v-model="filterForm.shopId" placeholder="请选择店铺" clearable multiple @change="handleShopChange">
+              <el-option :key="'all'" :label="'全部店铺'" :value="'ALL'" />
+              <el-option v-for="item in shopList" :key="item.shopId" :label="item.shopName" :value="item.shopId" />
             </el-select>
           </el-form-item>
           <!-- 时间范围 -->
@@ -85,22 +86,20 @@ const loading = ref(false)
 async function getShopList() {
   const data = await TemuCommonApi.getShopList()
   shopList.value = data.list
-  // 默认选中第一个店铺
-  if (shopList.value.length) {
-    filterForm.value.shopId = [shopList.value[0].shopId]
-  }
+  // 默认全部店铺
+  filterForm.value.shopId = ['ALL']
 }
 
 // 查询订单统计数据
 async function handleSearch() {
-  if (!filterForm.value.shopId.length || !filterForm.value.dateRange.length) {
-    ElMessage.error('请选择店铺和时间范围')
+  if (!filterForm.value.dateRange.length) {
+    ElMessage.error('请选择时间范围')
     return
   }
   loading.value = true
   try {
     const params = {
-      shopIds: filterForm.value.shopId.map(Number), // 保证是 number[]
+      shopIds: filterForm.value.shopId[0] === 'ALL' ? [] : filterForm.value.shopId.map(Number),
       startDate: formatDate(filterForm.value.dateRange[0]),
       endDate: formatDate(filterForm.value.dateRange[1]),
       granularity: chartType.value
@@ -195,11 +194,23 @@ onMounted(async () => {
   // 转为字符串，保证类型兼容 el-date-picker
   filterForm.value.dateRange = [formatDate(lastWeek), formatDate(today)]
   handleSearch()
+  ElMessage.info('默认显示所有店铺的订单统计，如需查看单店铺请在筛选中选择店铺')
 })
 
 watch(chartType, () => {
   handleSearch()
 })
+
+// 处理店铺选择变化
+function handleShopChange(val: any[]) {
+  // 如果选择了“全部店铺”，只保留全部店铺
+  if (val.includes('ALL')) {
+    filterForm.value.shopId = ['ALL']
+  } else if (!val.length) {
+    // 什么都不选，依然视为全部店铺
+    filterForm.value.shopId = []
+  }
+}
 </script>
 
 <style scoped>
