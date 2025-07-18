@@ -231,7 +231,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { ElMessage } from 'element-plus';
 import { Camera, Picture, Back, SuccessFilled, WarningFilled, CopyDocument, Van, Document } from '@element-plus/icons-vue';
 import Quagga from 'quagga';
@@ -242,6 +242,7 @@ import { OrderApi } from '@/api/temu/order';
 import type { OrderResult, ShippingOrder } from '@/api/temu/order/types';
 import ShippingDetailsDrawer from '@/views/temu/order/image-search/phone/components/ShippingDetailsDrawer.vue';
 import OrderListDrawer from './components/OrderListDrawer.vue';
+import { useRoute } from 'vue-router'
 
 const defaultAvatar = 'https://img.yzcdn.cn/vant/cat.jpeg';
 
@@ -260,7 +261,21 @@ const activeOrderIndex = ref(-1); // 默认无高亮
 const currentClickedOrder = ref<OrderResult | null>(null); // 新增：当前点击的订单
 const shippingCache = ref<Record<string, ShippingOrder | null>>({});
 
+const route = useRoute()
 
+onMounted(() => {
+  if (route.query.autoStart === 'true') {
+    handleStartCamera()
+  }
+})
+
+// 保持原有的全局事件监听（如果需要）
+onMounted(() => {
+  window.addEventListener('handleStartCamera', handleStartCamera)
+})
+onUnmounted(() => {
+  window.removeEventListener('handleStartCamera', handleStartCamera)
+})
 // 按物流序号排序的结果
 const sortedResults = computed(() => {
   return [...searchResults.value].sort((a, b) => {
@@ -323,6 +338,19 @@ const handleStartCamera = () => {
   resetImage();
   showCamera.value = true;
 };
+
+// 监听全局事件
+const handleGlobalStartCamera = () => {
+  handleStartCamera()
+}
+
+onMounted(() => {
+  window.addEventListener('handleStartCamera', handleGlobalStartCamera)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('handleStartCamera', handleGlobalStartCamera)
+})
 
 // 处理相机拍照结果
 const handleCameraCapture = async (file: File) => {

@@ -52,5 +52,15 @@ export const TemuCommonApi = {
       url: `/temu/common/role/get-user-by-role-code`,
       params: { roleCode }
     })
+  },
+  // 查询物流发货单列表
+  logisticsQuery: async (params: {
+    pageNo: number;
+    pageSize: number;
+  }) => {
+    return await request.get({ 
+      url: `/temuApi/delivery/page`,
+      params 
+    })
   }
 }
