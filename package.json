@@ -64,7 +64,7 @@
     "mitt": "^3.0.1",
     "nprogress": "^0.2.0",
     "pdf-lib": "^1.17.1",
-    "pdfjs-dist": "^5.2.133",
+    "pdfjs-dist": "^3.11.174",
     "pinia": "^2.1.7",
     "pinia-plugin-persistedstate": "^3.2.1",
     "print-js": "^1.6.0",

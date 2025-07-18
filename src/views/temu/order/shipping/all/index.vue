@@ -464,6 +464,8 @@ import { COLOR_ARRAYS } from '@/utils/color'
 import printJS from 'print-js'
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib'
 import ShippingInfoPopup from '../components/ShippingInfoPopup.vue'
+import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf'
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js'
 // const tableRef = useTemplateRef<InstanceType<typeof ElTable>>('tableRef')
 const shippingInfoPopup = useTemplateRef('shippingInfoPopup')
 
@@ -1908,7 +1910,7 @@ const handlerPrintBatchExpress = async () => {
     const uniqueOrderNos = new Map<string, string>()
     allOrders.forEach(order => {
       if (order.orderNo && order.expressImageUrl && !uniqueOrderNos.has(order.orderNo)) {
-        uniqueOrderNos.set(order.orderNo, order.expressImageUrl)
+        uniqueOrderNos.set(order.orderNo, order.expressImageUrl)        
       }
     })
 
@@ -2664,7 +2666,7 @@ const handlerPrintBatchAll = async () => {
         // 3. 处理每个订单编号
         for (const [orderNo, sameOrderItems] of ordersByOrderNo) {
           let pageIndex = 0; // 每个订单编号下的面单页索引
-          
+          // console.log(sameOrderItems);
           for (let i = 0; i < sameOrderItems.length; i++) {
             const orderItem = sameOrderItems[i];
             const isFirst = i === 0;
@@ -2675,19 +2677,38 @@ const handlerPrintBatchAll = async () => {
                 const printUrl = orderItem.expressImageUrl.startsWith('@')
                   ? orderItem.expressImageUrl.substring(1)
                   : orderItem.expressImageUrl;
-                let response = await fetch(printUrl);
-                if (response.ok) {
-                  let pdfBytes = await response.arrayBuffer();
-                  let pdf = await PDFDocument.load(pdfBytes);
-                  let copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
-                  if (copiedPages[pageIndex]) {
-                    mergedPdf.addPage(copiedPages[pageIndex]);
-                    pageIndex++;
+                // 新增：只打印customSku与PDF中DZ编号匹配的那一页
+                try {
+                  // 1. 用pdfjs-dist查找匹配页
+                  const response = await fetch(printUrl);
+                  if (!response.ok) continue;
+                  const arrayBuffer = await response.arrayBuffer();
+                  // 立即克隆一份
+                  const arrayBufferForPdfjs = arrayBuffer.slice(0);
+                  const pdfjsDoc = await pdfjsLib.getDocument({ data: arrayBufferForPdfjs }).promise;
+                  let matchedPage = -1;
+                  for (let pageNum = 1; pageNum <= pdfjsDoc.numPages; pageNum++) {
+                    const page = await pdfjsDoc.getPage(pageNum);
+                    const content = await page.getTextContent();
+                    const text = content.items.map((item) => item.str).join(' ');
+                    const match = text.match(/DZ(\w+)/);
+                    if (match && match[1] === orderItem.customSku) {
+                      matchedPage = pageNum - 1; // pdf-lib页码从0开始
+                      break;
+                    }
                   }
+                  if (matchedPage !== -1) {
+                    // pdf-lib 用 arrayBufferForPdfLib
+                    const arrayBufferForPdfLib = arrayBuffer.slice(0);
+                    const pdfLibDoc = await PDFDocument.load(arrayBufferForPdfLib);
+                    const copiedPages = await mergedPdf.copyPages(pdfLibDoc, [matchedPage]);
+                    mergedPdf.addPage(copiedPages[0]);
+                  }
+                } catch (e) {
+                  console.error('PDF匹配customSku失败', e);
                 }
               }
             }
-
             if (orderItem.complianceGoodsMergedUrl) {
               const url = orderItem.complianceGoodsMergedUrl.startsWith('@')
                 ? orderItem.complianceGoodsMergedUrl.substring(1)
