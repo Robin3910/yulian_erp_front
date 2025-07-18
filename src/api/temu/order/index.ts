@@ -30,6 +30,7 @@ export interface OrderVO {
   complianceGoodsMergedUrl: string // 合并文件url
   effectiveImgUrl: string // 合成预览图url
   originalQuantity: number // temu官网原始数量
+  isFoundAll: number // 是否备齐
 }
 
 // 订单 API
@@ -104,5 +105,21 @@ export const OrderApi = {
   },
   getOrderSkuPage: async (params: any) => {
     return await request.get({ url: `/temu/order/order-sku-page`, params })
+  },
+  // 切换订单是否备齐状态
+  toggleOrderIsFoundAll: async (row: any, isFoundAll: number) => {
+    // 后端期望接收Long类型的orderId，需要确保传递的是数字格式
+    const numericId = Number(row.id);
+    if (isNaN(numericId)) {
+      throw new Error('订单ID必须是数字');
+    }
+    try {
+      await request.post({ url: `/temu/order/toggle-is-found-all?orderId=${numericId}&isFoundAll=${isFoundAll}` })
+      // 更新当前行数据
+      row.isFoundAll = isFoundAll;
+    } catch (error) {
+      console.error('Failed to toggle isFoundAll:', error);
+      // 可以根据需要显示错误消息给用户
+    }
   },
 }
