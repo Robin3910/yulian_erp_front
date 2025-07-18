@@ -52,6 +52,30 @@
         </div>
       </el-card>
     </div>
+    <!-- 返单数量折线图 -->
+    <div class="chart-section">
+      <el-card>
+        <template #header>
+          <div class="chart-header">
+            <span>返单数量趋势</span>
+            <el-radio-group v-model="chartType" size="small">
+              <el-radio-button value="day">按天</el-radio-button>
+              <el-radio-button value="week">按周</el-radio-button>
+              <el-radio-button value="month">按月</el-radio-button>
+            </el-radio-group>
+          </div>
+        </template>
+        <div ref="chartRefReturn" class="chart" style="width: 100%; height: 400px;"></div>
+        <div v-if="summaryReturn && Object.keys(summaryReturn).length" class="summary-info" style="margin-top: 16px;">
+          <el-descriptions title="汇总信息" :column="4" border>
+            <el-descriptions-item label="总返单数">{{ summaryReturn.totalOrders }}</el-descriptions-item>
+            <el-descriptions-item label="均返单数">{{ summaryReturn.averageDaily }}</el-descriptions-item>
+            <el-descriptions-item label="最高">{{ summaryReturn.maxOrders }}</el-descriptions-item>
+            <el-descriptions-item label="最低">{{ summaryReturn.minOrders }}</el-descriptions-item>
+          </el-descriptions>
+        </div>
+      </el-card>
+    </div>
   </div>
 </template>
 
@@ -82,6 +106,13 @@ const chartData = ref<{ timePoints: string[]; values: number[] }>({ timePoints: 
 const summary = ref<any>({})
 const loading = ref(false)
 
+// 返单统计数据
+const chartDataReturn = ref<{ timePoints: string[]; values: number[] }>({ timePoints: [], values: [] })
+const summaryReturn = ref<any>({})
+const loadingReturn = ref(false)
+let chartInstanceReturn: echarts.ECharts | null = null
+const chartRefReturn = ref()
+
 // 获取店铺列表
 async function getShopList() {
   const data = await TemuCommonApi.getShopList()
@@ -97,6 +128,7 @@ async function handleSearch() {
     return
   }
   loading.value = true
+  loadingReturn.value = true
   try {
     const params = {
       shopIds: filterForm.value.shopId[0] === 'ALL' ? [] : filterForm.value.shopId.map(Number),
@@ -119,8 +151,19 @@ async function handleSearch() {
       console.log('chartData.value', chartData.value)
       updateChart()
     }
+    // 返单统计
+    const resReturn = await TemuOrderApi.getReturnOrderStatistics(params)
+    if (resReturn) {
+      chartDataReturn.value = {
+        timePoints: resReturn.timePoints,
+        values: resReturn.values
+      }
+      summaryReturn.value = resReturn.summary
+      updateChartReturn()
+    }
   } finally {
     loading.value = false
+    loadingReturn.value = false
   }
 }
 
@@ -161,6 +204,10 @@ function formatDate(date: any) {
   } else {
     console.error('DOM 没找到，chartRef 为 null')
   }
+  if (chartRefReturn.value) {
+    chartInstanceReturn = echarts.init(chartRefReturn.value)
+    updateChartReturn()
+  }
 }
 
 /**
@@ -181,6 +228,18 @@ function updateChart() {
   }
   chartInstance.setOption(option, true)
   console.log('已写入图表', option)               // 确认写进去了
+}
+
+function updateChartReturn() {
+  if (!chartInstanceReturn) return
+  const option = {
+    title: { text: '返单数量趋势图' },
+    tooltip: { trigger: 'axis' },
+    xAxis: { type: 'category', data: chartDataReturn.value.timePoints },
+    yAxis: { type: 'value' },
+    series: [{ name: '返单数量', type: 'line', data: chartDataReturn.value.values }]
+  }
+  chartInstanceReturn.setOption(option, true)
 }
 
 onMounted(async () => {
