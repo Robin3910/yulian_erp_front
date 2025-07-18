@@ -22,6 +22,7 @@
       <el-table-column prop="id" label="ID" width="80" />
       <el-table-column prop="batchCategoryId" label="批次ID" width="150" />
       <el-table-column prop="categoryId" label="类目ID" width="120" />
+      <el-table-column prop="categoryName" label="类目名字" width="150" />
       <el-table-column prop="createTime" label="创建时间" width="180" />
       <el-table-column label="操作" width="120">
         <template #default="scope">
