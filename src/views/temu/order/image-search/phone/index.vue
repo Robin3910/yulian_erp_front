@@ -197,7 +197,8 @@ import ShippingDetailsDrawer from './components/ShippingDetailsDrawer.vue'
 import CameraView from './components/CameraView.vue'
 import { OrderApi } from '@/api/temu/order'
 import type { OrderResult, ShippingOrder } from '@/api/temu/order/types'
-
+import { onMounted } from 'vue'
+import { useRoute } from 'vue-router'
 const fileInput = ref<HTMLInputElement | null>(null)
 const imageUrl = ref<string>('')
 const searchResults = ref<OrderResult[]>([])
@@ -206,10 +207,25 @@ const selectedFile = ref<File | null>(null)
 const shippingDrawerVisible = ref(false)
 const shippingData = ref<ShippingOrder | null>(null)
 const showCamera = ref(false)
+const route = useRoute()
 
+onMounted(() => {
+  if (route.query.autoStart === 'true') {
+    handleStartCamera()
+  }
+})
+
+// 保持原有的全局事件监听（如果需要）
+onMounted(() => {
+  window.addEventListener('handleStartCamera', handleStartCamera)
+})
+onUnmounted(() => {
+  window.removeEventListener('handleStartCamera', handleStartCamera)
+})
 // 开始相机拍照
 const handleStartCamera = () => {
   resetImage() // 重置之前的搜索结果
+  ElMessage.info('全局事件：handleStartImgCamera 被触发')
   showCamera.value = true
 }
 
