@@ -3520,7 +3520,7 @@ const getLevel3RowClassName = ({ row }: { row: ExtendedOrderVO }) => {
   return ''
 }
 
-// 批量打印中包序号和日期
+// 批量打印中包序号（移除日期信息）
 const handlerPrintBatchZhongbaoSeq = () => {
   if (!selectedRows.value || selectedRows.value.length === 0) {
     ElMessage.warning('请先选择要打印的中包！')
@@ -3532,11 +3532,10 @@ const handlerPrintBatchZhongbaoSeq = () => {
   const doc = new jsPDF({ unit: 'pt', format: [a4Width, a4Height] })
   selectedRows.value.forEach((row: any, idx: number) => {
     if (idx > 0) doc.addPage([a4Width, a4Height])
-    // 中包序号（sortingSequence）和日期（createTime）
+    // 只打印中包序号（sortingSequence），不再打印日期
     const seq = String(row.sortingSequence || '-')
-    const date = row.createTime ? formatDateSafe(row.createTime, 'MM-DD') : '-'
     // 动态计算字体大小，最大140pt，保证不溢出
-    let fontSize = 140;
+    let fontSize = 160; // 增大默认字体大小，因为不再显示日期
     const minFontSize = 16;
     const sideMargin = 80;
     doc.setFont('helvetica', 'bold');
@@ -3547,11 +3546,9 @@ const handlerPrintBatchZhongbaoSeq = () => {
       fontSize -= 2;
     }
     doc.setFontSize(fontSize);
-    doc.text(seq, a4Width / 2, a4Height / 2 - 30, { align: 'center' });
-    // 日期小号字体
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(36);
-    doc.text(String(date), a4Width / 2, a4Height / 2 + 40, { align: 'center' });
+    // 将序号垂直居中，不再偏上
+    doc.text(seq, a4Width / 2, a4Height / 2, { align: 'center' });
+    // 移除日期显示
   })
   // 生成PDF的blob url
   const pdfBlob = doc.output('blob')
