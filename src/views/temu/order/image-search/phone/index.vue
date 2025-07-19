@@ -5,6 +5,22 @@
       <span class="title">图片搜索</span>
     </div>
 
+    <!-- 物流序号搜索框 -->
+    <div class="search-box">
+      <el-input
+        v-model="dailySequence"
+        placeholder="请输入物流序号"
+        clearable
+        @keyup.enter="handleSearchByDailySequence"
+      >
+        <template #append>
+          <el-button @click="handleSearchByDailySequence">
+            <el-icon><Search /></el-icon>
+          </el-button>
+        </template>
+      </el-input>
+    </div>
+
     <!-- 上传区域 -->
     <div class="upload-section" v-if="!searchResults.length">
       <div class="preview-container" v-if="imageUrl">
@@ -171,6 +187,16 @@
       :shipping-data="shippingData"
     />
 
+    <!-- 物流单号列表对话框 -->
+    <ShippingListDialog
+      v-model="shippingListVisible"
+      :shipping-list="shippingList"
+      :total-count="totalCount"
+      :loading="loading"
+      @select="handleSelectShipping"
+      @load-all="loadAllShippingData"
+    />
+
     <!-- 相机组件 -->
     <CameraView
       v-if="showCamera"
@@ -190,14 +216,15 @@
 <script lang="ts" setup>
 import { ref, computed } from 'vue'
 import { ElMessage } from 'element-plus'
-import { Camera, Picture, Back, Printer } from '@element-plus/icons-vue'
+import { Camera, Picture, Back, Printer, Search } from '@element-plus/icons-vue'
 import { searchByImage } from '@/api/temu/image-search'
 import printJS from 'print-js'
 import ShippingDetailsDrawer from './components/ShippingDetailsDrawer.vue'
+import ShippingListDialog from '@/views/temu/order/barcode/phone/components/ShippingListDialog.vue'
 import CameraView from './components/CameraView.vue'
 import { OrderApi } from '@/api/temu/order'
 import type { OrderResult, ShippingOrder } from '@/api/temu/order/types'
-import { onMounted } from 'vue'
+import { onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 const fileInput = ref<HTMLInputElement | null>(null)
 const imageUrl = ref<string>('')
@@ -208,6 +235,11 @@ const shippingDrawerVisible = ref(false)
 const shippingData = ref<ShippingOrder | null>(null)
 const showCamera = ref(false)
 const route = useRoute()
+
+const dailySequence = ref('');
+const totalCount = ref(0);
+const shippingList = ref<ShippingOrder[]>([]);
+const shippingListVisible = ref(false);
 
 onMounted(() => {
   if (route.query.autoStart === 'true') {
@@ -456,6 +488,67 @@ const handleViewShipping = async (row: any) => {
     ElMessage.error('获取物流详情失败')
   }
 }
+
+// 根据物流序号搜索
+const handleSearchByDailySequence = async () => {
+  if (!dailySequence.value) {
+    ElMessage.warning('请输入物流序号');
+    return;
+  }
+  
+  try {
+    loading.value = true;
+    const res = await OrderApi.getShippingOrderPage({
+      dailySequence: dailySequence.value,
+      pageNo: 1,
+      pageSize: 3  // 初始只加载3条
+    });
+    
+    if (res?.list?.length > 0) {
+      shippingList.value = res.list;
+      totalCount.value = res.total;
+      shippingListVisible.value = true;
+    } else {
+      ElMessage.warning('未找到相关物流信息');
+    }
+  } catch (error) {
+    console.error('搜索失败:', error);
+    ElMessage.error('搜索失败，请重试');
+  } finally {
+    loading.value = false;
+  }
+};
+
+// 加载全部数据
+const loadAllShippingData = async () => {
+  if (!dailySequence.value) {
+    ElMessage.warning('请先输入物流序号');
+    return;
+  }
+  try {
+    loading.value = true;
+    const res = await OrderApi.getShippingOrderPage({
+      dailySequence: dailySequence.value,
+      pageNo: 1,
+      pageSize: totalCount.value  // 加载全部数据
+    });
+    if (res?.list?.length > 0) {
+      shippingList.value = res.list;
+      ElMessage.success('加载完成');
+    }
+  } catch (error) {
+    console.error('加载所有物流数据失败:', error);
+    ElMessage.error('加载所有物流数据失败，请重试');
+  } finally {
+    loading.value = false;
+  }
+};
+
+// 选择物流单号
+const handleSelectShipping = (item: ShippingOrder) => {
+  shippingData.value = item;
+  shippingDrawerVisible.value = true;
+};
 </script>
 
 <style lang="scss" scoped>
@@ -465,6 +558,7 @@ const handleViewShipping = async (row: any) => {
 .mobile-image-search {
   min-height: 100vh;
   background-color: #f5f7fa;
+  padding-top: 44px;
   
   .nav-header {
     position: fixed;
@@ -486,32 +580,59 @@ const handleViewShipping = async (row: any) => {
     }
   }
 
+  .search-box {
+    padding: 16px;
+    background: #fff;
+    margin-bottom: 8px;
+
+    :deep(.el-input) {
+      --el-input-height: 44px;
+      font-size: 16px;
+
+      .el-input__wrapper {
+        border-radius: 8px;
+      }
+
+      .el-input-group__append {
+        padding: 0 12px;
+        background-color: var(--el-color-primary);
+        border-color: var(--el-color-primary);
+        color: #fff;
+        border-top-right-radius: 8px;
+        border-bottom-right-radius: 8px;
+        
+        .el-icon {
+          font-size: 18px;
+        }
+      }
+    }
+  }
+
   .upload-section {
     padding: 64px 20px 20px;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    min-height: calc(100vh - 64px);
+    min-height: calc(100vh - 64px - 76px); // 减去导航栏和搜索框的高度
 
     .preview-container {
       width: 100%;
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 20px;
+      gap: 16px;
 
       .preview-image {
         width: 100%;
         max-width: 300px;
-        height: auto;
-        border-radius: 12px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        border-radius: 8px;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
       }
 
       .preview-actions {
         display: flex;
-        gap: 12px;
+        gap: 16px;
       }
     }
 
@@ -697,5 +818,15 @@ const handleViewShipping = async (row: any) => {
 }
 .el-button+.el-button {
     margin-left: 0px;
+}
+.mobile-image-search .search-box {
+    padding: 16px;
+    margin-top: -60px;
+    background: #fff;
+    margin-bottom: 8px;
+}
+.mobile-image-search .search-results {
+    padding: 0px 0px 0px;
+    min-height: 100vh;
 }
 </style> 
