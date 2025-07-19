@@ -259,7 +259,12 @@ class="w-80px h-80px" :hide-on-click-modal="true" :preview-teleported="true"
               <!-- 添加定制文字列 -->
               <el-table-column label="定制文字" align="center" prop="customTextList" min-width="180">
                 <template #default="{ row }">
-                  <div class="text-center">{{ row.customTextList || '--' }}</div>
+                  <div class="text-center" v-if="row.customTextList">
+                    <div v-for="(text, index) in row.customTextList.split(',')" :key="index" class="custom-text-item">
+                      {{ text }}
+                    </div>
+                  </div>
+                  <div v-else class="text-center">--</div>
                 </template>
               </el-table-column>
               <!-- 定制图片 -->
@@ -2888,5 +2893,11 @@ const handlePaginationChange = () => {
       transition: all 0.3s ease;
     }
   }
+}
+
+.custom-text-item {
+  padding: 2px 0;
+  line-height: 1.5;
+  word-break: break-all;
 }
 </style>
