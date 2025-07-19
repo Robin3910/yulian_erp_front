@@ -259,15 +259,7 @@ class="w-80px h-80px" :hide-on-click-modal="true" :preview-teleported="true"
               <!-- 添加定制文字列 -->
               <el-table-column label="定制文字" align="center" prop="customTextList" min-width="180">
                 <template #default="{ row }">
-
-                  <!-- 这里针对用户的复制操作进行监听，对该行为进行处理，保证用户拿到的是纯文本 -->
-                  <div
-                    class="text-center"
-                    @copy="onCopy($event, row.customTextList)"
-                  >
-                    {{ row.customTextList || '--' }}
-                  </div>
-                  
+                  <div class="text-center">{{ row.customTextList || '--' }}</div>
                 </template>
               </el-table-column>
               <!-- 定制图片 -->
@@ -2148,23 +2140,6 @@ const handlePaginationChange = () => {
   getList()
 }
 
-function onCopy(event: ClipboardEvent, raw: string) {
-  event.preventDefault();
-  // 转为纯文本，去除所有HTML标签和常见实体
-  let text = (raw || '')
-    .replace(/<[^>]+>/g, '')
-    .replace(/&nbsp;/g, ' ')
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'");
-  if (event.clipboardData) {
-    event.clipboardData.setData('text/plain', text);
-  } else if ((window as any).clipboardData) {
-    (window as any).clipboardData.setData('Text', text);
-  }
-}
 
 </script>
 
@@ -2408,21 +2383,6 @@ function onCopy(event: ClipboardEvent, raw: string) {
   }
 }
 
-// 定制文字显示样式 - 纯文本
-.custom-text-display {
-  white-space: pre-wrap;
-  word-break: break-all;
-  font-family: 'Courier New', monospace;
-  font-size: 12px;
-  line-height: 1.4;
-  background-color: #f8f9fa;
-  border: 1px solid #e9ecef;
-  border-radius: 4px;
-  padding: 8px;
-  color: #495057;
-  max-height: 120px;
-  overflow-y: auto;
-}
 
 .sku-info {
   text-align: left;

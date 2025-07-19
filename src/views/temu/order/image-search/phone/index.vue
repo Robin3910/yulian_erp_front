@@ -501,7 +501,7 @@ const handleSearchByDailySequence = async () => {
     const res = await OrderApi.getShippingOrderPage({
       dailySequence: dailySequence.value,
       pageNo: 1,
-      pageSize: 3  // 初始只加载3条
+      pageSize: 20  // 初始只加载20条
     });
     
     if (res?.list?.length > 0) {
