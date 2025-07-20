@@ -758,7 +758,9 @@ const handleFocus = async (row: any) => {
       customSku: order.customSku || '',
       customTextList: order.customTextList || '',
       productProperties: order.productProperties || '',
-      isMultiple: (order.originalQuantity || 0) > 1 // 修改为判断官网数量是否大于1
+      isMultiple: (order.originalQuantity || 0) > 1, // 修改为判断官网数量是否大于1
+      categoryId: order.categoryId || '',
+      categoryName: getCategoryName(order.categoryId) // 使用已有的 getCategoryName 函数获取类目名称
     }))
 
   if (shippingInfoPopup.value) {

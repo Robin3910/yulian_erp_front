@@ -45,16 +45,20 @@
                   </div>
                 </div>
                   </div>
-              <div class="quantity-info">
-                <div class="quantity-item original">
-                  <span class="label">官网数量：</span>
-                  <span class="value">{{ item.originalQuantity }}</span>
+                              <div class="quantity-info">
+                  <div class="quantity-item original">
+                    <span class="label">官网数量：</span>
+                    <span class="value">{{ item.originalQuantity }}</span>
+                  </div>
+                  <div class="quantity-item">
+                    <span class="label">制作数量：</span>
+                    <span class="value">{{ item.quantity }}</span>
+                  </div>
+                  <div class="quantity-item">
+                    <span class="label">所属类目：</span>
+                    <span class="value">{{ item.categoryName || '-' }}</span>
+                  </div>
                 </div>
-                <div class="quantity-item">
-                  <span class="label">制作数量：</span>
-                  <span class="value">{{ item.quantity }}</span>
-                </div>
-              </div>
             </div>
           </div>
         </div>
@@ -87,7 +91,9 @@ const formData = reactive({
     customSku: string,
     customTextList: string,
     productProperties: string,
-    isMultiple?: boolean
+    isMultiple?: boolean,
+    categoryId?: string,
+    categoryName?: string
   }>
 })
 
