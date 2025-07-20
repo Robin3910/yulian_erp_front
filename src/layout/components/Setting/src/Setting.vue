@@ -196,6 +196,8 @@ const clear = () => {
   wsCache.delete(CACHE_KEY.LAYOUT)
   wsCache.delete(CACHE_KEY.THEME)
   wsCache.delete(CACHE_KEY.IS_DARK)
+  wsCache.delete(CACHE_KEY.USER)
+  wsCache.delete(CACHE_KEY.ROLE_ROUTERS)
   window.location.reload()
 }
 
