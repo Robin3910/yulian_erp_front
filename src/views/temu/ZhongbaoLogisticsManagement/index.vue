@@ -88,6 +88,18 @@ v-model="queryParams.createTime" type="daterange" range-separator="至"
             </el-form-item>
           </el-col>
           <el-col :span="24" :lg="6">
+            <el-form-item label="打包人" prop="senderId" class="w-full">
+              <el-select v-model="queryParams.senderId" placeholder="请选择打包人" clearable filterable>
+                <el-option
+                  v-for="item in packerList"
+                  :key="item.id"
+                  :label="item.nickname"
+                  :value="item.id"
+                />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="24" :lg="6">
             <el-form-item>
               <el-button @click="handleQuery">
                 <Icon icon="ep:search" class="mr-5px" />
@@ -446,14 +458,6 @@ label="定制SKU" align="center" min-width="200">
                 <span v-else>-</span>
               </template>
             </el-table-column>
-            
-            <!-- 打包人 -->
-            <el-table-column label="打包人" align="center" min-width="100">
-              <template #default="{ row }">
-                <el-tag v-if="row.senderId" type="info" size="small">{{ getSenderName(row) }}</el-tag>
-                <span v-else>-</span>
-              </template>
-            </el-table-column>
 
             <!-- 操作列 -->
             <el-table-column label="操作" align="center" min-width="160">
@@ -617,6 +621,7 @@ interface OrderItem {
   isFoundAll?: number | null // 添加是否备齐字段：1-是，0-否
   batchNo?: string | null // 添加批次编号字段
   senderId?: number | null // 添加打包人ID字段
+  senderName?: string | null // 添加打包人姓名字段
 }
 
 interface OrderNoGroup {
@@ -663,6 +668,21 @@ const level3TableRef = ref() // 第三级表格引用
 const shopList = ref<any[]>([])
 // 多选
 const selectedRows = ref<ExtendedOrderVO[]>([])
+// 打包人列表
+const packerList = ref<any[]>([])
+
+// 初始化时获取打包人列表
+const initPackerList = async () => {
+  try {
+    const data = await TemuCommonApi.getUserListByRoleKey('production_staff')
+    if (data && Array.isArray(data)) {
+      packerList.value = data
+    }
+  } catch (error) {
+    console.error('获取打包人列表失败:', error)
+  }
+}
+
 const queryParams = reactive({
   pageNo: 1,
   pageSize: 10,
@@ -677,7 +697,8 @@ const queryParams = reactive({
   dailySequence: null as string | null, // 添加物流序号查询参数
   shippingStatus: undefined, // 新增发货状态查询参数
   batchNo: undefined, // 批次号搜索
-  customTextList: undefined // 定制文字搜索
+  customTextList: undefined, // 定制文字搜索
+  senderId: undefined // 添加打包人搜索参数
 })
 const queryFormRef = ref() // 搜索的表单
 
@@ -1109,6 +1130,7 @@ onMounted(() => {
   getList()
   getProductCategoryList()
   getShopList()
+  initPackerList() // 初始化打包人列表
 })
 
 // 清理全局函数
@@ -3613,20 +3635,33 @@ const handleAllocatePacker = () => {
     return
   }
 
-  // 获取选中的物流单号
-  const trackingNumbers = selectedRows.value.map(row => row.trackingNumber)
-  
-  // 去重
-  const uniqueTrackingNumbers = [...new Set(trackingNumbers)]
-  
   if (packerAssignmentPopup.value) {
-    // 获取选中行的中包序号
-    const sortingSequences = selectedRows.value
-      .map(row => row.sortingSequence)
-      .filter((seq): seq is string => !!seq) // 过滤掉undefined或null并帮助类型推断
+    // 获取所有选中行对应的物流单号下的所有中包序号
+    const sortingSequences: string[] = []
+    
+    // 遍历选中的物流单号
+    selectedRows.value.forEach(selectedRow => {
+      // 获取该物流单号下的所有订单
+      const orders = list.value.filter(item => item.trackingNumber === selectedRow.trackingNumber)
+      
+      // 从这些订单中提取所有不为空的中包序号
+      orders.forEach(order => {
+        if (order.sortingSequence) {
+          sortingSequences.push(order.sortingSequence)
+        }
+      })
+    })
+    
+    // 去重并过滤掉空值
+    const uniqueSortingSequences = [...new Set(sortingSequences)].filter(seq => !!seq)
+    
+    if (uniqueSortingSequences.length === 0) {
+      ElMessage.warning('选中的物流单号下没有找到有效的中包序号')
+      return
+    }
     
     // 设置数据
-    packerAssignmentPopup.value.formData.sortingSequences = [...new Set(sortingSequences)]
+    packerAssignmentPopup.value.formData.sortingSequences = uniqueSortingSequences
     packerAssignmentPopup.value.formData.packerId = undefined
     packerAssignmentPopup.value.formData.replaceShippedOperator = false // 默认不替换发货人
     
@@ -3655,28 +3690,17 @@ const handlePackerConfirm = async (data: any) => {
 const senderNameCache = new Map<number, string>() // 缓存已查询的打包人信息
 
 const getSenderName = (row: any) => {
-  // 检查是否有senderId，没有则返回空
-  if (!row.senderId) return ''
-  
-  // 获取第一个具有senderId的订单
-  let orderWithSender: any = null
-  
   // 如果是中包信息行
   if (row.sortingSequence) {
     const details = getOrderDetails(selectedTrackingNumber.value, row.sortingSequence)
-    orderWithSender = details.find(order => order.senderId)
+    // 获取第一个订单的senderName（因为同一个sortingSequence下的senderName都是一样的）
+    const firstOrder = details[0]
+    if (firstOrder?.senderName) {
+      return firstOrder.senderName
+    }
   }
   
-  // 获取senderId
-  const senderId = orderWithSender?.senderId || row.senderId
-  
-  // 如果缓存中有，直接返回
-  if (senderNameCache.has(senderId)) {
-    return senderNameCache.get(senderId)
-  }
-  
-  // 缓存中没有，暂时返回ID，后续可以通过API获取具体姓名
-  return `打包人(${senderId})`
+  return ''
 }
 </script>
 <style lang="scss">
