@@ -44,8 +44,17 @@
                     <span class="props-value">{{ item.productProperties }}</span>
                   </div>
                 </div>
+                  <!-- 添加SKU信息行 -->
+                  <div class="info-row sku-info-row">
+                    <div class="sku-info">
+                      <div class="sku-item">
+                        <span class="sku-label">定制SKU：</span>
+                        <span class="sku-value custom-sku">{{ item.customSku || '-' }}</span>
+                      </div>
+                    </div>
                   </div>
-                              <div class="quantity-info">
+                </div>
+                <div class="quantity-info">
                   <div class="quantity-item original">
                     <span class="label">官网数量：</span>
                     <span class="value">{{ item.originalQuantity }}</span>
@@ -269,6 +278,29 @@ defineExpose({
           display: inline-block;
           margin-left: 5px;
           line-height: 1.4;
+        }
+      }
+
+      .sku-info-row {
+        margin-top: 10px;
+        .sku-info {
+          display: flex;
+          gap: 20px;
+          .sku-item {
+            .sku-label {
+              font-size: 14px;
+              color: #606266;
+              font-weight: 500;
+            }
+            .sku-value {
+              font-size: 14px;
+              color: #303133;
+              font-weight: 500;
+            }
+            .custom-sku {
+              color: #409EFF;
+            }
+          }
         }
       }
     }
