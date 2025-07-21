@@ -2146,39 +2146,60 @@ const handlePaginationChange = () => {
 
 /** 获取排序后的订单列表 */
 const getSortedOrderList = (batch) => {
-  // 检查批次是否包含贺卡类目
+  // 特定尺寸的贴纸(酒标)列表
+  const SPECIAL_STICKER_SIZES = [
+    '贴纸(酒标)18cm*8.7cm*0.2cm',
+    '贴纸(酒标)16cm*6.3cm*0.2cm',
+    '贴纸(酒标)8.5cm*5cm*0.2cm',
+    '贴纸(酒标)5.7cm*1.7cm*0.2cm'
+  ];
+
+  // 检查批次是否包含特定尺寸的贴纸(酒标)或贺卡
+  const hasSpecialSticker = batch.orderList.some(order => 
+    order.categoryName && SPECIAL_STICKER_SIZES.includes(order.categoryName)
+  );
   const hasGreetingCard = batch.orderList.some(order => 
     order.categoryName && order.categoryName.includes('贺卡')
   );
   
-  // 如果批次包含贺卡订单，需要分开处理
-  if (hasGreetingCard) {
-    // 将订单分为贺卡订单和非贺卡订单
+  // 如果批次包含特定尺寸的贴纸(酒标)或贺卡订单，需要分开处理
+  if (hasSpecialSticker || hasGreetingCard) {
+    // 将订单分为三组：特定尺寸贴纸订单、贺卡订单和其他订单
+    const stickerOrders = batch.orderList.filter(order => 
+      order.categoryName && SPECIAL_STICKER_SIZES.includes(order.categoryName)
+    );
+    
     const greetingCardOrders = batch.orderList.filter(order => 
       order.categoryName && order.categoryName.includes('贺卡')
     );
     
     const otherOrders = batch.orderList.filter(order => 
-      !order.categoryName || !order.categoryName.includes('贺卡')
+      !order.categoryName || 
+      (!SPECIAL_STICKER_SIZES.includes(order.categoryName) && !order.categoryName.includes('贺卡'))
     );
     
-    // 贺卡订单按返单状态和制作数量排序
-    const sortedGreetingCardOrders = [...greetingCardOrders].sort((a, b) => {
-      // 先按返单状态排序
-      const returnOrderDiff = (a.isReturnOrder === 1 ? -1 : 0) - (b.isReturnOrder === 1 ? -1 : 0);
-      if (returnOrderDiff !== 0) return returnOrderDiff;
-      
-      // 再按制作数量从小到大排序
-      return (a.quantity || 0) - (b.quantity || 0);
-    });
+    // 特定尺寸贴纸订单和贺卡订单按返单状态和制作数量排序
+    const sortByReturnAndQuantity = (orders) => {
+      return [...orders].sort((a, b) => {
+        // 先按返单状态排序
+        const returnOrderDiff = (a.isReturnOrder === 1 ? -1 : 0) - (b.isReturnOrder === 1 ? -1 : 0);
+        if (returnOrderDiff !== 0) return returnOrderDiff;
+        
+        // 再按制作数量从小到大排序
+        return (a.quantity || 0) - (b.quantity || 0);
+      });
+    };
+
+    const sortedStickerOrders = sortByReturnAndQuantity(stickerOrders);
+    const sortedGreetingCardOrders = sortByReturnAndQuantity(greetingCardOrders);
     
-    // 非贺卡订单只按返单状态排序
+    // 其他订单只按返单状态排序
     const sortedOtherOrders = [...otherOrders].sort((a, b) => 
       (a.isReturnOrder === 1 ? -1 : 0) - (b.isReturnOrder === 1 ? -1 : 0)
     );
     
-    // 合并两部分订单，贺卡订单排在前面
-    return [...sortedGreetingCardOrders, ...sortedOtherOrders];
+    // 合并所有订单，特定尺寸贴纸订单和贺卡订单排在前面
+    return [...sortedStickerOrders, ...sortedGreetingCardOrders, ...sortedOtherOrders];
   }
   
   // 其他批次保持原有的返单优先排序逻辑
