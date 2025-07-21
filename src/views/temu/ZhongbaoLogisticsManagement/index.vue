@@ -3313,34 +3313,65 @@ const handlerPrintBatchZhongbaoSeq = () => {
     ElMessage.warning('请先选择要打印的中包！')
     return
   }
-  // 统一A4尺寸，和打印全部一致
+
+  // 获取所有选中的物流单号下的所有中包序号，保持选中顺序
+  const allSortingSequences: string[] = []
+  const processedSequences = new Set<string>() // 用于去重但保持顺序
+  
+  // 遍历选中的物流单号，按选中顺序处理
+  selectedRows.value.forEach(selectedRow => {
+    // 获取该物流单号下的所有订单
+    const orders = list.value.filter(item => item.trackingNumber === selectedRow.trackingNumber)
+    
+    // 从这些订单中提取所有不为空的中包序号，保持顺序
+    orders.forEach(order => {
+      if (order.sortingSequence && !processedSequences.has(order.sortingSequence)) {
+        allSortingSequences.push(order.sortingSequence)
+        processedSequences.add(order.sortingSequence)
+      }
+    })
+  })
+
+  // 过滤掉空值，但保持顺序
+  const validSequences = allSortingSequences.filter(seq => !!seq)
+
+  if (validSequences.length === 0) {
+    ElMessage.warning('选中的物流单号下没有找到有效的中包序号')
+    return
+  }
+
+  // 统一A4尺寸
   const a4Width = 595
   const a4Height = 842
   const doc = new jsPDF({ unit: 'pt', format: [a4Width, a4Height] })
-  selectedRows.value.forEach((row: any, idx: number) => {
+
+  // 为每个中包序号创建一页，按原始顺序打印
+  validSequences.forEach((seq, idx) => {
     if (idx > 0) doc.addPage([a4Width, a4Height])
-    // 只打印中包序号（sortingSequence），不再打印日期
-    const seq = String(row.sortingSequence || '-')
+    
     // 动态计算字体大小，最大140pt，保证不溢出
-    let fontSize = 160; // 增大默认字体大小，因为不再显示日期
-    const minFontSize = 16;
-    const sideMargin = 80;
-    doc.setFont('helvetica', 'bold');
+    let fontSize = 160
+    const minFontSize = 16
+    const sideMargin = 80
+    doc.setFont('helvetica', 'bold')
+    
     while (fontSize > minFontSize) {
-      doc.setFontSize(fontSize);
-      const textWidth = doc.getTextWidth(seq);
-      if (textWidth <= a4Width - sideMargin * 2) break;
-      fontSize -= 2;
+      doc.setFontSize(fontSize)
+      const textWidth = doc.getTextWidth(seq)
+      if (textWidth <= a4Width - sideMargin * 2) break
+      fontSize -= 2
     }
-    doc.setFontSize(fontSize);
-    // 将序号垂直居中，不再偏上
-    doc.text(seq, a4Width / 2, a4Height / 2, { align: 'center' });
-    // 移除日期显示
+    
+    doc.setFontSize(fontSize)
+    // 将序号垂直居中
+    doc.text(seq, a4Width / 2, a4Height / 2, { align: 'center' })
   })
+
   // 生成PDF的blob url
   const pdfBlob = doc.output('blob')
   const pdfUrl = URL.createObjectURL(new Blob([pdfBlob], { type: 'application/pdf' }))
-  // 用print-js弹窗打印，体验和打印全部一致
+  
+  // 用print-js弹窗打印
   printJS({
     printable: pdfUrl,
     type: 'pdf',
