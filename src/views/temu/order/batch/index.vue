@@ -155,8 +155,7 @@ v-loading="loading" :data="list" :stripe="true" :show-overflow-tooltip="true"
         <template #default="scope">
           <div>
             <el-table
-v-loading="loading" :data="scope.row.orderList && scope.row.orderList.length > 0 ? [...scope.row.orderList].sort((a, b) =>
-   (a.isReturnOrder === 1 ? -1 : 0) - (b.isReturnOrder === 1 ? -1 : 0)) : []" :stripe="true" :show-overflow-tooltip="true"
+v-loading="loading" :data="scope.row.orderList && scope.row.orderList.length > 0 ? getSortedOrderList(scope.row) : []" :stripe="true" :show-overflow-tooltip="true"
               row-key="id" :ref="(el) => {
                 if (el) registerTableRef(el, scope.row.batchNo)
               }
@@ -2145,6 +2144,48 @@ const handlePaginationChange = () => {
   getList()
 }
 
+/** 获取排序后的订单列表 */
+const getSortedOrderList = (batch) => {
+  // 检查批次是否包含贺卡类目
+  const hasGreetingCard = batch.orderList.some(order => 
+    order.categoryName && order.categoryName.includes('贺卡')
+  );
+  
+  // 如果批次包含贺卡订单，需要分开处理
+  if (hasGreetingCard) {
+    // 将订单分为贺卡订单和非贺卡订单
+    const greetingCardOrders = batch.orderList.filter(order => 
+      order.categoryName && order.categoryName.includes('贺卡')
+    );
+    
+    const otherOrders = batch.orderList.filter(order => 
+      !order.categoryName || !order.categoryName.includes('贺卡')
+    );
+    
+    // 贺卡订单按返单状态和制作数量排序
+    const sortedGreetingCardOrders = [...greetingCardOrders].sort((a, b) => {
+      // 先按返单状态排序
+      const returnOrderDiff = (a.isReturnOrder === 1 ? -1 : 0) - (b.isReturnOrder === 1 ? -1 : 0);
+      if (returnOrderDiff !== 0) return returnOrderDiff;
+      
+      // 再按制作数量从小到大排序
+      return (a.quantity || 0) - (b.quantity || 0);
+    });
+    
+    // 非贺卡订单只按返单状态排序
+    const sortedOtherOrders = [...otherOrders].sort((a, b) => 
+      (a.isReturnOrder === 1 ? -1 : 0) - (b.isReturnOrder === 1 ? -1 : 0)
+    );
+    
+    // 合并两部分订单，贺卡订单排在前面
+    return [...sortedGreetingCardOrders, ...sortedOtherOrders];
+  }
+  
+  // 其他批次保持原有的返单优先排序逻辑
+  return [...batch.orderList].sort((a, b) => 
+    (a.isReturnOrder === 1 ? -1 : 0) - (b.isReturnOrder === 1 ? -1 : 0)
+  );
+}
 
 </script>
 
