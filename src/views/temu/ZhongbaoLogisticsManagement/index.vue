@@ -28,7 +28,7 @@ v-model="queryParams.trackingNumber" placeholder="请输入物流单号" clearab
               <el-input v-model="queryParams.customSku" placeholder="请输入定制SKU" clearable @keyup.enter="handleQuery" />
             </el-form-item>
           </el-col>
-          
+
           <el-col :span="24" :lg="6">
             <el-form-item label="订单状态" prop="orderStatus" class="w-full">
               <el-select v-model="queryParams.orderStatus" placeholder="请选择订单状态" clearable>
@@ -78,15 +78,27 @@ v-model="queryParams.createTime" type="daterange" range-separator="至"
             </el-form-item>
           </el-col>
           <el-col :span="24" :lg="6">
-             <el-form-item label="批次号搜索" prop="batchNo" class="w-full">
-               <el-input v-model="queryParams.batchNo" placeholder="请输入批次号" clearable @keyup.enter="handleQuery" />
-             </el-form-item>
-           </el-col>
-           <el-col :span="24" :lg="6">
-             <el-form-item label="定制文字搜索" prop="customTextList" class="w-full">
+            <el-form-item label="批次号搜索" prop="batchNo" class="w-full">
+              <el-input v-model="queryParams.batchNo" placeholder="请输入批次号" clearable @keyup.enter="handleQuery" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="24" :lg="6">
+            <el-form-item label="定制文字搜索" prop="customTextList" class="w-full">
                <el-input v-model="queryParams.customTextList" placeholder="请输入定制文字" clearable @keyup.enter="handleQuery" />
-             </el-form-item>
-           </el-col>
+            </el-form-item>
+          </el-col>
+          <el-col :span="24" :lg="6">
+            <el-form-item label="打包人" prop="senderId" class="w-full">
+              <el-select v-model="queryParams.senderId" placeholder="请选择打包人" clearable filterable>
+                <el-option
+                  v-for="item in packerList"
+                  :key="item.id"
+                  :label="item.nickname"
+                  :value="item.id"
+                />
+              </el-select>
+            </el-form-item>
+          </el-col>
           <el-col :span="24" :lg="6">
             <el-form-item>
               <el-button @click="handleQuery">
@@ -96,6 +108,10 @@ v-model="queryParams.createTime" type="daterange" range-separator="至"
               <el-button @click="resetQuery">
                 <Icon icon="ep:refresh" class="mr-5px" />
                 重置
+              </el-button>
+              <el-button type="primary" @click="handleAllocatePacker">
+                <Icon icon="ep:user" class="mr-5px" />
+                分配打包人
               </el-button>
             </el-form-item>
           </el-col>
@@ -143,7 +159,7 @@ v-model="queryParams.createTime" type="daterange" range-separator="至"
         <span class="info-item">{{ selectedStats.orderNos }}个订单编号</span>
         <span class="info-item">{{ selectedStats.total }}个订单</span>
       </div>
-      
+
       <!-- 改为级联展开的表格结构 -->
       <div class="shipping-cascade-container">
         <!-- 第一级：物流单号和物流序号 -->
@@ -160,17 +176,18 @@ v-model="queryParams.createTime" type="daterange" range-separator="至"
             row-key="uniqueId"
             @row-click="handleTrackingNumberClick"
             :highlight-current-row="true">
-            
-        <!-- 复选框列 -->
+
+            <!-- 复选框列 -->
             <el-table-column type="selection" width="55" align="center" fixed="left" :reserve-selection="true" />
-            
-        <!-- 物流单号列 -->
-        <el-table-column label="物流单号" align="center" min-width="170" fixed="left" class-name="tracking-column">
+
+            <!-- 物流单号列 -->
+            <el-table-column label="物流单号" align="center" min-width="170" fixed="left" class-name="tracking-column">
               <template #default="{ row }">
-                <div class="tracking-number-cell"
+                <div
+class="tracking-number-cell"
                   style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; min-height: 80px;"
                   :class="{ 'selected-tracking': row.trackingNumber === selectedTrackingNumber }">
-                <div class="tracking-number-wrapper" style="margin: 4px 0; text-align: center;">
+                  <div class="tracking-number-wrapper" style="margin: 4px 0; text-align: center;">
                     <template v-if="row.trackingNumber && row.trackingNumber.includes('临时虚拟物流')">
                       <div style="display: flex; flex-direction: column; align-items: center;">
                         <span class="tracking-number-prefix" style="font-size: 14px; color: #606266; margin-bottom: 4px;">临时虚拟物流</span>
@@ -182,72 +199,72 @@ v-model="queryParams.createTime" type="daterange" range-separator="至"
                     <template v-else>
                       <span class="tracking-number" :style="{ color: `${getColor(row.index)}` }">{{
                         row.trackingNumber || '-'
-                  }}</span>
+                      }}</span>
                     </template>
-                </div>
+                  </div>
                 <div class="action-buttons" style="display: flex; gap: 8px; justify-content: center; margin-top: 4px;">
                   <el-tooltip
 effect="dark" content="进入专注模式" placement="top" popper-class="custom-tooltip"
-                    :show-after="100" :hide-after="200" :enterable="false" :offset="20">
+                      :show-after="100" :hide-after="200" :enterable="false" :offset="20">
                     <el-button
 size="small" type="primary" plain class="action-button urgent-print-button"
-                      @click.stop="handleFocus(row)">
-                      <el-icon>
-                        <Aim />
-                      </el-icon>
-                      查看详情
-                    </el-button>
-                  </el-tooltip>
+                        @click.stop="handleFocus(row)">
+                        <el-icon>
+                          <Aim />
+                        </el-icon>
+                        查看详情
+                      </el-button>
+                    </el-tooltip>
                   <el-tooltip
 effect="dark" content="当前加急面单尚未上传，请联系相关人员及时上传！" placement="top"
-                    :disabled="!!row.expressOutsideImageUrl" popper-class="custom-tooltip" :show-after="100"
-                    :hide-after="200" :enterable="false" :offset="20">
+                      :disabled="!!row.expressOutsideImageUrl" popper-class="custom-tooltip" :show-after="100"
+                      :hide-after="200" :enterable="false" :offset="20">
                     <el-button
 size="small" type="primary" plain class="action-button urgent-print-button"
-                      :disabled="!row.expressOutsideImageUrl" @click.stop="handlePrint(row.expressOutsideImageUrl)">
-                      <el-icon>
-                        <Printer />
-                      </el-icon>
-                      打印加急面单
-                    </el-button>
-                  </el-tooltip>
+                        :disabled="!row.expressOutsideImageUrl" @click.stop="handlePrint(row.expressOutsideImageUrl)">
+                        <el-icon>
+                          <Printer />
+                        </el-icon>
+                        打印加急面单
+                      </el-button>
+                    </el-tooltip>
                   <el-tooltip
 effect="dark" :content="hasUnpreparedOrdersInTracking(row.trackingNumber) ? '该物流有未找齐的货，请先备齐' : ''" placement="top"
                     :disabled="!hasUnpreparedOrdersInTracking(row.trackingNumber)" popper-class="custom-tooltip" :show-after="100"
                     :hide-after="200" :enterable="false" :offset="20">
                   <el-button
 v-if="canShip(row)" size="small" type="success" class="action-button ship-button"
-                      @click.stop="hasUnpreparedOrdersInTracking(row.trackingNumber) ? showUnpreparedWarning() : handleShip(row)"
-                      :disabled="hasUnpreparedOrdersInTracking(row.trackingNumber)">
-                    <el-icon>
-                      <Van />
-                    </el-icon>
-                    发货
-                  </el-button>
-                  </el-tooltip>
-                  <div style="margin-top: 4px; font-size: 12px; color: #909399;">
-                    发货人：{{ row.shippedOperatorNickname || '-' }}
+                        @click.stop="hasUnpreparedOrdersInTracking(row.trackingNumber) ? showUnpreparedWarning() : handleShip(row)"
+                        :disabled="hasUnpreparedOrdersInTracking(row.trackingNumber)">
+                        <el-icon>
+                          <Van />
+                        </el-icon>
+                        发货
+                      </el-button>
+                    </el-tooltip>
+                    <div style="margin-top: 4px; font-size: 12px; color: #909399;">
+                      发货人：{{ row.shippedOperatorNickname || '-' }}
+                    </div>
                   </div>
                 </div>
-              </div>
-          </template>
-        </el-table-column>
-            
-        <!-- 物流序号列 -->
-        <el-table-column label="物流序号" align="center" width="120" fixed="left" class-name="with-divider">
+              </template>
+            </el-table-column>
+
+            <!-- 物流序号列 -->
+            <el-table-column label="物流序号" align="center" width="120" fixed="left" class-name="with-divider">
               <template #default="{ row }">
-            <div
-              style="display: flex; flex-direction: column; align-items: center; gap: 4px; background-color: var(--el-fill-color-light); padding: 8px; border-radius: 6px;">
+                <div
+                  style="display: flex; flex-direction: column; align-items: center; gap: 4px; background-color: var(--el-fill-color-light); padding: 8px; border-radius: 6px;">
               <span
 class="count" :style="{
-                      color: `${getColor(row.index)}`,
-                      fontSize: '32px',
-                fontWeight: '800',
-                lineHeight: '1.2',
-                textAlign: 'center'
-              }">
-                {{ row.dailySequence || '-' }}
-              </span>
+                    color: `${getColor(row.index)}`,
+                    fontSize: '32px',
+                    fontWeight: '800',
+                    lineHeight: '1.2',
+                    textAlign: 'center'
+                  }">
+                    {{ row.dailySequence || '-' }}
+                  </span>
               <span
 v-if="row.createTime" style="
                       fontSize: '18px';
@@ -256,18 +273,18 @@ v-if="row.createTime" style="
                       textAlign: 'center';
                       marginTop: '4px';
               ">
-                {{ formatDateSafe(row.createTime, 'MM-DD') }}
-              </span>
+                    {{ formatDateSafe(row.createTime, 'MM-DD') }}
+                  </span>
                   <!-- 添加中包数量标签 -->
                   <el-tag size="small" type="info" effect="plain" style="margin-top: 8px; font-size: 20px; padding: 6px 12px; font-weight: bold;">
                     {{ getSortingSequenceCountByTrackingNumber(row.trackingNumber) }}个中包
                   </el-tag>
-            </div>
-          </template>
-        </el-table-column>
+                </div>
+              </template>
+            </el-table-column>
           </el-table>
         </div>
-        
+
         <!-- 第二级：订单信息 -->
         <div class="shipping-level-2" v-if="selectedTrackingNumber" style="flex: 1; overflow-x: auto;">
           <el-table
@@ -281,66 +298,72 @@ v-if="row.createTime" style="
             @row-click="handleOrderClick"
             :highlight-current-row="true">
 
-        <!-- 订单信息列 -->
+            <!-- 订单信息列 -->
             <el-table-column label="中包信息" align="center" min-width="275" class-name="order-info-column">
-          <template #default="{ row, $index }">
+              <template #default="{ row, $index }">
                 <div class="order-info" :class="{ 'selected-order': row.orderNo === selectedOrderNo }">
-              <div class="shop-info">
+                  <div class="shop-info">
                     <div class="shop-name" style="font-size: 18px; font-weight: bold; margin: 10px 0;">
-                      <span class="label" style="font-size: 18px;">店铺名称：</span>
-                      <span :style="{ color: `${getColor($index)}`, fontSize: '18px' }"> {{ row.shopName }}</span>
-                </div>
+                      <div class="mb-2">
+                        <span class="label" style="font-size: 18px;">店铺名称：</span>
+                        <span :style="{ color: `${getColor($index)}`, fontSize: '18px' }"> {{ row.shopName }}</span>
+                      </div>
+                      <div v-if="getSenderName(row)">
+                        <span class="label" style="font-size: 14px;">打包人：</span>
+                        <el-tag type="info" size="small">{{ getSenderName(row) }}</el-tag>
+                      </div>
+                    </div>
                     <div class="order-extra-info" style="display: flex; flex-direction: column; align-items: center; margin: 8px 0; padding: 8px; background-color: var(--el-fill-color-light); border-radius: 6px;">
                       <div class="sorting-sequence" style="margin-bottom: 8px;">
                         <span style="color: #409EFF; font-size: 28px; font-weight: 800; line-height: 1.2;">{{ row.sortingSequence || '-' }}</span>
-              </div>
+                      </div>
                       <div class="booking-time" style="margin-bottom: 8px;">
                         <span style="color: #409EFF; font-size: 24px; font-weight: 700;">{{ formatBookingTime(row.bookingTime) }}</span>
-                </div>
+                      </div>
                       <div class="quantity-info">
                         <el-tag type="success" size="large" effect="light" style="font-size: 18px; padding: 5px 10px; font-weight: bold;">
                           共{{ getTotalOriginalQuantityBySortingSequence(selectedTrackingNumber, row.sortingSequence || `order_${row.orderNo}`) }}个官网数量
                         </el-tag>
-                  </div>
-                  </div>
-                <!-- 添加缺件标签 -->
+                      </div>
+                    </div>
+                    <!-- 添加缺件标签 -->
                 <div v-if="hasUnpreparedOrders(selectedTrackingNumber, row.sortingSequence || `order_${row.orderNo}`)" class="mt-2 mb-2 flex justify-center">
                   <el-tag type="danger" size="large" effect="dark" style="font-size: 16px; padding: 5px 10px; font-weight: bold;">
                     缺{{ getUnpreparedOrdersCount(selectedTrackingNumber, row.sortingSequence || `order_${row.orderNo}`) }}件
-                  </el-tag>
-                </div>
-                <div class="mt-2 flex justify-center gap-2">
+                      </el-tag>
+                    </div>
+                    <div class="mt-2 flex justify-center gap-2">
                   <el-tooltip
 effect="dark" content="当前面单尚未上传，请联系相关人员及时上传！" placement="top"
                     :disabled="!!row.expressImageUrl" popper-class="custom-tooltip" :show-after="100" :hide-after="200"
                     :enterable="false" :offset="20">
                     <el-button
 size="small" type="primary" plain class="action-button urgent-print-button"
-                      :disabled="!row.expressImageUrl" @click.stop="handlePrint(row.expressImageUrl)">
-                      <el-icon>
-                        <Printer />
-                      </el-icon>
-                      打印面单
-                    </el-button>
-                  </el-tooltip>
+                          :disabled="!row.expressImageUrl" @click.stop="handlePrint(row.expressImageUrl)">
+                          <el-icon>
+                            <Printer />
+                          </el-icon>
+                          打印面单
+                        </el-button>
+                      </el-tooltip>
                   <el-tooltip
 effect="dark" content="当前商品条码尚未上传，请联系相关人员及时上传！" placement="top"
-                    :disabled="!!row.expressSkuImageUrl" popper-class="custom-tooltip" :show-after="100"
-                    :hide-after="200" :enterable="false" :offset="20">
+                        :disabled="!!row.expressSkuImageUrl" popper-class="custom-tooltip" :show-after="100"
+                        :hide-after="200" :enterable="false" :offset="20">
                     <el-button
 size="small" type="info" plain class="action-button urgent-print-button"
-                      :disabled="!row.expressSkuImageUrl" @click.stop="handlePrint(row.expressSkuImageUrl)">
-                      <el-icon>
-                        <Printer />
-                      </el-icon>
-                      打印商品条码
-                    </el-button>
-                  </el-tooltip>
+                          :disabled="!row.expressSkuImageUrl" @click.stop="handlePrint(row.expressSkuImageUrl)">
+                          <el-icon>
+                            <Printer />
+                          </el-icon>
+                          打印商品条码
+                        </el-button>
+                      </el-tooltip>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
-          </template>
-        </el-table-column>
+              </template>
+            </el-table-column>
           </el-table>
         </div>
 
@@ -354,92 +377,93 @@ size="small" type="info" plain class="action-button urgent-print-button"
             class="custom-table shipping-table level-3-table"
             :header-cell-style="{ background: 'var(--el-bg-color)' }"
             :row-class-name="getLevel3RowClassName">
-            
+
             <!-- 订单号列 -->
             <el-table-column label="订单号" min-width="120" align="center">
-          <template #default="{ row }">
+              <template #default="{ row }">
                 <div class="order-number-info" style="text-align: center; width: 100%;">
                   <span>{{ row.orderNo || '-' }}</span>
-            </div>
-          </template>
-        </el-table-column>
+                </div>
+              </template>
+            </el-table-column>
 
             <!-- 类目列 -->
             <el-table-column label="所属类目" min-width="120" align="center">
-          <template #default="{ row }">
+              <template #default="{ row }">
                 <div class="category-info" style="text-align: center; width: 100%;">
                   <span v-if="row.categoryId">
                     {{ getCategoryName(row.categoryId) }}
                   </span>
                   <span v-else>-</span>
                 </div>
-          </template>
-        </el-table-column>
+              </template>
+            </el-table-column>
 
-        <!-- 商品信息 -->
-        <el-table-column label="商品信息" min-width="175" align="center">
-          <template #default="{ row }">
+            <!-- 商品信息 -->
+            <el-table-column label="商品信息" min-width="175" align="center">
+              <template #default="{ row }">
             <div class="product-info" style="display: flex; flex-direction: column; align-items: flex-start; justify-content: center; width: 80%; margin: 0 auto;">
               <div class="product-props" v-if="row.productProperties" style="text-align: left; width: 100%; margin-bottom: 8px;">
-                <span class="label" style="display: inline-block; width: 90px; text-align: right;">属性：</span>
-                <span>{{ row.productProperties }}</span>
-              </div>
-              <div class="product-quantity" style="text-align: left; width: 100%; margin-bottom: 8px;">
-                <span class="label" style="display: inline-block; width: 90px; text-align: right;">官网数量：</span>
+                    <span class="label" style="display: inline-block; width: 90px; text-align: right;">属性：</span>
+                    <span>{{ row.productProperties }}</span>
+                  </div>
+                  <div class="product-quantity" style="text-align: left; width: 100%; margin-bottom: 8px;">
+                    <span class="label" style="display: inline-block; width: 90px; text-align: right;">官网数量：</span>
                 <span style="font-size: 18px; font-weight: 600; color: #409EFF;">{{ row.originalQuantity || '--' }}</span>
-              </div>
-              <div class="product-quantity" style="text-align: left; width: 100%;">
-                <span class="label" style="display: inline-block; width: 90px; text-align: right;">制作数量：</span>
-                <span>{{ row.quantity || '--' }}</span>
-              </div>
-            </div>
-          </template>
-        </el-table-column>
+                  </div>
+                  <div class="product-quantity" style="text-align: left; width: 100%;">
+                    <span class="label" style="display: inline-block; width: 90px; text-align: right;">制作数量：</span>
+                    <span>{{ row.quantity || '--' }}</span>
+                  </div>
+                </div>
+              </template>
+            </el-table-column>
 
-        <!-- SKU信息 -->
+            <!-- SKU信息 -->
         <el-table-column
 label="定制SKU" align="center" min-width="200">
-          <template #default="{ row }">
-            <div class="sku-info" style="display: flex; justify-content: center; align-items: center; width: 100%;">
-              <div class="sku-item custom-sku-wrapper" style="text-align: center;">
+              <template #default="{ row }">
+                <div class="sku-info" style="display: flex; justify-content: center; align-items: center; width: 100%;">
+                  <div class="sku-item custom-sku-wrapper" style="text-align: center;">
                 <div class="custom-sku-content" style="display: flex; justify-content: center; align-items: center;">
-                  <span v-if="row.customSku" class="custom-sku">{{ row.customSku }}</span>
-                  <span v-else>-</span>
+                      <span v-if="row.customSku" class="custom-sku">{{ row.customSku }}</span>
+                      <span v-else>-</span>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
-          </template>
-        </el-table-column>
+              </template>
+            </el-table-column>
 
-        <!-- 定制文字列表 -->
-        <el-table-column label="定制文字列表" prop="customTextList" align="center" min-width="110" show-overflow-tooltip>
-          <template #default="{ row }">
+            <!-- 定制文字列表 -->
+            <el-table-column label="定制文字列表" prop="customTextList" align="center" min-width="110" show-overflow-tooltip>
+              <template #default="{ row }">
             <div v-if="row.customTextList" style="font-size: 20px; font-weight: 700; padding: 8px; color: #409EFF; margin: 4px;">{{ row.customTextList }}</div>
-            <span v-else></span>
-          </template>
-        </el-table-column>
+                <span v-else></span>
+              </template>
+            </el-table-column>
 
-        <!-- 合成预览图 -->
-        <el-table-column label="合成预览图" align="center" min-width="360">
-          <template #default="{ row }">
-            <el-image v-if="row.effectiveImgUrl" :hide-on-click-modal="true" :preview-teleported="true"
-              :src="row.effectiveImgUrl" :preview-src-list="[row.effectiveImgUrl]"
-              style="width: 320px; height: 320px" fit="cover" loading="lazy" :initial-index="0" :preview="false" />
-            <span v-else>-</span>
-          </template>
-        </el-table-column>
+            <!-- 合成预览图 -->
+            <el-table-column label="合成预览图" align="center" min-width="360">
+              <template #default="{ row }">
+                <el-image
+v-if="row.effectiveImgUrl" :hide-on-click-modal="true" :preview-teleported="true"
+                  :src="row.effectiveImgUrl" :preview-src-list="[row.effectiveImgUrl]"
+                  style="width: 320px; height: 320px" fit="cover" loading="lazy" :initial-index="0" :preview="false" />
+                <span v-else>-</span>
+              </template>
+            </el-table-column>
 
-        <!-- 批次编号 -->
-        <el-table-column label="批次编号" prop="batchNo" align="center" min-width="120" show-overflow-tooltip>
-          <template #default="{ row }">
-            <div v-if="row.batchNo" style="font-size: 16px; font-weight: 600;">{{ row.batchNo }}</div>
-            <span v-else>-</span>
-          </template>
-        </el-table-column>
+            <!-- 批次编号 -->
+            <el-table-column label="批次编号" prop="batchNo" align="center" min-width="120" show-overflow-tooltip>
+              <template #default="{ row }">
+                <div v-if="row.batchNo" style="font-size: 16px; font-weight: 600;">{{ row.batchNo }}</div>
+                <span v-else>-</span>
+              </template>
+            </el-table-column>
 
-        <!-- 操作列 -->
+            <!-- 操作列 -->
             <el-table-column label="操作" align="center" min-width="160">
-          <template #default="{ row }">
+              <template #default="{ row }">
             <div class="action-buttons" style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%;">
               <el-tooltip
 effect="dark" content="当前合规单尚未上传，请联系相关人员及时上传！" placement="left-start"
@@ -447,27 +471,27 @@ effect="dark" content="当前合规单尚未上传，请联系相关人员及时
                 :hide-after="200" :enterable="false" :offset="20">
                 <el-button
 size="small" type="warning" plain class="action-button" :disabled="!row.complianceImageUrl"
-                  @click.stop="handlePrint(row.complianceImageUrl, row.originalQuantity)">
-                  <el-icon>
-                    <Printer />
-                  </el-icon>
-                  打印合规单
-                </el-button>
-              </el-tooltip>
+                      @click.stop="handlePrint(row.complianceImageUrl, row.originalQuantity)">
+                      <el-icon>
+                        <Printer />
+                      </el-icon>
+                      打印合规单
+                    </el-button>
+                  </el-tooltip>
               <el-tooltip
 effect="dark" content="当前合并文件尚未上传，请联系相关人员及时上传！" placement="left-start"
-                :disabled="!!row.complianceGoodsMergedUrl" popper-class="custom-tooltip custom-tooltip-left"
-                :show-after="100" :hide-after="200" :enterable="false" :offset="20">
+                    :disabled="!!row.complianceGoodsMergedUrl" popper-class="custom-tooltip custom-tooltip-left"
+                    :show-after="100" :hide-after="200" :enterable="false" :offset="20">
                 <el-button
 size="small" type="warning" plain class="action-button"
-                  :disabled="!row.complianceGoodsMergedUrl"
-                  @click.stop="handlePrint(row.complianceGoodsMergedUrl, row.originalQuantity)">
-                  <el-icon>
-                    <Printer />
-                  </el-icon>
-                  打印条码+合规单
-                </el-button>
-              </el-tooltip>
+                      :disabled="!row.complianceGoodsMergedUrl"
+                      @click.stop="handlePrint(row.complianceGoodsMergedUrl, row.originalQuantity)">
+                      <el-icon>
+                        <Printer />
+                      </el-icon>
+                      打印条码+合规单
+                    </el-button>
+                  </el-tooltip>
               <el-tooltip
                 effect="dark"
                 :content="row.orderStatus === 4 ? '订单已发货，无法修改备齐状态' : ''"
@@ -479,8 +503,8 @@ size="small" type="warning" plain class="action-button"
                 :enterable="false"
                 :offset="20"
               >
-                <div class="dual-circle-selector" :class="{ 'disabled': row.orderStatus === 4 }">
-                  <span class="selector-label">备齐：</span>
+                    <div class="dual-circle-selector" :class="{ 'disabled': row.orderStatus === 4 }">
+                      <span class="selector-label">备齐：</span>
                                       <div 
                       class="circle-option" 
                       :class="{ 'selected': row.isFoundAll === 1 }"
@@ -488,24 +512,24 @@ size="small" type="warning" plain class="action-button"
                       title="已备齐"
                     >
                       <el-icon class="check-icon"><Check /></el-icon>
-                    </div>
+                      </div>
                     <div 
                       class="circle-option" 
-                      :class="{ 'selected': row.isFoundAll === 0 || row.isFoundAll === null }"
+                        :class="{ 'selected': row.isFoundAll === 0 || row.isFoundAll === null }"
                       @click.stop="row.orderStatus !== 4 && toggleOrderIsFoundAll(row, 0)"
                       title="未备齐"
                     >
                       <el-icon class="close-icon"><Close /></el-icon>
+                      </div>
                     </div>
+                  </el-tooltip>
                 </div>
-              </el-tooltip>
-            </div>
-          </template>
-        </el-table-column>
-      </el-table>
+              </template>
+            </el-table-column>
+          </el-table>
         </div>
       </div>
-      
+
       <!-- 分页 -->
       <Pagination
 :total="total" v-model:page="queryParams.pageNo" v-model:limit="queryParams.pageSize"
@@ -513,6 +537,9 @@ size="small" type="warning" plain class="action-button"
     </ContentWrap>
 
     <ShippingInfoPopup @confirm="handlerRemarkConfirm" ref="shippingInfoPopup" />
+    
+    <!-- 分配打包人弹窗 -->
+    <PackerAssignmentPopup @confirm="handlePackerConfirm" ref="packerAssignmentPopup" />
 
     <!-- PDF预览弹窗 -->
     <el-dialog v-model="pdfPreviewVisible" width="800px" top="5vh" :close-on-click-modal="false" :close-on-press-escape="true" @close="onPdfPreviewClose">
@@ -539,10 +566,12 @@ import { COLOR_ARRAYS } from '@/utils/color'
 import printJS from 'print-js'
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib'
 import ShippingInfoPopup from './components/ShippingInfoPopup.vue'
+import PackerAssignmentPopup from './components/PackerAssignmentPopup.vue'
 import jsPDF from 'jspdf'
 import { ref as vueRef } from 'vue'
 // const tableRef = useTemplateRef<InstanceType<typeof ElTable>>('tableRef')
 const shippingInfoPopup = useTemplateRef('shippingInfoPopup')
+const packerAssignmentPopup = useTemplateRef('packerAssignmentPopup')
 
 declare global {
   interface Window {
@@ -593,6 +622,8 @@ interface OrderItem {
   bookingTime?: number | null // 添加预约时间字段
   isFoundAll?: number | null // 添加是否备齐字段：1-是，0-否
   batchNo?: string | null // 添加批次编号字段
+  senderId?: number | null // 添加打包人ID字段
+  senderName?: string | null // 添加打包人姓名字段
 }
 
 interface OrderNoGroup {
@@ -639,6 +670,21 @@ const level3TableRef = ref() // 第三级表格引用
 const shopList = ref<any[]>([])
 // 多选
 const selectedRows = ref<ExtendedOrderVO[]>([])
+// 打包人列表
+const packerList = ref<any[]>([])
+
+// 初始化时获取打包人列表
+const initPackerList = async () => {
+  try {
+    const data = await TemuCommonApi.getUserListByRoleKey('production_staff')
+    if (data && Array.isArray(data)) {
+      packerList.value = data
+    }
+  } catch (error) {
+    console.error('获取打包人列表失败:', error)
+  }
+}
+
 const queryParams = reactive({
   pageNo: 1,
   pageSize: 10,
@@ -653,7 +699,8 @@ const queryParams = reactive({
   dailySequence: null as string | null, // 添加物流序号查询参数
   shippingStatus: undefined, // 新增发货状态查询参数
   batchNo: undefined, // 批次号搜索
-  customTextList: undefined // 定制文字搜索
+  customTextList: undefined, // 定制文字搜索
+  senderId: undefined // 添加打包人搜索参数
 })
 const queryFormRef = ref() // 搜索的表单
 
@@ -688,7 +735,7 @@ const handlerRemarkConfirm = (data: any) => {
 const handleFocus = async (row: any) => {
   // 获取同一物流单号下的所有订单信息
   const sameTrackingOrders = list.value.filter(item => item.trackingNumber === row.trackingNumber)
-  
+
   // 按sortingSequence排序，如果没有则按orderNo排序
   const sortedOrders = [...sameTrackingOrders].sort((a, b) => {
     if (a.sortingSequence && b.sortingSequence) {
@@ -713,7 +760,9 @@ const handleFocus = async (row: any) => {
       customSku: order.customSku || '',
       customTextList: order.customTextList || '',
       productProperties: order.productProperties || '',
-      isMultiple: (order.originalQuantity || 0) > 1 // 修改为判断官网数量是否大于1
+      isMultiple: (order.originalQuantity || 0) > 1, // 修改为判断官网数量是否大于1
+      categoryId: order.categoryId || '',
+      categoryName: getCategoryName(order.categoryId) // 使用已有的 getCategoryName 函数获取类目名称
     }))
 
   if (shippingInfoPopup.value) {
@@ -733,12 +782,12 @@ const getList = async () => {
   // 清空选中记录和表格选中状态
   selectedRows.value = []
   selectedStats.value = { trackingNumbers: 0, orderNos: 0, total: 0 }
-  
+
   // 清除所有表格的选中和高亮状态
   if (tableRef.value) {
     tableRef.value.clearSelection()
   }
-  
+
   // 清除级联表格的高亮状态
   if (level1TableRef.value) {
     // 确保在DOM更新后清除选择状态
@@ -749,19 +798,19 @@ const getList = async () => {
       }
     })
   }
-  
+
   if (level2TableRef.value) {
     level2TableRef.value.setCurrentRow(null)
   }
-  
+
   if (level3TableRef.value) {
     level3TableRef.value.setCurrentRow(null)
   }
-  
+
   // 重置级联展开状态
   selectedTrackingNumber.value = ''
   selectedOrderNo.value = ''
-  
+
   packageTagMap.clear() // 清空包裹标签映射
   loading.value = true
   try {
@@ -968,34 +1017,34 @@ const handleSelectionChange = (selection: ExtendedOrderVO[]) => {
     // 直接使用选中的行，不需要过滤（因为第一级表格每行已经是唯一的物流单号）
     selectedRows.value = selection
 
-  // 统计选中的物流单号和订单编号数量
-  const trackingNumbersSet = new Set<string>()
-  const orderNosSet = new Set<string>()
-  let totalOrders = 0
+    // 统计选中的物流单号和订单编号数量
+    const trackingNumbersSet = new Set<string>()
+    const orderNosSet = new Set<string>()
+    let totalOrders = 0
 
-  // 对于每个选中的物流单号，找出其下所有的订单
+    // 对于每个选中的物流单号，找出其下所有的订单
     selection.forEach(selectedRow => {
-    if (selectedRow.trackingNumber) {
-      trackingNumbersSet.add(selectedRow.trackingNumber)
+      if (selectedRow.trackingNumber) {
+        trackingNumbersSet.add(selectedRow.trackingNumber)
 
-      // 找出该物流单号下的所有订单
-      const relatedOrders = list.value.filter(row =>
-        row.trackingNumber === selectedRow.trackingNumber
-      )
+        // 找出该物流单号下的所有订单
+        const relatedOrders = list.value.filter(row =>
+          row.trackingNumber === selectedRow.trackingNumber
+        )
 
-      relatedOrders.forEach(order => {
-        if (order.orderNo) {
-          orderNosSet.add(order.orderNo)
-        }
-        totalOrders++
-      })
-    }
-  })
+        relatedOrders.forEach(order => {
+          if (order.orderNo) {
+            orderNosSet.add(order.orderNo)
+          }
+          totalOrders++
+        })
+      }
+    })
 
-  selectedStats.value = {
-    trackingNumbers: trackingNumbersSet.size,
-    orderNos: orderNosSet.size,
-    total: totalOrders
+    selectedStats.value = {
+      trackingNumbers: trackingNumbersSet.size,
+      orderNos: orderNosSet.size,
+      total: totalOrders
     }
   } catch (error) {
     console.error('Selection change error:', error)
@@ -1085,6 +1134,7 @@ onMounted(() => {
   getList()
   getProductCategoryList()
   getShopList()
+  initPackerList() // 初始化打包人列表
 })
 
 // 清理全局函数
@@ -1190,12 +1240,12 @@ const handlePrint = async (url: string, quantity?: number) => {
 
   // 计算打印份数
   const printCount = quantity && quantity > 1 ? quantity : 1
- 
+
   // 判断是否为加急面单 - 更严格的判断
-  const isUrgentLabel = url.includes('expressOutsideImageUrl') || 
-                        url.includes('expressOutside') || 
-                        url.toLowerCase().includes('urgent')
-   
+  const isUrgentLabel = url.includes('expressOutsideImageUrl') ||
+    url.includes('expressOutside') ||
+    url.toLowerCase().includes('urgent')
+
   // 添加调试信息
   console.log('打印信息:', {
     url,
@@ -1218,17 +1268,17 @@ const handlePrint = async (url: string, quantity?: number) => {
       // 找到对应的订单数据 - 更宽松的查找条件
       let relatedOrder: any = null
       // 先根据URL精确匹配
-      relatedOrder = list.value.find(item => 
-        (item.expressOutsideImageUrl === url || 
-          (item.expressOutsideImageUrl?.startsWith('@') && item.expressOutsideImageUrl.substring(1) === printUrl))
+      relatedOrder = list.value.find(item =>
+      (item.expressOutsideImageUrl === url ||
+        (item.expressOutsideImageUrl?.startsWith('@') && item.expressOutsideImageUrl.substring(1) === printUrl))
       )
-      
+
       // 如果没找到，则按物流单号从URL中提取
       if (!relatedOrder) {
         // 尝试从URL中提取可能的物流单号或订单号
         const possibleIds = printUrl.match(/[A-Z0-9]{10,}/g) || []
         for (const id of possibleIds) {
-          const foundOrder = list.value.find(item => 
+          const foundOrder = list.value.find(item =>
             item.trackingNumber?.includes(id) || item.orderNo?.includes(id)
           )
           if (foundOrder) {
@@ -1237,18 +1287,18 @@ const handlePrint = async (url: string, quantity?: number) => {
           }
         }
       }
-      
+
       // 如果仍然没找到，使用第一个选中的行
       if (!relatedOrder && selectedRows.value.length > 0) {
         relatedOrder = selectedRows.value[0]
       }
-      
+
       console.log('关联订单信息:', relatedOrder)
-      
+
       // 获取序号信息
       const sequenceNumber = String(relatedOrder?.dailySequence || '-')
       console.log('物流序号:', sequenceNumber)
-      
+
       // 获取日期信息
       const dateText = relatedOrder?.createTime ? formatDateSafe(relatedOrder.createTime, 'MM-DD') : '-'
 
@@ -1267,36 +1317,36 @@ const handlePrint = async (url: string, quantity?: number) => {
           // 使用PDFDocument处理PDF文件
           const pdfBytes = await pdfBlob.arrayBuffer()
           const pdfDoc = await PDFDocument.load(pdfBytes)
-          
+
           // 创建新的PDF，添加序号页
           const mergedPdf = await PDFDocument.create()
 
           // 获取原始PDF的第一页尺寸作为参考
           const originalPages = pdfDoc.getPages()
-          const originalPageSize = originalPages.length > 0 
-            ? originalPages[0].getSize() 
+          const originalPageSize = originalPages.length > 0
+            ? originalPages[0].getSize()
             : { width: 595, height: 842 } // A4尺寸作为默认值
-          
+
           // 创建序号页，使用与原始PDF相同的尺寸
           const firstPage = mergedPdf.addPage([originalPageSize.width, originalPageSize.height])
           const { width, height } = firstPage.getSize()
-          
+
           // 使用默认字体
           const helveticaFont = await mergedPdf.embedFont(StandardFonts.Helvetica)
-          
+
           // 序号只有两位，可以使用更大的字体
           const maxFontSizeWidth = width * 0.9 // 占页面宽度的90%
           const maxFontSizeHeight = height * 0.75 // 占页面高度的75%，留出日期空间
           const maxFontSize = Math.min(maxFontSizeWidth, maxFontSizeHeight)
-          
+
           // 根据序号长度计算实际字体大小
           let fontSize = maxFontSize
           if (sequenceNumber.length > 2) {
             fontSize = maxFontSize / (sequenceNumber.length * 0.5) // 调整系数以适应更长的序号
           }
-          
+
           const textWidth = helveticaFont.widthOfTextAtSize(sequenceNumber, fontSize)
-          
+
           // 绘制序号(移至页面上部)
           firstPage.drawText(sequenceNumber, {
             x: (width - textWidth) / 2,
@@ -1305,7 +1355,7 @@ const handlePrint = async (url: string, quantity?: number) => {
             color: rgb(0, 0, 0),
             font: helveticaFont
           })
-          
+
           // 绘制日期(放在页面更下方)
           const dateWidth = helveticaFont.widthOfTextAtSize(dateText, 24)
           firstPage.drawText(dateText, {
@@ -1315,7 +1365,7 @@ const handlePrint = async (url: string, quantity?: number) => {
             color: rgb(0, 0, 0),
             font: helveticaFont
           })
-          
+
           // 拷贝原PDF的所有页面，保持原始尺寸
           const pages = await mergedPdf.copyPages(pdfDoc, pdfDoc.getPageIndices())
           pages.forEach(page => {
@@ -1331,13 +1381,13 @@ const handlePrint = async (url: string, quantity?: number) => {
           loading.close()
 
           // 打印合并后的PDF
-            printJS({
-              printable: mergedPdfUrl,
-              type: 'pdf',
-              showModal: true,
-              onLoadingEnd: () => {
-                URL.revokeObjectURL(mergedPdfUrl)
-              }
+          printJS({
+            printable: mergedPdfUrl,
+            type: 'pdf',
+            showModal: true,
+            onLoadingEnd: () => {
+              URL.revokeObjectURL(mergedPdfUrl)
+            }
           })
 
           ElMessage.success('打印完成')
@@ -1357,7 +1407,7 @@ const handlePrint = async (url: string, quantity?: number) => {
             </div>
           </div>
         `
-        
+
         // 合并序号页和图片页
         const printContent = sequencePageHtml + Array(printCount).fill(`
           <div style="page-break-after: always;">
@@ -1408,20 +1458,20 @@ const handlePrint = async (url: string, quantity?: number) => {
           // 直接使用PDFDocument处理PDF文件
           const pdfBytes = await pdfBlob.arrayBuffer()
           const pdfDoc = await PDFDocument.load(pdfBytes)
-          
+
           // 创建新的PDF
           const mergedPdf = await PDFDocument.create()
-          
+
           // 拷贝原PDF的所有页面
           const pages = await mergedPdf.copyPages(pdfDoc, pdfDoc.getPageIndices())
-          
+
           // 根据打印份数添加页面
           for (let i = 0; i < printCount; i++) {
             pages.forEach(page => {
               mergedPdf.addPage(page)
             })
           }
-          
+
           // 生成PDF数据
           const mergedPdfBytes = await mergedPdf.save()
           const mergedPdfBlob = new Blob([mergedPdfBytes], { type: 'application/pdf' })
@@ -1789,26 +1839,26 @@ const handlerPrintBatchUrgent = async () => {
     const mergedPdf = await PDFDocument.create()
     let successCount = 0
     let failCount = 0
-    
+
     // 默认A4尺寸
     let defaultPageSize = { width: 595, height: 842 }
 
     // 处理每个物流单号
     for (const [_, order] of uniqueTrackingOrders) {
       if (!order.expressOutsideImageUrl) continue
-      
-      const printUrl = order.expressOutsideImageUrl.startsWith('@') 
-        ? order.expressOutsideImageUrl.substring(1) 
+
+      const printUrl = order.expressOutsideImageUrl.startsWith('@')
+        ? order.expressOutsideImageUrl.substring(1)
         : order.expressOutsideImageUrl
-      
+
       try {
         // 确保序号是字符串类型
         const sequenceNumber = String(order.dailySequence || '-')
         const dateText = order.createTime ? formatDateSafe(order.createTime, 'MM-DD') : '-'
-        
+
         // 先获取原始PDF的尺寸
         let pageSize = defaultPageSize
-        
+
         if (printUrl.toLowerCase().endsWith('.pdf')) {
           const response = await fetch(printUrl)
           if (!response.ok) {
@@ -1816,37 +1866,37 @@ const handlerPrintBatchUrgent = async () => {
             failCount++
             continue
           }
-          
+
           const pdfBytes = await response.arrayBuffer()
           const pdf = await PDFDocument.load(pdfBytes)
           const originalPages = pdf.getPages()
-          
+
           if (originalPages.length > 0) {
             pageSize = originalPages[0].getSize()
             // 更新默认尺寸以便后续使用
             defaultPageSize = pageSize
           }
-          
+
           // 添加序号页，使用相同尺寸
           const sequencePage = mergedPdf.addPage([pageSize.width, pageSize.height])
           const { width, height } = sequencePage.getSize()
-          
+
           // 使用默认字体
           const helveticaFont = await mergedPdf.embedFont(StandardFonts.Helvetica)
-          
+
           // 计算序号文本宽度和字体大小
           const maxFontSizeWidth = width * 0.9 // 占页面宽度的90%
           const maxFontSizeHeight = height * 0.75 // 占页面高度的75%，留出日期空间
           const maxFontSize = Math.min(maxFontSizeWidth, maxFontSizeHeight)
-          
+
           // 根据序号长度计算实际字体大小
           let fontSize = maxFontSize
           if (sequenceNumber.length > 2) {
             fontSize = maxFontSize / (sequenceNumber.length * 0.5) // 调整系数以适应更长的序号
           }
-          
+
           const textWidth = helveticaFont.widthOfTextAtSize(sequenceNumber, fontSize)
-          
+
           // 绘制序号(移至页面上部)
           sequencePage.drawText(sequenceNumber, {
             x: (width - textWidth) / 2,
@@ -1855,7 +1905,7 @@ const handlerPrintBatchUrgent = async () => {
             color: rgb(0, 0, 0),
             font: helveticaFont
           })
-          
+
           // 绘制日期(放在页面更下方)
           const dateWidth = helveticaFont.widthOfTextAtSize(dateText, 24)
           sequencePage.drawText(dateText, {
@@ -1865,37 +1915,37 @@ const handlerPrintBatchUrgent = async () => {
             color: rgb(0, 0, 0),
             font: helveticaFont
           })
-          
+
           // 复制原始PDF的所有页面
           const copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices())
-          
+
           // 添加所有页面
           copiedPages.forEach(page => {
             mergedPdf.addPage(page)
           })
-          
+
           successCount++
         } else {
           // 对于图片，添加序号页
           const sequencePage = mergedPdf.addPage([defaultPageSize.width, defaultPageSize.height])
           const { width, height } = sequencePage.getSize()
-          
+
           // 使用默认字体
           const helveticaFont = await mergedPdf.embedFont(StandardFonts.Helvetica)
-          
+
           // 计算序号文本宽度和字体大小
           const maxFontSizeWidth = width * 0.9 // 占页面宽度的90%
           const maxFontSizeHeight = height * 0.75 // 占页面高度的75%，留出日期空间
           const maxFontSize = Math.min(maxFontSizeWidth, maxFontSizeHeight)
-          
+
           // 根据序号长度计算实际字体大小
           let fontSize = maxFontSize
           if (sequenceNumber.length > 2) {
             fontSize = maxFontSize / (sequenceNumber.length * 0.5) // 调整系数以适应更长的序号
           }
-          
+
           const textWidth = helveticaFont.widthOfTextAtSize(sequenceNumber, fontSize)
-          
+
           // 绘制序号(移至页面上部)
           sequencePage.drawText(sequenceNumber, {
             x: (width - textWidth) / 2,
@@ -1904,7 +1954,7 @@ const handlerPrintBatchUrgent = async () => {
             color: rgb(0, 0, 0),
             font: helveticaFont
           })
-          
+
           // 绘制日期(放在页面更下方)
           const dateWidth = helveticaFont.widthOfTextAtSize(dateText, 24)
           sequencePage.drawText(dateText, {
@@ -1914,7 +1964,7 @@ const handlerPrintBatchUrgent = async () => {
             color: rgb(0, 0, 0),
             font: helveticaFont
           })
-          
+
           // 我们需要另外处理图片
           // 图片会在PDF之外单独打印
           successCount++
@@ -2127,21 +2177,21 @@ const toggleOrderIsFoundAll = async (row: OrderItem, status: number) => {
       ElMessage.error('未找到订单ID，无法操作')
       return
     }
-    
+
     // 检查订单是否已发货
     if (row.orderStatus === 4) {
       ElMessage.warning('订单已发货，无法修改备齐状态')
       return
     }
-    
+
     // 如果状态相同，不需要调用接口
     if (row.isFoundAll === status) {
       return
     }
-    
+
     // 调用切换订单是否备齐的接口，使用订单ID
     await OrderApi.toggleOrderIsFoundAll(row, status)
-    
+
     ElMessage.success(`订单 ${row.orderNo} ${status === 1 ? '已标记为备齐' : '已标记为未备齐'}`)
   } catch (error) {
     console.error('切换订单备齐状态失败:', error)
@@ -2515,6 +2565,7 @@ const isProductionComplete = (row: ExtendedOrderVO) => {
   })
 }
 
+
 /** 批量打印加急面单、面单和条码+合规单 */
 const handlerPrintBatchAll = async () => {
   if (!selectedRows.value || selectedRows.value.length === 0) {
@@ -2835,40 +2886,69 @@ const handlerPrintBatchAll = async () => {
 
         // 3. 处理每个订单编号
         for (const [orderNo, sameOrderItems] of ordersByOrderNo) {
-          // 3.1 首先打印该订单编号的面单（只打印一次）
-          const firstOrder = sameOrderItems[0]
-          if (firstOrder.expressImageUrl) {
-            const printUrl = firstOrder.expressImageUrl.startsWith('@')
-              ? firstOrder.expressImageUrl.substring(1)
-              : firstOrder.expressImageUrl
-            const response = await fetch(printUrl)
-            if (response.ok) {
-              const pdfBytes = await response.arrayBuffer()
-              const pdf = await PDFDocument.load(pdfBytes)
-              const copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices())
-              copiedPages.forEach(page => mergedPdf.addPage(page))
-            }
-          }
-
-          // 3.2 然后打印该订单编号下每个订单项的条码+合规单
-          for (const orderItem of sameOrderItems) {
-            if (orderItem.complianceGoodsMergedUrl) {
-              const url = orderItem.complianceGoodsMergedUrl.startsWith('@')
-                ? orderItem.complianceGoodsMergedUrl.substring(1)
-                : orderItem.complianceGoodsMergedUrl
-              const response = await fetch(url)
-              if (response.ok) {
-                const pdfBytes = await response.arrayBuffer()
-                const pdf = await PDFDocument.load(pdfBytes)
-                const copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices())
-                const copies = orderItem.originalQuantity || 1
-                for (let i = 0; i < copies; i++) {
-                  copiedPages.forEach(page => mergedPdf.addPage(page))
+          let pageIndex = 0; // 每个订单编号下的面单页索引
+          // console.log(sameOrderItems);
+          for (let i = 0; i < sameOrderItems.length; i++) {
+            const orderItem = sameOrderItems[i];
+            const isFirst = i === 0;
+            const nextSku = !isFirst ? sameOrderItems[i - 1].sku : null;
+            // 第一个 或 SKU变化时打印面单            
+            if (isFirst || orderItem.sku !== nextSku) {
+              if (orderItem.expressImageUrl) {
+                const printUrl = orderItem.expressImageUrl.startsWith('@')
+                  ? orderItem.expressImageUrl.substring(1)
+                  : orderItem.expressImageUrl;
+                // 新增：只打印customSku与PDF中DZ编号匹配的那一页
+                try {
+                  // 1. 用pdfjs-dist查找匹配页
+                  const response = await fetch(printUrl);
+                  if (!response.ok) continue;
+                  const arrayBuffer = await response.arrayBuffer();
+                  // 立即克隆一份
+                  const arrayBufferForPdfjs = arrayBuffer.slice(0);
+                  const pdfjsDoc = await pdfjsLib.getDocument({ data: arrayBufferForPdfjs }).promise;
+                  let matchedPage = -1;
+                  for (let pageNum = 1; pageNum <= pdfjsDoc.numPages; pageNum++) {
+                    const page = await pdfjsDoc.getPage(pageNum);
+                    const content = await page.getTextContent();
+                    const text = content.items.map((item) => item.str).join(' ');
+                    const match = text.match(/DZ(\w+)/);
+                    if (match && match[1] === orderItem.customSku) {
+                      matchedPage = pageNum - 1; // pdf-lib页码从0开始
+                      break;
+                    }
+                  }
+                  if (matchedPage !== -1) {
+                    // pdf-lib 用 arrayBufferForPdfLib
+                    const arrayBufferForPdfLib = arrayBuffer.slice(0);
+                    const pdfLibDoc = await PDFDocument.load(arrayBufferForPdfLib);
+                    const copiedPages = await mergedPdf.copyPages(pdfLibDoc, [matchedPage]);
+                    mergedPdf.addPage(copiedPages[0]);
+                  }
+                } catch (e) {
+                  console.error('PDF匹配customSku失败', e);
                 }
               }
             }
+            if (orderItem.complianceGoodsMergedUrl) {
+              const url = orderItem.complianceGoodsMergedUrl.startsWith('@')
+                ? orderItem.complianceGoodsMergedUrl.substring(1)
+                : orderItem.complianceGoodsMergedUrl;
+              let response = await fetch(url);
+              if (response.ok) {
+                let pdfBytes = await response.arrayBuffer();
+                let pdf = await PDFDocument.load(pdfBytes);
+                let copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
+                const copies = orderItem.originalQuantity || 1;
+                for (let j = 0; j < copies; j++) {
+                  copiedPages.forEach(page => mergedPdf.addPage(page));
+                }
+              }
+            }
+            
           }
         }
+
 
         // 4. 添加空白页作为分隔（如果不是最后一个物流单号）
         if ([...ordersByTracking.keys()].indexOf(trackingNumber) < ordersByTracking.size - 1) {
@@ -2878,301 +2958,8 @@ const handlerPrintBatchAll = async () => {
         successCount++
       } catch (error) {
         console.error(`处理物流单号 ${trackingNumber} 失败:`, error)
-        failCount++
-      }
-    }
-
-    if (mergedPdf.getPageCount() === 0) {
-      loading.close() // 关闭加载
-      ElMessage.error('没有可打印的文件')
-      return
-    }
-
-    // 更新加载提示
-    loading.setText('正在准备打印...')
-
-    // 保存合并后的PDF
-    const mergedPdfBytes = await mergedPdf.save()
-    const mergedPdfBlob = new Blob([mergedPdfBytes], { type: 'application/pdf' })
-    const mergedPdfUrl = URL.createObjectURL(mergedPdfBlob)
-
-    // 使用print-js打印PDF
-    printJS({
-      printable: mergedPdfUrl,
-      type: 'pdf',
-      showModal: true,
-      onLoadingEnd: () => {
-        // 清理资源
-        URL.revokeObjectURL(mergedPdfUrl)
-        loading.close() // 关闭加载
-      }
-    })
-
-    // 显示处理结果
-    if (failCount > 0) {
-      ElMessage.warning(`成功处理${successCount}个物流单号，${failCount}个物流单号处理失败`)
-    } else {
-      ElMessage.success(`成功处理${successCount}个物流单号`)
-    }
-  } catch (error) {
-    loading.close() // 关闭加载
-    console.error('批量打印失败:', error)
-    ElMessage.error(
-      '批量打印失败：' + (error instanceof Error ? error.message : '未知错误')
-    )
-  }
-}
-
-/** 批量打印序号+加急面单+面单 */
-const handlerPrintBatchLabels = async () => {
-  if (!selectedRows.value || selectedRows.value.length === 0) {
-    ElMessage.warning('请先选择要打印的订单')
-    return
-  }
-
-  // 创建加载实例
-  const loading = ElLoading.service({
-    lock: true,
-    text: '正在处理打印文件，请稍候...',
-    background: 'rgba(0, 0, 0, 0.7)'
-  })
-
-  try {
-    // 按照页面显示顺序获取所有选中的订单
-    const allOrders: ExtendedOrderVO[] = []
-    list.value.forEach(row => {
-      // 如果当前行被选中，获取该物流单号下的所有订单
-      if (selectedRows.value.some(selected => selected.uniqueId === row.uniqueId)) {
-        const sameTrackingOrders = list.value.filter(item =>
-          item.trackingNumber === row.trackingNumber
-        ) as ExtendedOrderVO[]
-        // 确保不重复添加同一物流单号的订单
-        if (!allOrders.some(order => order.trackingNumber === row.trackingNumber)) {
-          allOrders.push(...sameTrackingOrders)
-        }
-      }
-    })
-
-    // 检查是否有订单缺少必要的文件
-    const ordersWithoutFiles = allOrders.filter(
-      (order) => !order.expressOutsideImageUrl || !order.expressImageUrl
-    )
-    if (ordersWithoutFiles.length > 0) {
-      loading.close() // 关闭加载
-      // 按店铺分组并去重SKC
-      const groupedByShop = ordersWithoutFiles.reduce((acc, order) => {
-        const shopName = order.shopName || '未知店铺'
-        if (!acc[shopName]) {
-          acc[shopName] = new Set()
-        }
-        if (order.skc) {
-          acc[shopName].add(order.skc)
-        }
-        return acc
-      }, {} as Record<string, Set<string>>)
-
-      const missingInfo = Object.entries(groupedByShop)
-        .map(
-          ([shopName, skcs]) => `
-          <div style="margin-bottom: 16px;">
-            <div style="color: #606266; font-weight: bold; margin-bottom: 8px;">${shopName}</div>
-            <div style="padding-left: 16px;">
-              ${Array.from(skcs)
-              .map(
-                (skc) => `
-                <div style="color: #409EFF; margin-bottom: 4px;">
-                  ${skc}
-                </div>
-              `
-              )
-              .join('')}
-            </div>
-          </div>
-        `
-        )
-        .join('')
-
-      ElNotification({
-        title: '无法批量打印',
-        message: `
-          <div style="margin-bottom: 10px; color: #303133;">以下SKC缺少必要的打印文件，请联系相关人员及时补充：</div>
-          <div style="max-height: 300px; overflow-y: auto; padding-right: 10px;">${missingInfo}</div>
-        `,
-        type: 'warning',
-        duration: 0,
-        dangerouslyUseHTMLString: true,
-        offset: 60
-      })
-      return
-    }
-
-    // 更新加载提示
-    loading.setText('正在合并PDF文件...')
-
-    // 创建一个新的PDF文档
-    const mergedPdf = await PDFDocument.create()
-    let successCount = 0
-    let failCount = 0
-
-    // 按物流单号分组订单，但保持页面显示顺序
-    const ordersByTracking = new Map<string, ExtendedOrderVO[]>()
-    allOrders.forEach(order => {
-      if (!ordersByTracking.has(order.trackingNumber)) {
-        ordersByTracking.set(order.trackingNumber, [])
-      }
-      ordersByTracking.get(order.trackingNumber)?.push(order)
-    })
-
-    // 更新总数用于进度显示
-    const totalTrackingNumbers = ordersByTracking.size
-    let currentTrackingNumber = 0
-
-    // 默认A4尺寸
-    let defaultPageSize = { width: 595, height: 842 }
-
-    // 按照页面显示顺序处理每个物流单号
-    for (const [trackingNumber, orders] of ordersByTracking) {
-      currentTrackingNumber++
-      loading.setText(`正在处理第 ${currentTrackingNumber}/${totalTrackingNumbers} 个物流单号...`)
-
-      try {
-        // 从订单中获取序号和日期信息
-        const firstOrder = orders[0]
-        const sequenceNumber = String(firstOrder.dailySequence || '-')
-        const dateText = firstOrder.createTime ? formatDateSafe(firstOrder.createTime, 'MM-DD') : '-'
+        console.log(error);
         
-        // 1. 首先添加序号页
-        let pageSize = defaultPageSize
-        
-        // 尝试从加急面单获取页面尺寸
-        if (orders[0].expressOutsideImageUrl) {
-          const printUrl = orders[0].expressOutsideImageUrl.startsWith('@') 
-            ? orders[0].expressOutsideImageUrl.substring(1) 
-            : orders[0].expressOutsideImageUrl
-          
-          if (printUrl.toLowerCase().endsWith('.pdf')) {
-            try {
-              const response = await fetch(printUrl)
-              if (response.ok) {
-                const pdfBytes = await response.arrayBuffer()
-                const pdf = await PDFDocument.load(pdfBytes)
-                const originalPages = pdf.getPages()
-                
-                if (originalPages.length > 0) {
-                  pageSize = originalPages[0].getSize()
-                  // 更新默认尺寸以便后续使用
-                  defaultPageSize = pageSize
-                }
-              }
-            } catch (error) {
-              console.error(`获取PDF尺寸失败: ${printUrl}`, error)
-            }
-          }
-        }
-        
-        // 添加序号页
-        const sequencePage = mergedPdf.addPage([pageSize.width, pageSize.height])
-        const { width, height } = sequencePage.getSize()
-        
-        // 使用默认字体
-        const helveticaFont = await mergedPdf.embedFont(StandardFonts.Helvetica)
-        
-        // 计算序号文本宽度和字体大小 - 让序号变大一点
-        const maxFontSizeWidth = width * 0.9 // 占页面宽度的90%
-        const maxFontSizeHeight = height * 0.8 // 占页面高度的80%，让序号更大
-        const maxFontSize = Math.min(maxFontSizeWidth, maxFontSizeHeight)
-        
-        // 根据序号长度统一计算字体大小，确保所有长度的序号都显示完整
-        let fontSize
-        if (sequenceNumber.length <= 1) {
-          fontSize = maxFontSize * 0.9 // 单位数使用90%的最大字体
-        } else if (sequenceNumber.length === 2) {
-          fontSize = maxFontSize * 0.85 // 双位数使用85%的最大字体
-        } else {
-          fontSize = maxFontSize / (sequenceNumber.length * 0.4) // 三位数及以上使用更大的字体
-        }
-        
-        // 确保字体大小不会过大导致显示不完整，但允许更大的尺寸
-        fontSize = Math.min(fontSize, height * 0.6)
-        
-        const textWidth = helveticaFont.widthOfTextAtSize(sequenceNumber, fontSize)
-        
-        // 绘制序号(居中显示，往下移)
-        sequencePage.drawText(sequenceNumber, {
-          x: (width - textWidth) / 2,
-          y: height * 0.45, // 调整到页面45%处，往下移
-          size: fontSize,
-          color: rgb(0, 0, 0),
-          font: helveticaFont
-        })
-        
-        // 绘制日期(放在序号下方，更加贴近序号)
-        const dateWidth = helveticaFont.widthOfTextAtSize(dateText, 24)
-        sequencePage.drawText(dateText, {
-          x: (width - dateWidth) / 2,
-          y: height * 0.3, // 调整到页面30%处，往下移
-          size: 24,
-          color: rgb(0, 0, 0),
-          font: helveticaFont
-        })
-        
-        // 2. 添加加急面单（每个物流单号只需要一次）
-        const urgentUrl = orders[0].expressOutsideImageUrl
-        if (urgentUrl) {
-          const printUrl = urgentUrl.startsWith('@') ? urgentUrl.substring(1) : urgentUrl
-          
-          try {
-            const response = await fetch(printUrl)
-            if (response.ok) {
-              const pdfBytes = await response.arrayBuffer()
-              const pdf = await PDFDocument.load(pdfBytes)
-              const copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices())
-              copiedPages.forEach(page => mergedPdf.addPage(page))
-            }
-          } catch (error) {
-            console.error(`加载加急面单失败: ${printUrl}`, error)
-          }
-        }
-
-        // 3. 按订单编号分组
-        const ordersByOrderNo = new Map<string, ExtendedOrderVO[]>()
-        orders.forEach(order => {
-          if (!ordersByOrderNo.has(order.orderNo)) {
-            ordersByOrderNo.set(order.orderNo, [])
-          }
-          ordersByOrderNo.get(order.orderNo)?.push(order)
-        })
-
-        // 4. 处理每个订单编号的面单
-        for (const [orderNo, sameOrderItems] of ordersByOrderNo) {
-          // 打印该订单编号的面单（只打印一次）
-          const firstOrder = sameOrderItems[0]
-          if (firstOrder.expressImageUrl) {
-            const printUrl = firstOrder.expressImageUrl.startsWith('@')
-              ? firstOrder.expressImageUrl.substring(1)
-              : firstOrder.expressImageUrl
-            try {
-              const response = await fetch(printUrl)
-              if (response.ok) {
-                const pdfBytes = await response.arrayBuffer()
-                const pdf = await PDFDocument.load(pdfBytes)
-                const copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices())
-                copiedPages.forEach(page => mergedPdf.addPage(page))
-              }
-            } catch (error) {
-              console.error(`加载面单失败: ${printUrl}`, error)
-            }
-          }
-        }
-
-        // 5. 添加空白页作为分隔（如果不是最后一个物流单号）
-        if ([...ordersByTracking.keys()].indexOf(trackingNumber) < ordersByTracking.size - 1) {
-          const blankPage = mergedPdf.addPage()
-        }
-
-        successCount++
-      } catch (error) {
-        console.error(`处理物流单号 ${trackingNumber} 失败:`, error)
         failCount++
       }
     }
@@ -3280,36 +3067,36 @@ const handlePagination = (params: any) => {
 /** 获取唯一的物流单号数据 */
 const getUniqueTrackingNumbers = () => {
   if (!list.value || list.value.length === 0) return []
-  
+
   // 按物流单号分组，只保留每个物流单号的第一条记录
   const trackingMap = new Map<string, ExtendedOrderVO>()
-  
+
   list.value.forEach((item, index) => {
     if (!trackingMap.has(item.trackingNumber)) {
       // 添加索引属性用于颜色显示，并确保有唯一ID
       const uniqueId = item.uniqueId || `tracking_${item.trackingNumber}_${index}`
-      const itemWithIndex = { 
-        ...item, 
+      const itemWithIndex = {
+        ...item,
         index,
         uniqueId // 确保有唯一ID
       }
       trackingMap.set(item.trackingNumber, itemWithIndex)
     }
   })
-  
+
   return Array.from(trackingMap.values())
 }
 
 /** 根据物流单号获取订单 */
 const getOrdersByTrackingNumber = (trackingNumber: string) => {
   if (!trackingNumber || !list.value || list.value.length === 0) return []
-  
+
   // 获取该物流单号下的所有订单
   const orders = list.value.filter(item => item.trackingNumber === trackingNumber)
-  
+
   // 按中包序号分组，只保留每个中包序号的第一条记录
   const sortingSequenceMap = new Map<string, ExtendedOrderVO>()
-  
+
   orders.forEach((item, index) => {
     // 使用中包序号作为key，如果为空则使用orderNo作为备用
     const key = item.sortingSequence || `order_${item.orderNo}`
@@ -3319,23 +3106,23 @@ const getOrdersByTrackingNumber = (trackingNumber: string) => {
       sortingSequenceMap.set(key, itemWithIndex)
     }
   })
-  
+
   return Array.from(sortingSequenceMap.values())
 }
 
 /** 获取订单详情 */
 const getOrderDetails = (trackingNumber: string, sortingSequence: string) => {
   if (!trackingNumber || !list.value || list.value.length === 0) return []
-  
+
   // 获取该物流单号下的所有订单
   const orders = list.value.filter(item => item.trackingNumber === trackingNumber)
-  
+
   // 如果sortingSequence是以order_开头的，说明是使用orderNo作为备用key
   if (sortingSequence && sortingSequence.startsWith('order_')) {
     const orderNo = sortingSequence.substring(6) // 去掉'order_'前缀
     return orders.filter(item => item.orderNo === orderNo)
   }
-  
+
   // 否则按中包序号过滤
   return orders.filter(item => item.sortingSequence === sortingSequence)
 }
@@ -3351,10 +3138,10 @@ const handleOrderClick = (row: ExtendedOrderVO) => {
   // 使用中包序号作为选中标识，如果为空则使用orderNo作为备用
   // 确保精确匹配，避免类似序号(293037和293037_01)的混淆
   const newSelectedValue = row.sortingSequence || `order_${row.orderNo}`
-  
+
   // 强制重置选中状态，确保UI正确更新
   selectedOrderNo.value = ''
-  
+
   // 使用nextTick确保DOM更新后再设置新值
   nextTick(() => {
     selectedOrderNo.value = newSelectedValue
@@ -3364,14 +3151,14 @@ const handleOrderClick = (row: ExtendedOrderVO) => {
 /** 格式化预约时间，只显示月份和日期 */
 const formatBookingTime = (timestamp: number | null | undefined) => {
   if (!timestamp) return '-'
-  
+
   // 将时间戳转换为日期对象
   const date = new Date(timestamp)
-  
+
   // 获取月份（加1是因为JavaScript中月份从0开始）和日期
   const month = (date.getMonth() + 1).toString().padStart(2, '0')
   const day = date.getDate().toString().padStart(2, '0')
-  
+
   // 返回格式化的日期字符串，例如：07-13
   return `${month}-${day}`
 }
@@ -3379,40 +3166,40 @@ const formatBookingTime = (timestamp: number | null | undefined) => {
 /** 根据物流单号获取订单数量 */
 const getOrderCountByTrackingNumber = (trackingNumber: string) => {
   if (!trackingNumber || !list.value || list.value.length === 0) return 0
-  
+
   // 获取该物流单号下的所有订单
   const orders = list.value.filter(item => item.trackingNumber === trackingNumber)
-  
+
   // 统计不同的订单号数量
   const uniqueOrderNos = new Set(orders.map(order => order.orderNo))
-  
+
   return uniqueOrderNos.size
 }
 
 /** 根据物流单号获取中包数量 */
 const getSortingSequenceCountByTrackingNumber = (trackingNumber: string) => {
   if (!trackingNumber || !list.value || list.value.length === 0) return 0
-  
+
   // 获取该物流单号下的所有订单
   const orders = list.value.filter(item => item.trackingNumber === trackingNumber)
-  
+
   // 统计不同的中包序号数量，过滤掉空值
   const uniqueSortingSequences = new Set(
     orders
       .map(order => order.sortingSequence)
       .filter(seq => seq) // 过滤掉null、undefined和空字符串
   )
-  
+
   return uniqueSortingSequences.size
 }
 
 /** 获取特定中包序号下所有订单的官网数量总和 */
 const getTotalOriginalQuantityBySortingSequence = (trackingNumber: string, sortingSequence: string) => {
   if (!trackingNumber || !sortingSequence || !list.value || list.value.length === 0) return 0
-  
+
   // 获取该物流单号下的所有订单
   const orders = list.value.filter(item => item.trackingNumber === trackingNumber)
-  
+
   // 如果sortingSequence是以order_开头的，说明是使用orderNo作为备用key
   let filteredOrders: ExtendedOrderVO[] = []
   if (sortingSequence.startsWith('order_')) {
@@ -3422,22 +3209,22 @@ const getTotalOriginalQuantityBySortingSequence = (trackingNumber: string, sorti
     // 否则按中包序号过滤
     filteredOrders = orders.filter(item => item.sortingSequence === sortingSequence)
   }
-  
+
   // 累加所有订单的官网数量
   const totalOriginalQuantity = filteredOrders.reduce((sum, order) => {
     return sum + (order.originalQuantity || 0)
   }, 0)
-  
+
   return totalOriginalQuantity
 }
 
 /** 检查特定中包序号下是否有未备齐的订单 */
 const hasUnpreparedOrders = (trackingNumber: string, sortingSequence: string) => {
   if (!trackingNumber || !sortingSequence || !list.value || list.value.length === 0) return false
-  
+
   // 获取该物流单号下的所有订单
   const orders = list.value.filter(item => item.trackingNumber === trackingNumber)
-  
+
   // 如果sortingSequence是以order_开头的，说明是使用orderNo作为备用key
   let filteredOrders: ExtendedOrderVO[] = []
   if (sortingSequence.startsWith('order_')) {
@@ -3447,7 +3234,7 @@ const hasUnpreparedOrders = (trackingNumber: string, sortingSequence: string) =>
     // 否则按中包序号过滤
     filteredOrders = orders.filter(item => item.sortingSequence === sortingSequence)
   }
-  
+
   // 检查是否有未备齐的订单（isFoundAll为0或者null）
   return filteredOrders.some(order => order.isFoundAll === 0 || order.isFoundAll === null)
 }
@@ -3455,10 +3242,10 @@ const hasUnpreparedOrders = (trackingNumber: string, sortingSequence: string) =>
 /** 获取特定中包序号下未备齐的订单数量 */
 const getUnpreparedOrdersCount = (trackingNumber: string, sortingSequence: string) => {
   if (!trackingNumber || !sortingSequence || !list.value || list.value.length === 0) return 0
-  
+
   // 获取该物流单号下的所有订单
   const orders = list.value.filter(item => item.trackingNumber === trackingNumber)
-  
+
   // 如果sortingSequence是以order_开头的，说明是使用orderNo作为备用key
   let filteredOrders: ExtendedOrderVO[] = []
   if (sortingSequence.startsWith('order_')) {
@@ -3468,7 +3255,7 @@ const getUnpreparedOrdersCount = (trackingNumber: string, sortingSequence: strin
     // 否则按中包序号过滤
     filteredOrders = orders.filter(item => item.sortingSequence === sortingSequence)
   }
-  
+
   // 计算未备齐的订单数量
   return filteredOrders.filter(order => order.isFoundAll === 0 || order.isFoundAll === null).length
 }
@@ -3476,10 +3263,10 @@ const getUnpreparedOrdersCount = (trackingNumber: string, sortingSequence: strin
 /** 检查物流单号下是否有未备齐的订单 */
 const hasUnpreparedOrdersInTracking = (trackingNumber: string) => {
   if (!trackingNumber || !list.value || list.value.length === 0) return false
-  
+
   // 获取该物流单号下的所有订单
   const orders = list.value.filter(item => item.trackingNumber === trackingNumber)
-  
+
   // 检查是否有未备齐的订单（isFoundAll为0或者null）
   return orders.some(order => order.isFoundAll === 0 || order.isFoundAll === null)
 }
@@ -3496,18 +3283,18 @@ const showUnpreparedWarning = () => {
 // 根据categoryId获取类目名称
 const getCategoryName = (categoryId: string | null) => {
   if (!categoryId) return '-'
-  
+
   // 确保类目列表已加载
   if (!categoryList.value || categoryList.value.length === 0) {
     return '类目加载中...'
   }
-  
+
   const category = categoryList.value.find(item => item.categoryId == categoryId)
-  
+
   if (!category) {
     return `未知类目(${categoryId})`
   }
-  
+
   return category.categoryName || '-'
 }
 
@@ -3520,43 +3307,71 @@ const getLevel3RowClassName = ({ row }: { row: ExtendedOrderVO }) => {
   return ''
 }
 
-// 批量打印中包序号和日期
+// 批量打印中包序号（移除日期信息）
 const handlerPrintBatchZhongbaoSeq = () => {
   if (!selectedRows.value || selectedRows.value.length === 0) {
     ElMessage.warning('请先选择要打印的中包！')
     return
   }
-  // 统一A4尺寸，和打印全部一致
+
+  // 获取所有选中的物流单号下的所有中包序号，保持选中顺序
+  const allSortingSequences: string[] = []
+  const processedSequences = new Set<string>() // 用于去重但保持顺序
+  
+  // 遍历选中的物流单号，按选中顺序处理
+  selectedRows.value.forEach(selectedRow => {
+    // 获取该物流单号下的所有订单
+    const orders = list.value.filter(item => item.trackingNumber === selectedRow.trackingNumber)
+    
+    // 从这些订单中提取所有不为空的中包序号，保持顺序
+    orders.forEach(order => {
+      if (order.sortingSequence && !processedSequences.has(order.sortingSequence)) {
+        allSortingSequences.push(order.sortingSequence)
+        processedSequences.add(order.sortingSequence)
+      }
+    })
+  })
+
+  // 过滤掉空值，但保持顺序
+  const validSequences = allSortingSequences.filter(seq => !!seq)
+
+  if (validSequences.length === 0) {
+    ElMessage.warning('选中的物流单号下没有找到有效的中包序号')
+    return
+  }
+
+  // 统一A4尺寸
   const a4Width = 595
   const a4Height = 842
   const doc = new jsPDF({ unit: 'pt', format: [a4Width, a4Height] })
-  selectedRows.value.forEach((row: any, idx: number) => {
+
+  // 为每个中包序号创建一页，按原始顺序打印
+  validSequences.forEach((seq, idx) => {
     if (idx > 0) doc.addPage([a4Width, a4Height])
-    // 中包序号（sortingSequence）和日期（createTime）
-    const seq = String(row.sortingSequence || '-')
-    const date = row.createTime ? formatDateSafe(row.createTime, 'MM-DD') : '-'
+    
     // 动态计算字体大小，最大140pt，保证不溢出
-    let fontSize = 140;
-    const minFontSize = 16;
-    const sideMargin = 80;
-    doc.setFont('helvetica', 'bold');
+    let fontSize = 160
+    const minFontSize = 16
+    const sideMargin = 80
+    doc.setFont('helvetica', 'bold')
+    
     while (fontSize > minFontSize) {
-      doc.setFontSize(fontSize);
-      const textWidth = doc.getTextWidth(seq);
-      if (textWidth <= a4Width - sideMargin * 2) break;
-      fontSize -= 2;
+      doc.setFontSize(fontSize)
+      const textWidth = doc.getTextWidth(seq)
+      if (textWidth <= a4Width - sideMargin * 2) break
+      fontSize -= 2
     }
-    doc.setFontSize(fontSize);
-    doc.text(seq, a4Width / 2, a4Height / 2 - 30, { align: 'center' });
-    // 日期小号字体
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(36);
-    doc.text(String(date), a4Width / 2, a4Height / 2 + 40, { align: 'center' });
+    
+    doc.setFontSize(fontSize)
+    // 将序号垂直居中
+    doc.text(seq, a4Width / 2, a4Height / 2, { align: 'center' })
   })
+
   // 生成PDF的blob url
   const pdfBlob = doc.output('blob')
   const pdfUrl = URL.createObjectURL(new Blob([pdfBlob], { type: 'application/pdf' }))
-  // 用print-js弹窗打印，体验和打印全部一致
+  
+  // 用print-js弹窗打印
   printJS({
     printable: pdfUrl,
     type: 'pdf',
@@ -3580,6 +3395,81 @@ const onPdfPreviewPrint = () => {
     iframe.contentWindow.focus()
     iframe.contentWindow.print()
   }
+}
+
+// 分配打包人按钮处理函数
+const handleAllocatePacker = () => {
+  if (selectedRows.value.length === 0) {
+    ElMessage.warning('请先选择要分配打包人的物流单号')
+    return
+  }
+
+  if (packerAssignmentPopup.value) {
+    // 获取所有选中行对应的物流单号下的所有中包序号
+    const sortingSequences: string[] = []
+    
+    // 遍历选中的物流单号
+    selectedRows.value.forEach(selectedRow => {
+      // 获取该物流单号下的所有订单
+      const orders = list.value.filter(item => item.trackingNumber === selectedRow.trackingNumber)
+      
+      // 从这些订单中提取所有不为空的中包序号
+      orders.forEach(order => {
+        if (order.sortingSequence) {
+          sortingSequences.push(order.sortingSequence)
+        }
+      })
+    })
+    
+    // 去重并过滤掉空值
+    const uniqueSortingSequences = [...new Set(sortingSequences)].filter(seq => !!seq)
+    
+    if (uniqueSortingSequences.length === 0) {
+      ElMessage.warning('选中的物流单号下没有找到有效的中包序号')
+      return
+    }
+    
+    // 设置数据
+    packerAssignmentPopup.value.formData.sortingSequences = uniqueSortingSequences
+    packerAssignmentPopup.value.formData.packerId = undefined
+    packerAssignmentPopup.value.formData.replaceShippedOperator = false // 默认不替换发货人
+    
+    // 显示弹窗
+    packerAssignmentPopup.value.setVisible(true)
+  }
+}
+
+// 处理分配打包人确认
+const handlePackerConfirm = async (data: any) => {
+  try {
+    // TODO: 替换为实际API调用
+    // await OrderApi.allocatePacker(data)
+    
+    // 模拟API调用
+    await new Promise(resolve => setTimeout(resolve, 500))
+    
+    getList() // 刷新数据
+  } catch (error) {
+    console.error('分配打包人失败:', error)
+    ElMessage.error('分配打包人失败')
+  }
+}
+
+// 获取打包人姓名
+const senderNameCache = new Map<number, string>() // 缓存已查询的打包人信息
+
+const getSenderName = (row: any) => {
+  // 如果是中包信息行
+  if (row.sortingSequence) {
+    const details = getOrderDetails(selectedTrackingNumber.value, row.sortingSequence)
+    // 获取第一个订单的senderName（因为同一个sortingSequence下的senderName都是一样的）
+    const firstOrder = details[0]
+    if (firstOrder?.senderName) {
+      return firstOrder.senderName
+    }
+  }
+  
+  return ''
 }
 </script>
 <style lang="scss">
@@ -3642,7 +3532,7 @@ $predefined-colors: (
         backface-visibility: hidden;
       }
     }
-    
+
     // 当前行高亮
     :deep(.el-table__row.current-row) {
       background-color: var(--el-color-primary-light-5) !important;
@@ -3654,7 +3544,7 @@ $predefined-colors: (
       border-left: 4px solid var(--el-color-primary);
     }
   }
-  
+
   // 选中的物流单号和订单样式
   .selected-tracking {
     background-color: var(--el-color-primary-light-5);
@@ -3664,7 +3554,7 @@ $predefined-colors: (
     padding: 6px;
     border: 2px solid var(--el-color-primary);
   }
-  
+
   .selected-order {
     background-color: var(--el-color-primary-light-7);
     border-radius: 6px;
@@ -3673,31 +3563,31 @@ $predefined-colors: (
     padding: 6px;
     border: 2px solid var(--el-color-primary-dark-2);
   }
-  
+
   // 级联展开容器
   .shipping-cascade-container {
     display: flex;
     overflow-x: auto;
     gap: 8px;
     margin-bottom: 16px;
-    
+
     .shipping-level-1 {
       min-width: 360px;
       max-width: 360px;
       border-right: 1px solid var(--el-border-color);
     }
-    
+
     .shipping-level-2 {
       min-width: 300px;
       max-width: 400px;
       border-right: 1px solid var(--el-border-color);
     }
-    
+
     .shipping-level-3 {
       flex: 1;
       min-width: 400px;
     }
-    
+
     .level-1-table, .level-2-table, .level-3-table {
       height: calc(100vh - 280px);
     }
@@ -3737,18 +3627,18 @@ $predefined-colors: (
     &:nth-child(even) {
       background-color: var(--el-fill-color-light);
     }
-    
+
     // 未备齐货的订单行样式
     &.not-prepared-row {
       background-color: rgba(245, 108, 108, 0.15) !important;
-      
+
       td {
         background-color: rgba(245, 108, 108, 0.15) !important;
       }
-      
+
       &:hover {
         background-color: rgba(245, 108, 108, 0.25) !important;
-        
+
         td {
           background-color: rgba(245, 108, 108, 0.25) !important;
         }
@@ -4619,7 +4509,7 @@ $predefined-colors: (
   display: flex;
   justify-content: center;
   align-items: center;
-  
+
   span {
     display: inline-block;
   }
@@ -4632,13 +4522,13 @@ $predefined-colors: (
   align-items: center;
   justify-content: center;
   width: 100%;
-  
+
   .el-tooltip {
     display: flex;
     justify-content: center;
     width: 100%;
   }
-  
+
   .action-button {
     margin: 0 auto;
   }
@@ -4650,12 +4540,12 @@ $predefined-colors: (
   justify-content: center;
   align-items: center;
   width: 100%;
-  
+
   .custom-sku-content {
     display: flex;
     justify-content: center;
     align-items: center;
-    
+
     .custom-sku {
       font-size: 18px;
       font-weight: 700;
@@ -4677,7 +4567,7 @@ $predefined-colors: (
   width: 80%;
   margin: 0 auto;
   padding: 8px;
-  
+
   .product-props,
   .product-quantity {
     text-align: left;
@@ -4685,7 +4575,7 @@ $predefined-colors: (
     align-items: center;
     width: 100%;
     margin-bottom: 10px;
-    
+
     .label {
       display: inline-block;
       width: 90px;
@@ -4695,7 +4585,7 @@ $predefined-colors: (
       flex-shrink: 0;
     }
   }
-  
+
   // 突出显示官网数量
   .product-quantity:nth-child(2) {
     span:last-child {
@@ -4715,13 +4605,13 @@ $predefined-colors: (
   background-color: #f5f7fa;
   border-radius: 4px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-  
+
   &.disabled {
     opacity: 0.6;
     cursor: not-allowed;
     filter: grayscale(0.5);
   }
-  
+
   .circle-option {
     width: 26px;
     height: 26px;
@@ -4733,42 +4623,42 @@ $predefined-colors: (
     cursor: pointer;
     transition: all 0.3s;
     position: relative;
-    
+
     &:hover:not(.disabled) {
       transform: translateY(-2px);
       box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
     }
-    
+
     &.selected {
       &:first-child {
         border-color: #67C23A;
         background-color: rgba(103, 194, 58, 0.1);
         box-shadow: 0 0 0 2px rgba(103, 194, 58, 0.2);
-        
+
         .el-icon {
           color: #67C23A;
         }
       }
-      
+
       &:last-child {
         border-color: #F56C6C;
         background-color: rgba(245, 108, 108, 0.1);
         box-shadow: 0 0 0 2px rgba(245, 108, 108, 0.2);
-        
+
         .el-icon {
           color: #F56C6C;
         }
       }
     }
-    
+
     &:not(.selected) {
       background-color: #fff;
-      
+
       .el-icon {
         opacity: 0;
       }
     }
-    
+
     .el-icon {
       font-size: 16px;
       font-weight: bold;
@@ -4778,17 +4668,17 @@ $predefined-colors: (
       width: 100%;
       height: 100%;
       transition: all 0.3s;
-      
+
       &.check-icon {
         color: #67C23A;
       }
-      
+
       &.close-icon {
         color: #F56C6C;
       }
     }
   }
-  
+
   .selector-label {
     font-size: 14px;
     font-weight: 500;

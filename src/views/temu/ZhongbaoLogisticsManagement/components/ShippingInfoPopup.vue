@@ -44,17 +44,30 @@
                     <span class="props-value">{{ item.productProperties }}</span>
                   </div>
                 </div>
+                  <!-- 添加SKU信息行 -->
+                  <div class="info-row sku-info-row">
+                    <div class="sku-info">
+                      <div class="sku-item">
+                        <span class="sku-label">定制SKU：</span>
+                        <span class="sku-value custom-sku">{{ item.customSku || '-' }}</span>
+                      </div>
+                    </div>
                   </div>
-              <div class="quantity-info">
-                <div class="quantity-item original">
-                  <span class="label">官网数量：</span>
-                  <span class="value">{{ item.originalQuantity }}</span>
                 </div>
-                <div class="quantity-item">
-                  <span class="label">制作数量：</span>
-                  <span class="value">{{ item.quantity }}</span>
+                <div class="quantity-info">
+                  <div class="quantity-item original">
+                    <span class="label">官网数量：</span>
+                    <span class="value">{{ item.originalQuantity }}</span>
+                  </div>
+                  <div class="quantity-item">
+                    <span class="label">制作数量：</span>
+                    <span class="value">{{ item.quantity }}</span>
+                  </div>
+                  <div class="quantity-item">
+                    <span class="label">所属类目：</span>
+                    <span class="value">{{ item.categoryName || '-' }}</span>
+                  </div>
                 </div>
-              </div>
             </div>
           </div>
         </div>
@@ -87,7 +100,9 @@ const formData = reactive({
     customSku: string,
     customTextList: string,
     productProperties: string,
-    isMultiple?: boolean
+    isMultiple?: boolean,
+    categoryId?: string,
+    categoryName?: string
   }>
 })
 
@@ -263,6 +278,29 @@ defineExpose({
           display: inline-block;
           margin-left: 5px;
           line-height: 1.4;
+        }
+      }
+
+      .sku-info-row {
+        margin-top: 10px;
+        .sku-info {
+          display: flex;
+          gap: 20px;
+          .sku-item {
+            .sku-label {
+              font-size: 14px;
+              color: #606266;
+              font-weight: 500;
+            }
+            .sku-value {
+              font-size: 14px;
+              color: #303133;
+              font-weight: 500;
+            }
+            .custom-sku {
+              color: #409EFF;
+            }
+          }
         }
       }
     }

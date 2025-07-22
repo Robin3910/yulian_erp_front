@@ -495,25 +495,6 @@ const handleConfirm = () => {
   }
 }
 
-// ##########################事件监听处理区###################################################
-function onCopy(event: ClipboardEvent, raw: string) {
-  event.preventDefault();
-  // 转为纯文本，去除所有HTML标签和常见实体
-  let text = (raw || '')
-    .replace(/<[^>]+>/g, '')
-    .replace(/&nbsp;/g, ' ')
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'");
-  if (event.clipboardData) {
-    event.clipboardData.setData('text/plain', text);
-  } else if ((window as any).clipboardData) {
-    (window as any).clipboardData.setData('Text', text);
-  }
-}
-
 onMounted(() => {
   dialogVisible.value = props.visible
 })
@@ -528,20 +509,3 @@ defineExpose({
 })
 </script>
 
-<style scoped lang="scss">
-// 定制文字显示样式 - 纯文本
-.custom-text-display {
-  white-space: pre-wrap;
-  word-break: break-all;
-  font-family: 'Courier New', monospace;
-  font-size: 12px;
-  line-height: 1.4;
-  background-color: #f8f9fa;
-  border: 1px solid #e9ecef;
-  border-radius: 4px;
-  padding: 8px;
-  color: #495057;
-  max-height: 120px;
-  overflow-y: auto;
-}
-</style>

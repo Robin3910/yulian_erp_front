@@ -3,7 +3,7 @@
     <!-- 查询区 -->
     <el-row :gutter="16" align="middle" class="search-row">
       <el-col :span="6">
-        <el-input v-model="searchBatchId" placeholder="按批次ID查询" clearable style="width: 180px;" />
+        <el-input v-model="searchBatchId" placeholder="按批次大类查询" clearable style="width: 180px;" />
         <el-button @click="onSearchByBatch" type="primary" style="margin-left: 8px;">按批次查询</el-button>
       </el-col>
       <el-col :span="6">
@@ -19,12 +19,12 @@
     <!-- 列表区 -->
     <el-table :data="tableData" @selection-change="onSelectionChange" style="margin-top: 16px;" border>
       <el-table-column type="selection" width="55" />
-      <el-table-column prop="id" label="ID" width="80" />
-      <el-table-column prop="batchCategoryId" label="批次ID" width="150" />
+      <!-- <el-table-column prop="id" label="ID" width="80" /> -->
+      <el-table-column prop="batchCategoryId" label="批次大类" width="150" />
       <el-table-column prop="categoryId" label="类目ID" width="120" />
       <el-table-column prop="categoryName" label="类目名字" width="150" />
       <el-table-column prop="createTime" label="创建时间" width="180" />
-      <el-table-column label="操作" width="120
+      <el-table-column label="操作" width="120">
         <template #default="scope">
           <el-button size="small" @click="onEdit(scope.row)">编辑</el-button>
         </template>
