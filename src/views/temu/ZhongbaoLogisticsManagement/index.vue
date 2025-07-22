@@ -736,17 +736,26 @@ const handleFocus = async (row: any) => {
   // 获取同一物流单号下的所有订单信息
   const sameTrackingOrders = list.value.filter(item => item.trackingNumber === row.trackingNumber)
 
-  // 按sortingSequence排序，如果没有则按orderNo排序
+  // 获取该物流单号下的所有中包序号，按照它们在页面上的显示顺序
+  const sortingSequenceOrder = getOrdersByTrackingNumber(row.trackingNumber)
+    .map(order => order.sortingSequence || `order_${order.orderNo}`)
+
+  // 按照中包序号的位置顺序对订单进行排序
   const sortedOrders = [...sameTrackingOrders].sort((a, b) => {
-    if (a.sortingSequence && b.sortingSequence) {
-      return a.sortingSequence.localeCompare(b.sortingSequence)
-    } else if (a.sortingSequence) {
-      return -1
-    } else if (b.sortingSequence) {
-      return 1
-    } else {
-      return a.orderNo.localeCompare(b.orderNo)
+    const aKey = a.sortingSequence || `order_${a.orderNo}`
+    const bKey = b.sortingSequence || `order_${b.orderNo}`
+    const aIndex = sortingSequenceOrder.indexOf(aKey)
+    const bIndex = sortingSequenceOrder.indexOf(bKey)
+    
+    // 如果都找到了位置，按位置排序
+    if (aIndex !== -1 && bIndex !== -1) {
+      return aIndex - bIndex
     }
+    // 如果只有一个找到了位置，将找到的排在前面
+    if (aIndex !== -1) return -1
+    if (bIndex !== -1) return 1
+    // 如果都没找到位置，按订单号排序
+    return a.orderNo.localeCompare(b.orderNo)
   })
 
   // 提取所有有效的预览图和数量信息
