@@ -460,7 +460,9 @@ label="定制SKU" align="center" min-width="200">
             <!-- 定制文字列表 -->
             <el-table-column label="定制文字列表" prop="customTextList" align="center" min-width="110" show-overflow-tooltip>
               <template #default="{ row }">
-            <div v-if="row.customTextList" style="font-size: 20px; font-weight: 700; padding: 8px; color: #409EFF; margin: 4px;">{{ row.customTextList }}</div>
+                <div v-if="row.customTextList" style="font-size: 20px; font-weight: 700; padding: 8px; color: #409EFF; margin: 4px;">
+                  {{ row.customTextList.startsWith(',') ? row.customTextList.substring(1) : row.customTextList }}
+                </div>
                 <span v-else></span>
               </template>
             </el-table-column>
@@ -756,6 +758,17 @@ const handlerRemarkConfirm = (data: any) => {
   console.log('备注确认:', data)
 }
 
+// 添加判断是否为个性化动漫肖像贺卡的函数
+const isCustomAnimeCard = (categoryId: string | null, productTitle: string | null) => {
+  if (!categoryId || !productTitle) return false
+  // 检查是否为贺卡类目
+  const category = categoryList.value.find(item => item.categoryId == categoryId)
+  const isGreetingCard = category?.categoryName?.includes('贺卡')
+  // 检查标题是否包含指定文字
+  const hasCustomAnime = productTitle.includes('个性化动漫肖像贺卡定制')
+  return isGreetingCard && hasCustomAnime
+}
+
 const handleFocus = async (row: any) => {
   // 获取同一物流单号下的所有订单信息
   const sameTrackingOrders = list.value.filter(item => item.trackingNumber === row.trackingNumber)
@@ -771,38 +784,48 @@ const handleFocus = async (row: any) => {
     const aIndex = sortingSequenceOrder.indexOf(aKey)
     const bIndex = sortingSequenceOrder.indexOf(bKey)
     
-    // 如果都找到了位置，按位置排序
     if (aIndex !== -1 && bIndex !== -1) {
       return aIndex - bIndex
     }
-    // 如果只有一个找到了位置，将找到的排在前面
     if (aIndex !== -1) return -1
     if (bIndex !== -1) return 1
-    // 如果都没找到位置，按订单号排序
     return a.orderNo.localeCompare(b.orderNo)
   })
 
   // 提取所有有效的预览图和数量信息
   const previewData = sortedOrders
-    .filter(order => order.effectiveImgUrl) // 只保留有预览图的订单
-    .map(order => ({
-      imageUrl: order.effectiveImgUrl || '',
-      originalQuantity: order.originalQuantity || 0,
-      quantity: order.quantity || 0,
-      orderNo: order.orderNo,
-      customSku: order.customSku || '',
-      customTextList: order.customTextList || '',
-      productProperties: order.productProperties || '',
-      isMultiple: (order.originalQuantity || 0) > 1, // 修改为判断官网数量是否大于1
-      categoryId: order.categoryId || '',
-      categoryName: getCategoryName(order.categoryId) // 使用已有的 getCategoryName 函数获取类目名称
-    }))
+    .filter(order => {
+      // 如果是个性化动漫肖像贺卡，则需要customImageUrls
+      if (isCustomAnimeCard(order.categoryId, order.productTitle)) {
+        return order.customImageUrls
+      }
+      // 其他情况需要effectiveImgUrl
+      return order.effectiveImgUrl
+    })
+    .map(order => {
+      const isAnimeCard = isCustomAnimeCard(order.categoryId, order.productTitle)
+      const customImages = order.customImageUrls ? order.customImageUrls.split(',').filter(url => url) : []
+      
+      return {
+        imageUrl: isAnimeCard ? '' : (order.effectiveImgUrl || ''),
+        customImages: isAnimeCard ? customImages : [],
+        isAnimeCard,
+        originalQuantity: order.originalQuantity || 0,
+        quantity: order.quantity || 0,
+        orderNo: order.orderNo,
+        customSku: order.customSku || '',
+        customTextList: order.customTextList || '',
+        productProperties: order.productProperties || '',
+        isMultiple: (order.originalQuantity || 0) > 1,
+        categoryId: order.categoryId || '',
+        categoryName: getCategoryName(order.categoryId)
+      }
+    })
 
   if (shippingInfoPopup.value) {
     shippingInfoPopup.value.setVisible(true)
     shippingInfoPopup.value.formData.orderId = String(row.id)
     shippingInfoPopup.value.formData.trackingNumber = row.trackingNumber
-    // 传递排序后的预览图数据
     shippingInfoPopup.value.formData.previewData = previewData
   }
 }
@@ -3521,26 +3544,39 @@ const handleSortingSequenceFocus = async (row: any) => {
 
   // 提取所有有效的预览图和数量信息
   const previewData = sortingSequenceOrders
-    .filter(order => order.effectiveImgUrl) // 只保留有预览图的订单
-    .map(order => ({
-      imageUrl: order.effectiveImgUrl || '',
-      originalQuantity: order.originalQuantity || 0,
-      quantity: order.quantity || 0,
-      orderNo: order.orderNo,
-      customSku: order.customSku || '',
-      customTextList: order.customTextList || '',
-      productProperties: order.productProperties || '',
-      isMultiple: (order.originalQuantity || 0) > 1,
-      categoryId: order.categoryId || '',
-      categoryName: getCategoryName(order.categoryId)
-    }))
+    .filter(order => {
+      // 如果是个性化动漫肖像贺卡，则需要customImageUrls
+      if (isCustomAnimeCard(order.categoryId, order.productTitle)) {
+        return order.customImageUrls
+      }
+      // 其他情况需要effectiveImgUrl
+      return order.effectiveImgUrl
+    })
+    .map(order => {
+      const isAnimeCard = isCustomAnimeCard(order.categoryId, order.productTitle)
+      const customImages = order.customImageUrls ? order.customImageUrls.split(',').filter(url => url) : []
+      
+      return {
+        imageUrl: isAnimeCard ? '' : (order.effectiveImgUrl || ''),
+        customImages: isAnimeCard ? customImages : [],
+        isAnimeCard,
+        originalQuantity: order.originalQuantity || 0,
+        quantity: order.quantity || 0,
+        orderNo: order.orderNo,
+        customSku: order.customSku || '',
+        customTextList: order.customTextList || '',
+        productProperties: order.productProperties || '',
+        isMultiple: (order.originalQuantity || 0) > 1,
+        categoryId: order.categoryId || '',
+        categoryName: getCategoryName(order.categoryId)
+      }
+    })
 
   if (shippingInfoPopup.value) {
     shippingInfoPopup.value.setVisible(true)
     shippingInfoPopup.value.formData.orderId = String(row.id)
     shippingInfoPopup.value.formData.trackingNumber = selectedTrackingNumber.value
-    shippingInfoPopup.value.formData.sortingSequence = row.sortingSequence // 添加中包序号信息
-    // 传递预览图数据
+    shippingInfoPopup.value.formData.sortingSequence = row.sortingSequence
     shippingInfoPopup.value.formData.previewData = previewData
   }
 }
