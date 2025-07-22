@@ -11,6 +11,9 @@
       <div class="package-info-panel">
         <div class="panel-header">
           <h3>物流单号：{{ formData.trackingNumber || '-' }}</h3>
+          <div v-if="formData.sortingSequence" class="sorting-sequence">
+            中包序号：<span class="sequence-value">{{ formData.sortingSequence }}</span>
+          </div>
         </div>
       </div>
 
@@ -92,6 +95,7 @@ const dialogVisible = ref(false)
 const formData = reactive({
   orderId: '',
   trackingNumber: '',
+  sortingSequence: '', // 添加中包序号字段
   previewData: [] as Array<{
     imageUrl: string,
     originalQuantity: number,
@@ -137,6 +141,18 @@ defineExpose({
     font-size: 18px;
     color: #303133;
     margin: 0;
+    margin-bottom: 10px;
+  }
+
+  .sorting-sequence {
+    font-size: 16px;
+    color: #606266;
+    
+    .sequence-value {
+      color: #409EFF;
+      font-weight: bold;
+      font-size: 18px;
+    }
   }
 }
 

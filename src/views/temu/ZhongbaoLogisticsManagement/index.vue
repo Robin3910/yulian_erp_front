@@ -360,6 +360,21 @@ size="small" type="info" plain class="action-button urgent-print-button"
                         </el-button>
                       </el-tooltip>
                     </div>
+                    <!-- 添加查看详情按钮 -->
+                    <div class="mt-2 flex justify-center">
+                      <el-button
+                        size="small"
+                        type="primary"
+                        plain
+                        class="action-button"
+                        @click.stop="handleSortingSequenceFocus(row)"
+                      >
+                        <el-icon>
+                          <Aim />
+                        </el-icon>
+                        查看中包详情
+                      </el-button>
+                    </div>
                   </div>
                 </div>
               </template>
@@ -3479,6 +3494,46 @@ const getSenderName = (row: any) => {
   }
   
   return ''
+}
+
+// 添加处理中包详情的函数
+const handleSortingSequenceFocus = async (row: any) => {
+  // 获取该物流单号下的所有订单
+  const orders = list.value.filter(item => 
+    item.trackingNumber === selectedTrackingNumber.value
+  )
+
+  // 获取当前中包序号的所有订单
+  const sortingSequenceOrders = orders.filter(order => {
+    const orderKey = order.sortingSequence || `order_${order.orderNo}`
+    const rowKey = row.sortingSequence || `order_${row.orderNo}`
+    return orderKey === rowKey
+  })
+
+  // 提取所有有效的预览图和数量信息
+  const previewData = sortingSequenceOrders
+    .filter(order => order.effectiveImgUrl) // 只保留有预览图的订单
+    .map(order => ({
+      imageUrl: order.effectiveImgUrl || '',
+      originalQuantity: order.originalQuantity || 0,
+      quantity: order.quantity || 0,
+      orderNo: order.orderNo,
+      customSku: order.customSku || '',
+      customTextList: order.customTextList || '',
+      productProperties: order.productProperties || '',
+      isMultiple: (order.originalQuantity || 0) > 1,
+      categoryId: order.categoryId || '',
+      categoryName: getCategoryName(order.categoryId)
+    }))
+
+  if (shippingInfoPopup.value) {
+    shippingInfoPopup.value.setVisible(true)
+    shippingInfoPopup.value.formData.orderId = String(row.id)
+    shippingInfoPopup.value.formData.trackingNumber = selectedTrackingNumber.value
+    shippingInfoPopup.value.formData.sortingSequence = row.sortingSequence // 添加中包序号信息
+    // 传递预览图数据
+    shippingInfoPopup.value.formData.previewData = previewData
+  }
 }
 </script>
 <style lang="scss">
