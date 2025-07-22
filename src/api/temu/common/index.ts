@@ -58,9 +58,29 @@ export const TemuCommonApi = {
     pageNo: number;
     pageSize: number;
   }) => {
-    return await request.get({ 
+    return await request.post({
       url: `/temuApi/delivery/page`,
-      params 
+      data: params  // 修改这里，将 params 改为 data，确保参数通过请求体发送
     })
+  },
+  // 打印物流面单
+  printDeliveryLabel: async (deliveryNo: string) => {
+    const res = await request.postOriginal({
+      url: `/temuApi/delivery/boxmark/print`,
+      data: {
+        deliveryOrderSnList: deliveryNo.split(',')
+      }
+    })
+    return res.data
+  },
+  // 打印商品条码
+  printProductBarcode: async (productSkuIds: number[]) => {
+    const res = await request.postOriginal({
+      url: `/temuApi/delivery/custom-label/print`,
+      data: {
+        personalProductSkuIdList: productSkuIds
+      }
+    })
+    return res.data
   }
 }
