@@ -374,7 +374,7 @@ size="small" type="info" plain class="action-button urgent-print-button"
                         size="small"
                         type="primary"
                         plain
-                        class="action-button"
+                        class="action-button zhongbao-detail-btn"
                         @click.stop="handleSortingSequenceFocus(row)"
                       >
                         <el-icon>
@@ -3617,6 +3617,17 @@ $predefined-colors: (
 @each $name, $color in $predefined-colors {
   .#{$name}-bg {
     background-color: $color !important;
+  }
+}
+
+.zhongbao-detail-btn {
+  font-size: 14px !important;
+  height: 36px !important;
+  padding: 0 16px !important;
+  
+  .el-icon {
+    font-size: 16px !important;
+    margin-right: 6px !important;
   }
 }
 </style>
