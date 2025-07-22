@@ -6,8 +6,9 @@
         <el-col :span="24" :lg="6">
           <el-form-item label="类目" prop="categoryId" class="w-full">
             <el-select filterable v-model="queryParams.categoryId" placeholder="请选择类目" clearable multiple>
-              <el-option v-for="(item, index) in categoryList" :key="index" :label="item.categoryName"
-                         :value="item.id" />
+              <el-option
+v-for="(item, index) in categoryList" :key="index" :label="item.categoryName"
+                :value="item.id" />
             </el-select>
           </el-form-item>
         </el-col>
@@ -36,24 +37,27 @@
         <el-col :span="24" :lg="6">
           <el-form-item label="订单状态" prop="orderStatus" class="w-full">
             <el-select v-model="queryParams.status" placeholder="请选择订单状态" clearable>
-              <el-option v-for="dict in getStrDictOptions(DICT_TYPE.TEMU_ORDER_BATCH_STATUS)" :key="dict.value"
-                         :label="dict.label" :value="dict.value" />
+              <el-option
+v-for="dict in getStrDictOptions(DICT_TYPE.TEMU_ORDER_BATCH_STATUS)" :key="dict.value"
+                :label="dict.label" :value="dict.value" />
             </el-select>
           </el-form-item>
         </el-col>
         <el-col :span="24" :lg="6">
           <el-form-item label="分配状态" prop="orderStatus" class="w-full">
             <el-select v-model="queryParams.isDispatchTask" placeholder="请选择分配状态" clearable>
-              <el-option v-for="dict in getStrDictOptions(DICT_TYPE.TEMU_ORDER_BATCH_DISPATCH_STATUS)" :key="dict.value"
-                         :label="dict.label" :value="dict.value" />
+              <el-option
+v-for="dict in getStrDictOptions(DICT_TYPE.TEMU_ORDER_BATCH_DISPATCH_STATUS)" :key="dict.value"
+                :label="dict.label" :value="dict.value" />
             </el-select>
           </el-form-item>
         </el-col>
         <el-col :span="24" :lg="6">
           <el-form-item label="创建时间" prop="createTime">
-            <el-date-picker v-model="queryParams.createTime" value-format="YYYY-MM-DD HH:mm:ss" type="daterange"
-                            start-placeholder="开始日期" end-placeholder="结束日期"
-                            :default-time="[new Date('1 00:00:00'), new Date('1 23:59:59')]" class="!w-220px" />
+            <el-date-picker
+v-model="queryParams.createTime" value-format="YYYY-MM-DD HH:mm:ss" type="daterange"
+              start-placeholder="开始日期" end-placeholder="结束日期"
+              :default-time="[new Date('1 00:00:00'), new Date('1 23:59:59')]" class="!w-220px" />
           </el-form-item>
         </el-col>
         <el-col :span="24" :lg="6">
@@ -97,8 +101,9 @@
             <Icon icon="ep:document" class="mr-5px" />
             打印批次拣货单
           </el-button>
-          <el-button type="warning" @click="handlePrintSelectedOrders" plain
-                     :disabled="selectedInnerOrders.length === 0">
+          <el-button
+type="warning" @click="handlePrintSelectedOrders" plain
+            :disabled="selectedInnerOrders.length === 0">
             <Icon icon="ep:printer" class="mr-5px" />
             打印选中订单条码+合规单
           </el-button>
@@ -113,13 +118,15 @@
         </div>
       </div>
       <div class="flex gap-2">
-        <el-button type="primary" @click="handlerCompleteSelectedDrawTasks" plain
-                   :disabled="selectedInnerOrders.length === 0" class="batch-draw-complete-btn">
+        <el-button
+type="primary" @click="handlerCompleteSelectedDrawTasks" plain
+          :disabled="selectedInnerOrders.length === 0" class="batch-draw-complete-btn">
           <Icon icon="ep:check" class="mr-5px" />
           批量作图完成
         </el-button>
-        <el-button type="success" @click="handleDownloadSelectedImages" plain
-                   :disabled="selectedInnerOrders.length === 0">
+        <el-button
+type="success" @click="handleDownloadSelectedImages" plain
+          :disabled="selectedInnerOrders.length === 0">
           <Icon icon="ep:picture" class="mr-5px" />
           下载选中订单图片
         </el-button>
@@ -129,10 +136,11 @@
         </el-button>
       </div>
     </div>
-    <el-table v-loading="loading" :data="list" :stripe="true" :show-overflow-tooltip="true"
-              :expand-row-keys="expandedRows" height="calc(100vh - 280px)"
-              :header-cell-style="{ background: 'var(--el-bg-color)' }" row-key="id" @selection-change="handlerSelectionChange"
-              v-infinite-scroll="loadMore" infinite-scroll-disabled="loading" infinite-scroll-distance="10" ref="mainTableRef">
+    <el-table
+v-loading="loading" :data="list" :stripe="true" :show-overflow-tooltip="true"
+      :expand-row-keys="expandedRows" height="calc(100vh - 280px)"
+      :header-cell-style="{ background: 'var(--el-bg-color)' }" row-key="id" @selection-change="handlerSelectionChange"
+      v-infinite-scroll="loadMore" infinite-scroll-disabled="loading" infinite-scroll-distance="10" ref="mainTableRef">
       <!--选择-->
       <el-table-column reserve-selection type="selection" width="30" align="center" />
       <el-table-column type="expand" width="90">
@@ -146,28 +154,35 @@
         </template>
         <template #default="scope">
           <div>
-            <el-table v-loading="loading" :data="scope.row.orderList" :stripe="true" :show-overflow-tooltip="true"
-                      row-key="id" :ref="(el) => {
+            <el-table
+v-loading="loading" :data="scope.row.orderList && scope.row.orderList.length > 0 ? getSortedOrderList(scope.row) : []" :stripe="true" :show-overflow-tooltip="true"
+              row-key="id" :ref="(el) => {
                 if (el) registerTableRef(el, scope.row.batchNo)
               }
                 " @selection-change="(selection) => handleInnerSelectionChange(selection, scope.row)">
               <!--选择-->
               <el-table-column reserve-selection type="selection" width="30" align="center" />
               <!--订单编号-->
-              <el-table-column label="订单信息" align="center" prop="orderNo" min-width="280"
-                               class-name="order-info-column">
+              <el-table-column
+label="订单信息" align="center" prop="orderNo" min-width="280"
+                class-name="order-info-column">
                 <template #default="{ row }">
                   <div class="text-left">
                     <div>
-                      <div class="font-bold">订单号：{{ row.orderNo }}</div>
+                      <div class="font-bold">
+                        订单号：{{ row.orderNo }}
+                        <el-tag v-if="row.isReturnOrder === 1" type="danger" size="small" class="ml-2">返单</el-tag>
+                      </div>
                       <div class="text-gray-500 mt-1">店铺名称：{{ row.shopName }}</div>
                     </div>
                     <div class="mt-2 flex gap-2">
-                      <el-tooltip effect="dark" content="当前商品条码尚未上传，请联系相关人员及时上传！" placement="top"
-                                  :disabled="!!row.goodsSn" popper-class="custom-tooltip" :show-after="100" :hide-after="200"
-                                  :enterable="false" :offset="20">
-                        <el-button size="small" :type="row.goodsSn ? 'primary' : 'default'" plain
-                                   class="print-action-button" :disabled="!row.goodsSn" @click="handlerPrintGoodsSn(row, 1)">
+                      <el-tooltip
+effect="dark" content="当前商品条码尚未上传，请联系相关人员及时上传！" placement="top"
+                        :disabled="!!row.goodsSn" popper-class="custom-tooltip" :show-after="100" :hide-after="200"
+                        :enterable="false" :offset="20">
+                        <el-button
+size="small" :type="row.goodsSn ? 'primary' : 'default'" plain
+                          class="print-action-button" :disabled="!row.goodsSn" @click="handlerPrintGoodsSn(row, 1)">
                           <template #icon>
                             <el-icon class="print-icon">
                               <Printer />
@@ -176,12 +191,14 @@
                           打印商品条码
                         </el-button>
                       </el-tooltip>
-                      <el-tooltip effect="dark" content="当前合规单尚未上传，请联系相关人员及时上传！" placement="top"
-                                  :disabled="!!row.complianceUrl" popper-class="custom-tooltip" :show-after="100"
-                                  :hide-after="200" :enterable="false" :offset="20">
-                        <el-button size="small" :type="row.complianceUrl ? 'success' : 'default'" plain
-                                   class="print-action-button" :disabled="!row.complianceUrl"
-                                   @click="handlerPrintGoodsSn(row, 2)">
+                      <el-tooltip
+effect="dark" content="当前合规单尚未上传，请联系相关人员及时上传！" placement="top"
+                        :disabled="!!row.complianceUrl" popper-class="custom-tooltip" :show-after="100"
+                        :hide-after="200" :enterable="false" :offset="20">
+                        <el-button
+size="small" :type="row.complianceUrl ? 'success' : 'default'" plain
+                          class="print-action-button" :disabled="!row.complianceUrl"
+                          @click="handlerPrintGoodsSn(row, 2)">
                           <template #icon>
                             <el-icon class="print-icon">
                               <Printer />
@@ -192,12 +209,14 @@
                       </el-tooltip>
                     </div>
                     <div class="mt-2 flex justify-center">
-                      <el-tooltip effect="dark" content="当前合并文件尚未上传，请联系相关人员及时上传！" placement="top"
-                                  :disabled="!!row.complianceGoodsMergedUrl" popper-class="custom-tooltip" :show-after="100"
-                                  :hide-after="200" :enterable="false" :offset="20">
-                        <el-button size="small" :type="row.complianceGoodsMergedUrl ? 'warning' : 'default'" plain
-                                   class="print-action-button" :disabled="!row.complianceGoodsMergedUrl"
-                                   @click="handlerPrintGoodsSn(row, 3)">
+                      <el-tooltip
+effect="dark" content="当前合并文件尚未上传，请联系相关人员及时上传！" placement="top"
+                        :disabled="!!row.complianceGoodsMergedUrl" popper-class="custom-tooltip" :show-after="100"
+                        :hide-after="200" :enterable="false" :offset="20">
+                        <el-button
+size="small" :type="row.complianceGoodsMergedUrl ? 'warning' : 'default'" plain
+                          class="print-action-button" :disabled="!row.complianceGoodsMergedUrl"
+                          @click="handlerPrintGoodsSn(row, 3)">
                           <template #icon>
                             <el-icon class="print-icon">
                               <Printer />
@@ -215,9 +234,10 @@
                 <template #default="{ row }">
                   <div class="text-left flex items-start gap-4">
                     <div class="flex-shrink-0">
-                      <el-image class="w-80px h-80px" :hide-on-click-modal="true" :preview-teleported="true"
-                                :src="row.productImgUrl" :preview-src-list="[row.productImgUrl]" lazy :initial-index="0"
-                                fit="cover" loading="lazy" />
+                      <el-image
+class="w-80px h-80px" :hide-on-click-modal="true" :preview-teleported="true"
+                        :src="row.productImgUrl" :preview-src-list="[row.productImgUrl]" lazy :initial-index="0"
+                        fit="cover" loading="lazy" />
                     </div>
                     <div class="flex-1">
                       <div class="truncate mb-2 font-bold">标题：{{ row.productTitle }}</div>
@@ -238,7 +258,12 @@
               <!-- 添加定制文字列 -->
               <el-table-column label="定制文字" align="center" prop="customTextList" min-width="180">
                 <template #default="{ row }">
-                  <div class="text-center">{{ row.customTextList || '--' }}</div>
+                  <div class="text-center" v-if="row.customTextList">
+                    <div v-for="(text, index) in row.customTextList.split(',')" :key="index" class="custom-text-item">
+                      {{ text }}
+                    </div>
+                  </div>
+                  <div v-else class="text-center">--</div>
                 </template>
               </el-table-column>
               <!-- 定制图片 -->
@@ -246,8 +271,9 @@
                 <template #default="{ row }">
                   <div class="flex flex-wrap" v-if="row.customImageUrls">
                     <div v-for="(item, index) in row.customImageUrls.split(',')" :key="index" class="ml-2">
-                      <el-image class="w-60px h-60px" :hide-on-click-modal="true" :preview-teleported="true" :src="item + '?x-oss-process=image/resize,w_200'"
-                                :preview-src-list="[item]" lazy :initial-index="0" fit="cover" loading="lazy" />
+                      <el-image
+class="w-60px h-60px" :hide-on-click-modal="true" :preview-teleported="true" :src="item + '?x-oss-process=image/resize,w_200'"
+                        :preview-src-list="[item]" lazy :initial-index="0" fit="cover" loading="lazy" />
                     </div>
                   </div>
                 </template>
@@ -256,8 +282,9 @@
               <el-table-column label="合成预览" align="center" prop="effectiveImgUrl" min-width="120">
                 <template #default="{ row }">
                   <div class="text-left">
-                    <el-image class="w-60px h-60px" v-if="row.effectiveImgUrl" :hide-on-click-modal="true"
-                              :preview-teleported="true" :preview-src-list="[row.effectiveImgUrl]" :src="row.effectiveImgUrl" />
+                    <el-image
+class="w-60px h-60px" v-if="row.effectiveImgUrl" :hide-on-click-modal="true"
+                      :preview-teleported="true" :preview-src-list="[row.effectiveImgUrl]" :src="row.effectiveImgUrl" />
                   </div>
                 </template>
               </el-table-column>
@@ -265,9 +292,10 @@
               <el-table-column label="合规单图片" align="center" prop="complianceImageUrl" min-width="120">
                 <template #default="{ row }">
                   <div class="text-left">
-                    <el-image class="w-60px h-60px" v-if="row.complianceImageUrl" :hide-on-click-modal="true"
-                              :preview-teleported="true" :preview-src-list="[row.complianceImageUrl]"
-                              :src="row.complianceImageUrl" />
+                    <el-image
+class="w-60px h-60px" v-if="row.complianceImageUrl" :hide-on-click-modal="true"
+                      :preview-teleported="true" :preview-src-list="[row.complianceImageUrl]"
+                      :src="row.complianceImageUrl" />
                     <div v-else class="text-gray-400 text-sm">暂无图片</div>
                   </div>
                 </template>
@@ -321,8 +349,9 @@
                       {{ row.isCompleteDrawTask === 1 ? '作图完成' : '作图待完成' }}
                     </el-tag>
                     <div class="task-actions" v-if="row.isCompleteDrawTask === 0">
-                      <el-button type="primary" @click="handlerCompleteOrderTask(scope.row, row, 1)"
-                                 class="print-action-button" plain size="small">
+                      <el-button
+type="primary" @click="handlerCompleteOrderTask(scope.row, row, 1)"
+                        class="print-action-button" plain size="small">
                         标记作图完成
                       </el-button>
                     </div>
@@ -332,13 +361,15 @@
               <el-table-column label="生产状态" align="center" min-width="120">
                 <template #default="{ row }">
                   <div class="flex flex-col gap-2">
-                    <el-tag :type="row.isCompleteProducerTask === 1 ? 'success' : 'info'" class="status-tag"
-                            size="large">
+                    <el-tag
+:type="row.isCompleteProducerTask === 1 ? 'success' : 'info'" class="status-tag"
+                      size="large">
                       {{ row.isCompleteProducerTask === 1 ? '生产完成' : '生产待完成' }}
                     </el-tag>
                     <div class="task-actions" v-if="row.isCompleteProducerTask === 0">
-                      <el-button type="success" @click="handlerCompleteOrderTask(scope.row, row, 2)"
-                                 class="print-action-button" plain size="small">
+                      <el-button
+type="success" @click="handlerCompleteOrderTask(scope.row, row, 2)"
+                        class="print-action-button" plain size="small">
                         标记生产完成
                       </el-button>
                     </div>
@@ -386,15 +417,16 @@
           <div class="category-info">
             <template v-if="row.orderList && row.orderList.length > 0">
               <div class="flex flex-col" style="align-items: flex-start">
-                <el-tag v-for="(category, index) in [
+                <el-tag
+v-for="(category, index) in [
                   ...new Set(row.orderList.map((order) => order.categoryName))
                 ]" :key="index" class="category-tag" type="info" effect="plain">
                   <span>{{ category }}</span>
                   <span class="ml-2">制作数量：<span class="color-rose-500">{{
-                      row.orderList
-                        .filter((order) => order.categoryName === category)
-                        .reduce((acc, order) => acc + order.quantity, 0)
-                    }}</span></span>
+                    row.orderList
+                      .filter((order) => order.categoryName === category)
+                      .reduce((acc, order) => acc + order.quantity, 0)
+                      }}</span></span>
                 </el-tag>
               </div>
             </template>
@@ -413,8 +445,9 @@
               </el-button>
             </a>
 
-            <el-button v-if="row.status === 0" type="primary" plain size="small" @click="handlerHandleUpload(row)"
-                       class="action-button ml-2">
+            <el-button
+v-if="row.status === 0" type="primary" plain size="small" @click="handlerHandleUpload(row)"
+              class="action-button ml-2">
               <Icon icon="ep:upload" class="mr-5px" />
               重新上传文件
             </el-button>
@@ -444,8 +477,9 @@
       </el-table-column>
       <el-table-column label="任务分配状态" align="center" min-width="90">
         <template #default="{ row }">
-          <dict-tag :type="DICT_TYPE.TEMU_ORDER_BATCH_DISPATCH_STATUS" :value="row.isDispatchTask"
-                    class="batch-status-tag" />
+          <dict-tag
+:type="DICT_TYPE.TEMU_ORDER_BATCH_DISPATCH_STATUS" :value="row.isDispatchTask"
+            class="batch-status-tag" />
         </template>
       </el-table-column>
 
@@ -475,19 +509,21 @@
               <div class="flex justify-between mb-1">
                 <span class="text-sm">作图进度</span>
                 <span class="text-sm">{{row.orderList?.filter(order => order.isCompleteDrawTask === 1).length || 0
-                  }}/{{ row.orderList?.length || 0 }}</span>
+                }}/{{ row.orderList?.length || 0 }}</span>
               </div>
-              <el-progress :percentage="calculateProgress(row.orderList, 'draw')" :stroke-width="8"
-                           :color="progressColor(calculateProgress(row.orderList, 'draw'))" :show-text="false" />
+              <el-progress
+:percentage="calculateProgress(row.orderList, 'draw')" :stroke-width="8"
+                :color="progressColor(calculateProgress(row.orderList, 'draw'))" :show-text="false" />
             </div>
             <div class="progress-item mt-2">
               <div class="flex justify-between mb-1">
                 <span class="text-sm">生产进度</span>
                 <span class="text-sm">{{row.orderList?.filter(order => order.isCompleteProducerTask === 1).length || 0
-                  }}/{{ row.orderList?.length || 0 }}</span>
+                }}/{{ row.orderList?.length || 0 }}</span>
               </div>
-              <el-progress :percentage="calculateProgress(row.orderList, 'production')" :stroke-width="8"
-                           :color="progressColor(calculateProgress(row.orderList, 'production'))" :show-text="false" />
+              <el-progress
+:percentage="calculateProgress(row.orderList, 'production')" :stroke-width="8"
+                :color="progressColor(calculateProgress(row.orderList, 'production'))" :show-text="false" />
             </div>
           </div>
         </template>
@@ -511,14 +547,16 @@
 
     </el-table>
     <!-- 分页 -->
-    <Pagination :total="total" v-model:page="queryParams.pageNo" v-model:limit="queryParams.pageSize"
-                :page-sizes="[1, 3, 5, 10, 20]" :default-page-size="5" @pagination="handlePaginationChange" />
+    <Pagination
+:total="total" v-model:page="queryParams.pageNo" v-model:limit="queryParams.pageSize"
+      :page-sizes="[1, 3, 5, 10, 20]" :default-page-size="5" @pagination="handlePaginationChange" />
   </ContentWrap>
   <!--修改备注-->
   <OrderRemarkPopup @confirm="handlerRemarkConfirm" ref="orderRemarkPopup" />
   <!--分配任务 -->
-  <OrderBatchTaskDispatchPopup v-if="orderBatchTaskDispatchVisible" ref="orderBatchTaskDispatchPopup"
-                               @confirm="handlerDispatchTaskConfirm" @close="orderBatchTaskDispatchVisible = false" />
+  <OrderBatchTaskDispatchPopup
+v-if="orderBatchTaskDispatchVisible" ref="orderBatchTaskDispatchPopup"
+    @confirm="handlerDispatchTaskConfirm" @close="orderBatchTaskDispatchVisible = false" />
 </template>
 
 <script setup lang="ts">
@@ -1090,14 +1128,14 @@ const handlerPrintBatchGoodsSn = async () => {
             <div style="color: #606266; font-weight: bold; margin-bottom: 8px;">${shopName}</div>
             <div style="padding-left: 16px;">
               ${skus
-            .map(
-              (sku) => `
+              .map(
+                (sku) => `
                 <div style="color: #409EFF; margin-bottom: 4px;">
                   ${sku}
                 </div>
               `
-            )
-            .join('')}
+              )
+              .join('')}
             </div>
           </div>
         `
@@ -1219,8 +1257,8 @@ const handlerPrintBatchCompliance = async () => {
               <div style="color: #606266; font-weight: bold; margin-bottom: 8px;">${shopName}</div>
               <div style="padding-left: 16px;">
                 ${Array.from(skcMap.entries())
-            .map(
-              ([skc, skuSet]) => `
+                  .map(
+                    ([skc, skuSet]) => `
                       <div style="color: #409EFF; margin-bottom: 4px;">
                         <div><strong>SKC：</strong>${skc}</div>
                         <div style="margin-left: 12px; color: #606266;">
@@ -1229,8 +1267,8 @@ const handlerPrintBatchCompliance = async () => {
                         </div>
                       </div>
                     `
-            )
-            .join('')}
+                  )
+                  .join('')}
               </div>
             </div>
           `
@@ -1348,14 +1386,14 @@ const handlerPrintBatchMerged = async () => {
             <div style="color: #606266; font-weight: bold; margin-bottom: 8px;">${shopName}</div>
             <div style="padding-left: 16px;">
               ${Array.from(skcs)
-            .map(
-              (skc) => `
+              .map(
+                (skc) => `
                 <div style="color: #409EFF; margin-bottom: 4px;">
                   ${skc}
                 </div>
               `
-            )
-            .join('')}
+              )
+              .join('')}
             </div>
           </div>
         `
@@ -1516,25 +1554,25 @@ const handlerPrintBatchPickList = () => {
                 </div>
                 <div style="display: flex; gap: 10px; align-items: flex-start;">
                   ${order.customImageUrls
-              ? `
+                ? `
                   <div>
                     <strong>定制图片：</strong>
                     <div style="display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px;">
                       ${order.customImageUrls
-                .split(',')
-                .map(
-                  (url) => `
+                  .split(',')
+                  .map(
+                    (url) => `
                         <img src="${url}" style="width: 40px; height: 40px; object-fit: contain; border: 1px solid #ddd;">
                       `
-                )
-                .join('')}
+                  )
+                  .join('')}
                     </div>
                   </div>
                   `
-              : ''
-            }
+                : ''
+              }
                   ${order.effectiveImgUrl
-              ? `
+                ? `
                   <div>
                     <strong>合成预览：</strong>
                     <div style="margin-top: 4px;">
@@ -1542,8 +1580,8 @@ const handlerPrintBatchPickList = () => {
                     </div>
                   </div>
                   `
-              : ''
-            }
+                : ''
+              }
                 </div>
               </td>
               <td style="text-align: center; vertical-align: middle;">${order.originalQuantity || 0}</td>
@@ -1580,7 +1618,7 @@ const handlerPrintBatchPickList = () => {
                   ${ordersHtml}
                 </tbody>
                 ${isLastPage
-          ? `
+            ? `
                 <tfoot>
                   <tr>
                     <td colspan="4" style="text-align: right;"><strong>总数量：</strong></td>
@@ -1588,13 +1626,13 @@ const handlerPrintBatchPickList = () => {
                   </tr>
                 </tfoot>
                 `
-          : ''
-        }
+            : ''
+          }
               </table>
             </div>
 
             ${isLastPage
-          ? `
+            ? `
             <div class="pick-list-footer">
               <div style="display: flex; justify-content: space-between; padding: 0 40px;">
                 <div>拣货人：____________</div>
@@ -1603,8 +1641,8 @@ const handlerPrintBatchPickList = () => {
               </div>
             </div>
             `
-          : ''
-        }
+            : ''
+          }
           </div>
         `)
       }
@@ -1745,14 +1783,14 @@ const handlePrintSelectedOrders = async () => {
             <div style="color: #606266; font-weight: bold; margin-bottom: 8px;">${shopName}</div>
             <div style="padding-left: 16px;">
               ${Array.from(skcs)
-            .map(
-              (skc) => `
+              .map(
+                (skc) => `
                 <div style="color: #409EFF; margin-bottom: 4px;">
                   ${skc}
                 </div>
               `
-            )
-            .join('')}
+              )
+              .join('')}
             </div>
           </div>
         `
@@ -1987,7 +2025,7 @@ const handlerCompleteSelectedDrawTasks = async () => {
   try {
     // 仅过滤未完成的订单
     const unfinishedOrders = selectedInnerOrders.value.filter(order => order.isCompleteDrawTask === 0)
-
+    
     if (unfinishedOrders.length === 0) {
       ElMessage.warning('所选订单均已完成作图任务')
       return
@@ -1996,8 +2034,8 @@ const handlerCompleteSelectedDrawTasks = async () => {
     // 确认操作
     try {
       await ElMessageBox.confirm(
-        `确定要将 ${unfinishedOrders.length} 个选中订单标记为作图完成吗？`,
-        '确认操作',
+        `确定要将 ${unfinishedOrders.length} 个选中订单标记为作图完成吗？`, 
+        '确认操作', 
         {
           confirmButtonText: '确认',
           cancelButtonText: '取消',
@@ -2008,7 +2046,7 @@ const handlerCompleteSelectedDrawTasks = async () => {
       // 用户取消操作
       return
     }
-
+    
     // 显示操作进行中的提示（不阻塞界面）
     const processingMessage = ElMessage({
       message: `正在处理 ${unfinishedOrders.length} 个订单，请稍候...`,
@@ -2016,30 +2054,30 @@ const handlerCompleteSelectedDrawTasks = async () => {
       duration: 0,
       showClose: true
     })
-
+    
     // 禁用按钮，避免重复操作
     const btnDisabled = ref(true)
     setTimeout(() => {
       const btn = document.querySelector('.batch-draw-complete-btn')
       if (btn) btn.setAttribute('disabled', 'disabled')
     }, 0)
-
+    
     // 处理结果计数
     let successCount = 0
     let failCount = 0
-
+    
     // 逐个处理订单
     for (const order of unfinishedOrders) {
       // 查找订单所属的批次
-      const batch = list.value.find(b =>
+      const batch = list.value.find(b => 
         b.orderList && b.orderList.some(o => o.id === order.id)
       )
-
+      
       if (!batch) {
         failCount++
         continue
       }
-
+      
       try {
         // 调用API标记作图完成
         await OrderBatchApi.completeOrderTaskByAdmin({
@@ -2047,7 +2085,7 @@ const handlerCompleteSelectedDrawTasks = async () => {
           id: batch.id,
           orderId: order.id
         })
-
+        
         // 更新本地数据状态
         order.isCompleteDrawTask = 1
         successCount++
@@ -2055,10 +2093,10 @@ const handlerCompleteSelectedDrawTasks = async () => {
         failCount++
       }
     }
-
+    
     // 关闭处理中的提示
     processingMessage.close()
-
+    
     // 显示结果
     if (failCount > 0 && successCount > 0) {
       ElMessage.warning(`已完成${successCount}个订单标记，${failCount}个订单失败`)
@@ -2067,35 +2105,35 @@ const handlerCompleteSelectedDrawTasks = async () => {
     } else {
       ElMessage.success(`成功标记${successCount}个订单作图完成`)
     }
-
+    
     // 清除勾选状态
     if (successCount > 0) {
       // 清除内部表格的选择
       clearSelectedInnerOrders()
     }
-
+    
     // 恢复按钮状态
     setTimeout(() => {
       const btn = document.querySelector('.batch-draw-complete-btn')
       if (btn) btn.removeAttribute('disabled')
     }, 0)
-
+    
   } catch (error) {
     // 出错时也关闭提示
     ElMessage.closeAll()
-
+    
     ElMessage.error('批量标记作图完成失败，请重试')
     console.error('批量标记作图完成失败:', error)
-
+    
     // 清除勾选状态
     clearSelectedInnerOrders()
-
+    
     // 恢复按钮状态
     setTimeout(() => {
       const btn = document.querySelector('.batch-draw-complete-btn')
       if (btn) btn.removeAttribute('disabled')
     }, 0)
-  }
+  } 
   // 不需要finally块了
 }
 
@@ -2104,6 +2142,70 @@ const handlePaginationChange = () => {
   // 清除主表格选择
   clearAllSelections()
   getList()
+}
+
+/** 获取排序后的订单列表 */
+const getSortedOrderList = (batch) => {
+  // 特定尺寸的贴纸(酒标)列表
+  const SPECIAL_STICKER_SIZES = [
+    '贴纸(酒标)18cm*8.7cm*0.2cm',
+    '贴纸(酒标)16cm*6.3cm*0.2cm',
+    '贴纸(酒标)8.5cm*5cm*0.2cm',
+    '贴纸(酒标)5.7cm*1.7cm*0.2cm'
+  ];
+
+  // 检查批次是否包含特定尺寸的贴纸(酒标)或贺卡
+  const hasSpecialSticker = batch.orderList.some(order => 
+    order.categoryName && SPECIAL_STICKER_SIZES.includes(order.categoryName)
+  );
+  const hasGreetingCard = batch.orderList.some(order => 
+    order.categoryName && order.categoryName.includes('贺卡')
+  );
+  
+  // 如果批次包含特定尺寸的贴纸(酒标)或贺卡订单，需要分开处理
+  if (hasSpecialSticker || hasGreetingCard) {
+    // 将订单分为三组：特定尺寸贴纸订单、贺卡订单和其他订单
+    const stickerOrders = batch.orderList.filter(order => 
+      order.categoryName && SPECIAL_STICKER_SIZES.includes(order.categoryName)
+    );
+    
+    const greetingCardOrders = batch.orderList.filter(order => 
+      order.categoryName && order.categoryName.includes('贺卡')
+    );
+    
+    const otherOrders = batch.orderList.filter(order => 
+      !order.categoryName || 
+      (!SPECIAL_STICKER_SIZES.includes(order.categoryName) && !order.categoryName.includes('贺卡'))
+    );
+    
+    // 特定尺寸贴纸订单和贺卡订单按返单状态和制作数量排序
+    const sortByReturnAndQuantity = (orders) => {
+      return [...orders].sort((a, b) => {
+        // 先按返单状态排序
+        const returnOrderDiff = (a.isReturnOrder === 1 ? -1 : 0) - (b.isReturnOrder === 1 ? -1 : 0);
+        if (returnOrderDiff !== 0) return returnOrderDiff;
+        
+        // 再按制作数量从小到大排序
+        return (a.quantity || 0) - (b.quantity || 0);
+      });
+    };
+
+    const sortedStickerOrders = sortByReturnAndQuantity(stickerOrders);
+    const sortedGreetingCardOrders = sortByReturnAndQuantity(greetingCardOrders);
+    
+    // 其他订单只按返单状态排序
+    const sortedOtherOrders = [...otherOrders].sort((a, b) => 
+      (a.isReturnOrder === 1 ? -1 : 0) - (b.isReturnOrder === 1 ? -1 : 0)
+    );
+    
+    // 合并所有订单，特定尺寸贴纸订单和贺卡订单排在前面
+    return [...sortedStickerOrders, ...sortedGreetingCardOrders, ...sortedOtherOrders];
+  }
+  
+  // 其他批次保持原有的返单优先排序逻辑
+  return [...batch.orderList].sort((a, b) => 
+    (a.isReturnOrder === 1 ? -1 : 0) - (b.isReturnOrder === 1 ? -1 : 0)
+  );
 }
 
 </script>
@@ -2347,6 +2449,7 @@ const handlePaginationChange = () => {
     font-weight: 600;
   }
 }
+
 
 .sku-info {
   text-align: left;
@@ -2852,5 +2955,11 @@ const handlePaginationChange = () => {
       transition: all 0.3s ease;
     }
   }
+}
+
+.custom-text-item {
+  padding: 2px 0;
+  line-height: 1.5;
+  word-break: break-all;
 }
 </style>

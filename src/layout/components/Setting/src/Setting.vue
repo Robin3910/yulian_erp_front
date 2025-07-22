@@ -19,7 +19,6 @@ defineOptions({ name: 'Setting' })
 const { t } = useI18n()
 const appStore = useAppStore()
 const router = useRouter()
-
 const { getPrefixCls } = useDesign()
 const prefixCls = getPrefixCls('setting')
 const layout = computed(() => appStore.getLayout)
@@ -197,6 +196,8 @@ const clear = () => {
   wsCache.delete(CACHE_KEY.LAYOUT)
   wsCache.delete(CACHE_KEY.THEME)
   wsCache.delete(CACHE_KEY.IS_DARK)
+  wsCache.delete(CACHE_KEY.USER)
+  wsCache.delete(CACHE_KEY.ROLE_ROUTERS)
   window.location.reload()
 }
 
@@ -208,7 +209,21 @@ const goToBarcodeScan = () => {
   // 如果当前已经在条码识别页面，则直接触发相机启动
   if (currentRoute.path === targetPath) {
     // 触发全局事件来启动相机
-    window.dispatchEvent(new CustomEvent('startBarcodeCamera'))
+    window.dispatchEvent(new CustomEvent('handleStartCamera'))
+  } else {
+    // 如果不在条码识别页面，则跳转过
+    router.push(`${targetPath}?autoStart=true`)
+  }
+}
+
+// 跳转到图像识别页面
+const goToImgcodeScan = () => {
+  const currentRoute = router.currentRoute.value
+  const targetPath = '/temu/admin/image/search/phone'
+  // 如果当前已经在条码识别页面，则直接触发相机启动
+  if (currentRoute.path === targetPath) {
+    // 触发全局事件来启动相机
+    window.dispatchEvent(new CustomEvent('handleStartCamera'))
   } else {
     // 如果不在条码识别页面，则跳转过去
     router.push(`${targetPath}?autoStart=true`)
@@ -231,6 +246,13 @@ const goToBarcodeScan = () => {
     @click="goToBarcodeScan"
   >
     <Icon color="#fff" icon="ep:camera" />
+  </div>
+
+  <div
+    class="fixed right-0 top-[calc(45%+120px)] h-40px w-40px cursor-pointer bg-[#f5d742] text-center leading-40px "
+    @click="goToImgcodeScan"
+  >
+    <Icon color="#fff" icon="ep:picture" />
   </div>
 
   <ElDrawer v-model="drawer" :z-index="4000" direction="rtl" size="350px">
@@ -327,6 +349,10 @@ $prefix-cls: #{$namespace}-setting;
 
 // 条码识别按钮样式
 .fixed.right-0.top-\[calc\(45\%\+60px\)\] {
+  border-radius: 6px 0 0 6px;
+  z-index: 1200;
+}
+.fixed.right-0.top-\[calc\(45\%\+120px\)\] {
   border-radius: 6px 0 0 6px;
   z-index: 1200;
 }

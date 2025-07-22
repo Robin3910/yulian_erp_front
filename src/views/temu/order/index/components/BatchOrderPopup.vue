@@ -494,7 +494,7 @@ const handleConfirm = () => {
     return
   }
 }
-// ##########################事件监听处理区###################################################
+
 onMounted(() => {
   dialogVisible.value = props.visible
 })
@@ -509,4 +509,3 @@ defineExpose({
 })
 </script>
 
-<style scoped lang="scss"></style>

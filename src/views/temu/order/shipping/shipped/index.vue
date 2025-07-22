@@ -2078,38 +2078,66 @@ const handlerPrintBatchAll = async () => {
 
         // 3. 处理每个订单编号
         for (const [orderNo, sameOrderItems] of ordersByOrderNo) {
-          // 3.1 首先打印该订单编号的面单（只打印一次）
-          const firstOrder = sameOrderItems[0]
-          if (firstOrder.expressImageUrl) {
-            const printUrl = firstOrder.expressImageUrl.startsWith('@')
-              ? firstOrder.expressImageUrl.substring(1)
-              : firstOrder.expressImageUrl
-            const response = await fetch(printUrl)
-            if (response.ok) {
-              const pdfBytes = await response.arrayBuffer()
-              const pdf = await PDFDocument.load(pdfBytes)
-              const copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices())
-              copiedPages.forEach(page => mergedPdf.addPage(page))
-            }
-          }
-
-          // 3.2 然后打印该订单编号下每个订单项的条码+合规单
-          for (const orderItem of sameOrderItems) {
-            if (orderItem.complianceGoodsMergedUrl) {
-              const url = orderItem.complianceGoodsMergedUrl.startsWith('@')
-                ? orderItem.complianceGoodsMergedUrl.substring(1)
-                : orderItem.complianceGoodsMergedUrl
-              const response = await fetch(url)
-              if (response.ok) {
-                const pdfBytes = await response.arrayBuffer()
-                const pdf = await PDFDocument.load(pdfBytes)
-                const copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices())
-                const copies = orderItem.originalQuantity || 1
-                for (let i = 0; i < copies; i++) {
-                  copiedPages.forEach(page => mergedPdf.addPage(page))
+          let pageIndex = 0; // 每个订单编号下的面单页索引
+          // console.log(sameOrderItems);
+          for (let i = 0; i < sameOrderItems.length; i++) {
+            const orderItem = sameOrderItems[i];
+            const isFirst = i === 0;
+            const nextSku = !isFirst ? sameOrderItems[i - 1].sku : null;
+            // 第一个 或 SKU变化时打印面单            
+            if (isFirst || orderItem.sku !== nextSku) {
+              if (orderItem.expressImageUrl) {
+                const printUrl = orderItem.expressImageUrl.startsWith('@')
+                  ? orderItem.expressImageUrl.substring(1)
+                  : orderItem.expressImageUrl;
+                // 新增：只打印customSku与PDF中DZ编号匹配的那一页
+                try {
+                  // 1. 用pdfjs-dist查找匹配页
+                  const response = await fetch(printUrl);
+                  if (!response.ok) continue;
+                  const arrayBuffer = await response.arrayBuffer();
+                  // 立即克隆一份
+                  const arrayBufferForPdfjs = arrayBuffer.slice(0);
+                  const pdfjsDoc = await pdfjsLib.getDocument({ data: arrayBufferForPdfjs }).promise;
+                  let matchedPage = -1;
+                  for (let pageNum = 1; pageNum <= pdfjsDoc.numPages; pageNum++) {
+                    const page = await pdfjsDoc.getPage(pageNum);
+                    const content = await page.getTextContent();
+                    const text = content.items.map((item) => item.str).join(' ');
+                    const match = text.match(/DZ(\w+)/);
+                    if (match && match[1] === orderItem.customSku) {
+                      matchedPage = pageNum - 1; // pdf-lib页码从0开始
+                      break;
+                    }
+                  }
+                  if (matchedPage !== -1) {
+                    // pdf-lib 用 arrayBufferForPdfLib
+                    const arrayBufferForPdfLib = arrayBuffer.slice(0);
+                    const pdfLibDoc = await PDFDocument.load(arrayBufferForPdfLib);
+                    const copiedPages = await mergedPdf.copyPages(pdfLibDoc, [matchedPage]);
+                    mergedPdf.addPage(copiedPages[0]);
+                  }
+                } catch (e) {
+                  console.error('PDF匹配customSku失败', e);
                 }
               }
             }
+            if (orderItem.complianceGoodsMergedUrl) {
+              const url = orderItem.complianceGoodsMergedUrl.startsWith('@')
+                ? orderItem.complianceGoodsMergedUrl.substring(1)
+                : orderItem.complianceGoodsMergedUrl;
+              let response = await fetch(url);
+              if (response.ok) {
+                let pdfBytes = await response.arrayBuffer();
+                let pdf = await PDFDocument.load(pdfBytes);
+                let copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
+                const copies = orderItem.originalQuantity || 1;
+                for (let j = 0; j < copies; j++) {
+                  copiedPages.forEach(page => mergedPdf.addPage(page));
+                }
+              }
+            }
+            
           }
         }
 

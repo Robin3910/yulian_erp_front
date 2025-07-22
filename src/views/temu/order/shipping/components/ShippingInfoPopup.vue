@@ -78,7 +78,6 @@
         <div v-for="(order, index) in formData.orders" :key="index" class="order-item">
           <!-- 订单头部 -->
           <div class="order-header">
-            
             <div class="order-basic-info">
               <div class="order-number">
                 <span class="label">订单号：</span>
@@ -529,35 +528,46 @@ const handlePrintAll = async () => {
     }
 
     // 遍历每个订单组
-    for (const [orderNo, orders] of orderGroups) {
-      try {
-        // 打印物流面单（如果存在）
-        if (orders[0].expressImageUrl) {
-          const expressUrl = orders[0].expressImageUrl.startsWith('@')
-            ? orders[0].expressImageUrl.substring(1)
-            : orders[0].expressImageUrl;
-          await addPdfToMerged(mergedPdf, expressUrl);
-        }
-
-        // 打印条码+合规单（根据官网数量打印）
-        for (const order of orders) {
-          if (order.complianceGoodsMergedUrl) {
-            const mergedUrl = order.complianceGoodsMergedUrl.startsWith('@')
-              ? order.complianceGoodsMergedUrl.substring(1)
-              : order.complianceGoodsMergedUrl;
-            
-            // 根据官网数量复制对应份数
-            const copies = order.originalQuantity || 1;
-            for (let i = 0; i < copies; i++) {
-              await addPdfToMerged(mergedPdf, mergedUrl);
+    for (const [orderNo, sameOrderItems] of orderGroups) {
+       let pageIndex = 0; // 每个订单编号下的面单页索引
+          for (let i = 0; i < sameOrderItems.length; i++) {
+            const orderItem = sameOrderItems[i];
+            if (orderItem.complianceGoodsMergedUrl) {
+              const url = orderItem.complianceGoodsMergedUrl.startsWith('@')
+                ? orderItem.complianceGoodsMergedUrl.substring(1)
+                : orderItem.complianceGoodsMergedUrl;
+              let response = await fetch(url);
+              if (response.ok) {
+                let pdfBytes = await response.arrayBuffer();
+                let pdf = await PDFDocument.load(pdfBytes);
+                let copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
+                const copies = orderItem.originalQuantity || 1;
+                for (let j = 0; j < copies; j++) {
+                  copiedPages.forEach(page => mergedPdf.addPage(page));
+                }
+              }
+            }
+            // 判断是否需要打印面单
+            const isLast = i === sameOrderItems.length - 1;
+            const nextSku = !isLast ? sameOrderItems[i + 1].sku : null;
+            if (isLast || orderItem.sku !== nextSku) {
+              if (orderItem.expressImageUrl) {
+                const printUrl = orderItem.expressImageUrl.startsWith('@')
+                  ? orderItem.expressImageUrl.substring(1)
+                  : orderItem.expressImageUrl;
+                let response = await fetch(printUrl);
+                if (response.ok) {
+                  let pdfBytes = await response.arrayBuffer();
+                  let pdf = await PDFDocument.load(pdfBytes);
+                  let copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
+                  if (copiedPages[pageIndex]) {
+                    mergedPdf.addPage(copiedPages[pageIndex]);
+                    pageIndex++;
+                  }
+                }
+              }
             }
           }
-        }
-        successCount++;
-      } catch (error) {
-        console.error(`处理订单 ${orderNo} 失败:`, error);
-        failCount++;
-      }
     }
 
     // 如果有成功合并的PDF，则打印

@@ -3,16 +3,12 @@
     <!-- 查询区 -->
     <el-row :gutter="16" align="middle" class="search-row">
       <el-col :span="6">
-        <el-input v-model="searchBatchId" placeholder="按批次ID查询" clearable style="width: 180px;" />
+        <el-input v-model="searchBatchId" placeholder="按批次大类查询" clearable style="width: 180px;" />
         <el-button @click="onSearchByBatch" type="primary" style="margin-left: 8px;">按批次查询</el-button>
       </el-col>
       <el-col :span="6">
         <el-input v-model="searchCategoryId" placeholder="按类目ID查询" clearable style="width: 180px;" />
         <el-button @click="onSearchByCategory" type="primary" style="margin-left: 8px;">按类目查询</el-button>
-      </el-col>
-      <el-col :span="6">
-        <el-input v-model="searchCategoryName" placeholder="按类目名称查询" clearable style="width: 180px;" />
-        <el-button @click="onSearchByCategoryName" type="primary" style="margin-left: 8px;">按类目名称查询</el-button>
       </el-col>
       <el-col :span="4">
         <el-button @click="onReset" type="default">重置</el-button>
@@ -23,10 +19,10 @@
     <!-- 列表区 -->
     <el-table :data="tableData" @selection-change="onSelectionChange" style="margin-top: 16px;" border>
       <el-table-column type="selection" width="55" />
-      <el-table-column prop="id" label="ID" width="80" />
-      <el-table-column prop="batchCategoryId" label="批次ID" width="150" />
+      <!-- <el-table-column prop="id" label="ID" width="80" /> -->
+      <el-table-column prop="batchCategoryId" label="批次大类" width="150" />
       <el-table-column prop="categoryId" label="类目ID" width="120" />
-      <el-table-column prop="categoryName" label="类目名称" width="180" />
+      <el-table-column prop="categoryName" label="类目名字" width="150" />
       <el-table-column prop="createTime" label="创建时间" width="180" />
       <el-table-column label="操作" width="120">
         <template #default="scope">
@@ -50,86 +46,53 @@
         <el-button type="primary" @click="onEditSave">保存</el-button>
       </template>
     </el-dialog>
-
-    <!-- 分页 -->
-    <el-pagination
-      style="margin-top: 16px; text-align: right"
-      background
-      layout="total, sizes, prev, pager, next, jumper"
-      :total="total"
-      :current-page="pageNo"
-      :page-size="pageSize"
-      @current-change="handleCurrentChange"
-      @size-change="handleSizeChange"
-      :page-sizes="[10, 20, 50, 100]"
-    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
-  getBatchCategoryPage,
+  getBatchCategoryList,
+  getBatchCategoryListByCategory,
   deleteBatchCategories,
   updateBatchCategoryId
 } from '@/api/temu/product-category/batchCategory'
 
 const searchBatchId = ref('')
 const searchCategoryId = ref('')
-const searchCategoryName = ref('')
 const tableData = ref<any[]>([])
 const multipleSelection = ref<any[]>([])
-
-const pageNo = ref(1)
-const pageSize = ref(10)
-const total = ref(0)
 
 const editDialogVisible = ref(false)
 const editForm = ref({ batchCategoryId: '', categoryId: 0 })
 
 // 查询
 const fetchData = async () => {
-  const params: any = {
-    pageNo: pageNo.value,
-    pageSize: pageSize.value
+  let res
+  if (searchBatchId.value) {
+    res = await getBatchCategoryList(searchBatchId.value)
+  } else if (searchCategoryId.value) {
+    res = await getBatchCategoryListByCategory(Number(searchCategoryId.value))
+  } else {
+    res = await getBatchCategoryList()
   }
-  if (searchBatchId.value) params.batchCategoryId = searchBatchId.value
-  if (searchCategoryId.value) params.categoryId = searchCategoryId.value
-  if (searchCategoryName.value) params.categoryName = searchCategoryName.value
-
-  const res = await getBatchCategoryPage(params)
-  tableData.value = res?.list || []
-  total.value = res?.total || 0
+  tableData.value = res || []
+  
 }
-
-onMounted(() => {
-  fetchData()
-})
+fetchData()
 
 const onSearchByBatch = () => {
   searchCategoryId.value = ''
-  searchCategoryName.value = ''
-  pageNo.value = 1
   fetchData()
 }
 const onSearchByCategory = () => {
   searchBatchId.value = ''
-  searchCategoryName.value = ''
-  pageNo.value = 1
-  fetchData()
-}
-const onSearchByCategoryName = () => {
-  searchBatchId.value = ''
-  searchCategoryId.value = ''
-  pageNo.value = 1
   fetchData()
 }
 const onReset = () => {
   searchBatchId.value = ''
   searchCategoryId.value = ''
-  searchCategoryName.value = ''
-  pageNo.value = 1
   fetchData()
 }
 
@@ -161,16 +124,6 @@ const onEditSave = async () => {
     editDialogVisible.value = false
     fetchData()
   } catch (e) {}
-}
-
-const handleCurrentChange = (val: number) => {
-  pageNo.value = val
-  fetchData()
-}
-const handleSizeChange = (val: number) => {
-  pageSize.value = val
-  pageNo.value = 1
-  fetchData()
 }
 </script>
 

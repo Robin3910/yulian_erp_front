@@ -56,4 +56,19 @@ export const OrderBatchApi = {
   completeOrderTaskByAdmin: async (data: any) => {
     return await request.post({ url: `/temu/order-batch/complete-batch-order-task-by-admin`, data })
   },
+// 处理返单
+  handleReturnOrder: async (data: { 
+    batchId: number; 
+    returnReason: string;
+    returnDetail?: string;
+    handleMethod?: string;
+    priority?: string;
+    expectedCompleteTime?: string;
+  }) => {
+    return await request.post({ url: `/temu/order-batch/handle-return-order`, data })
+  },
+// 获取返单统计
+  getReturnOrderStats: async () => {
+    return await request.get({ url: `/temu/order-batch/return-stats` })
+  },
 }
