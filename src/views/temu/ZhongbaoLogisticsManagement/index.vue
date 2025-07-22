@@ -83,6 +83,25 @@ v-model="queryParams.createTime" type="daterange" range-separator="至"
             </el-form-item>
           </el-col>
           <el-col :span="24" :lg="6">
+            <el-form-item label="近三天批次" prop="recentBatchNo" class="w-full">
+              <el-select
+                v-model="queryParams.recentBatchNo"
+                placeholder="请选择近三天批次号"
+                clearable
+                filterable
+                :loading="batchLoading"
+                class="w-full"
+              >
+                <el-option
+                  v-for="item in filteredRecentBatchList"
+                  :key="item.id"
+                  :label="item.batchNo"
+                  :value="item.batchNo"
+                />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="24" :lg="6">
             <el-form-item label="定制文字搜索" prop="customTextList" class="w-full">
                <el-input v-model="queryParams.customTextList" placeholder="请输入定制文字" clearable @keyup.enter="handleQuery" />
             </el-form-item>
@@ -579,7 +598,7 @@ size="small" type="warning" plain class="action-button"
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, reactive, onMounted, onUnmounted, nextTick, computed, watch } from 'vue'
 import { OrderApi, OrderVO } from '@/api/temu/order'
 import { TemuCommonApi } from '@/api/temu/common'
 import { ElMessage, ElMessageBox, ElNotification, ElTable, ElLoading } from 'element-plus'
@@ -708,6 +727,26 @@ const initPackerList = async () => {
   }
 }
 
+interface QueryParams {
+  pageNo: number
+  pageSize: number
+  orderNo?: string
+  trackingNumber?: string
+  shopId?: number
+  createTime: any[]
+  orderStatus?: number
+  customSku: string | null
+  categoryIds: number[]
+  isUrgent?: number
+  dailySequence: string | null
+  shippingStatus?: number
+  batchNo?: string
+  recentBatchNo?: string
+  customTextList?: string
+  senderId?: number
+  isFoundAll?: number
+}
+
 const queryParams = reactive({
   pageNo: 1,
   pageSize: 10,
@@ -722,6 +761,7 @@ const queryParams = reactive({
   dailySequence: null as string | null, // 添加物流序号查询参数
   shippingStatus: undefined, // 新增发货状态查询参数
   batchNo: undefined, // 批次号搜索
+  recentBatchNo: undefined, // 近三天批次搜索
   customTextList: undefined, // 定制文字搜索
   senderId: undefined, // 添加打包人搜索参数
   isFoundAll: undefined // 添加是否找齐查询参数
@@ -1006,16 +1046,16 @@ const getShopList = async () => {
 
 /** 搜索按钮操作 */
 const handleQuery = () => {
+  // 如果近三天批次有值，优先使用近三天批次的值
+  if (queryParams.recentBatchNo) {
+    queryParams.batchNo = queryParams.recentBatchNo
+  }
   queryParams.pageNo = 1
-  // 清空选中记录
   selectedRows.value = []
-  // 重置级联展开状态
   selectedTrackingNumber.value = ''
   selectedOrderNo.value = ''
-  // 如果表格实例存在，清空表格的选中状态
   if (level1TableRef.value) {
     level1TableRef.value.clearSelection()
-    // 清除当前行高亮
     level1TableRef.value.setCurrentRow(null)
   }
   getList()
@@ -1023,21 +1063,14 @@ const handleQuery = () => {
 
 /** 重置按钮操作 */
 const resetQuery = () => {
-  queryFormRef.value.resetFields()
-  // 清空选中记录
+  queryFormRef.value?.resetFields()
+  queryParams.recentBatchNo = undefined // 清空近三天批次
   selectedRows.value = []
-  // 重置级联展开状态
   selectedTrackingNumber.value = ''
   selectedOrderNo.value = ''
-  // 如果表格实例存在，清空表格的选中状态
   if (level1TableRef.value) {
     level1TableRef.value.clearSelection()
-    // 清除当前行高亮
     level1TableRef.value.setCurrentRow(null)
-  }
-  // 如果二级表格存在，也清除其高亮
-  if (level2TableRef.value) {
-    level2TableRef.value.setCurrentRow(null)
   }
   handleQuery()
 }
@@ -1163,11 +1196,21 @@ const handleSpanMethod = ({ rowIndex, columnIndex }: { rowIndex: number; columnI
 }
 
 /** 初始化 **/
-onMounted(() => {
-  getList()
-  getProductCategoryList()
-  getShopList()
-  initPackerList() // 初始化打包人列表
+onMounted(async () => {
+  try {
+    console.log('开始获取批次列表')
+    await getRecentBatchList()
+    console.log('批次列表获取完成，当前列表长度:', recentBatchList.value.length)
+    await Promise.all([
+      getProductCategoryList(),
+      getShopList(),
+      initPackerList()
+    ])
+    handleQuery()
+  } catch (error) {
+    console.error('初始化数据失败:', error)
+    ElMessage.error('初始化数据失败')
+  }
 })
 
 // 清理全局函数
@@ -3544,6 +3587,49 @@ const handleSortingSequenceFocus = async (row: any) => {
     shippingInfoPopup.value.formData.previewData = previewData
   }
 }
+
+// 添加批次列表相关数据
+const recentBatchList = ref<any[]>([])
+const batchLoading = ref(false)
+
+// 获取近三天批次列表
+const getRecentBatchList = async () => {
+  try {
+    batchLoading.value = true
+    const res = await OrderApi.getRecentBatches()
+    console.log('API返回的原始数据:', res)
+    
+    if (res && Array.isArray(res)) {
+      recentBatchList.value = res
+      console.log('批次列表数据已更新:', recentBatchList.value)
+    }
+  } catch (error) {
+    console.error('获取近三天批次列表失败:', error)
+    ElMessage.error('获取近三天批次列表失败')
+  } finally {
+    batchLoading.value = false
+  }
+}
+
+// 修改下拉框组件
+const handleBatchSelect = (val: string) => {
+  console.log('选择的批次号:', val)
+  queryParams.batchNo = val
+}
+
+// 计算过滤后的近三天批次列表
+const filteredRecentBatchList = computed(() => {
+  // 如果没有选中类目，显示全部批次
+  if (!queryParams.categoryIds || queryParams.categoryIds.length === 0) {
+    return recentBatchList.value
+  }
+  // 只显示与选中类目有交集的批次
+  return recentBatchList.value.filter(batch => {
+    if (!batch.categoryIds || batch.categoryIds.length === 0) return false
+    // 只要有一个类目id在batch.categoryIds中即可
+    return queryParams.categoryIds.some(cid => batch.categoryIds.includes(String(cid)))
+  })
+})
 </script>
 <style lang="scss">
 $predefined-colors: (
