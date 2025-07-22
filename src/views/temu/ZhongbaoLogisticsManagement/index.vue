@@ -100,6 +100,14 @@ v-model="queryParams.createTime" type="daterange" range-separator="至"
             </el-form-item>
           </el-col>
           <el-col :span="24" :lg="6">
+            <el-form-item label="是否找齐" prop="isFoundAll" class="w-full">
+              <el-select v-model="queryParams.isFoundAll" placeholder="请选择是否找齐" clearable>
+                <el-option label="是" :value="1" />
+                <el-option label="否" :value="0" />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="24" :lg="6">
             <el-form-item>
               <el-button @click="handleQuery">
                 <Icon icon="ep:search" class="mr-5px" />
@@ -715,7 +723,8 @@ const queryParams = reactive({
   shippingStatus: undefined, // 新增发货状态查询参数
   batchNo: undefined, // 批次号搜索
   customTextList: undefined, // 定制文字搜索
-  senderId: undefined // 添加打包人搜索参数
+  senderId: undefined, // 添加打包人搜索参数
+  isFoundAll: undefined // 添加是否找齐查询参数
 })
 const queryFormRef = ref() // 搜索的表单
 
