@@ -50,7 +50,6 @@
       border 
       stripe 
       style="width: 100%" 
-      v-loading="loading"
       @selection-change="handleSelectionChange"
     >
       <el-table-column type="selection" width="55" fixed />
@@ -164,7 +163,6 @@ import { ElMessage, ElLoading } from 'element-plus'
 import { TemuCommonApi } from '@/api/temu/common'
 
 const orderList = ref<any[]>([])
-const loading = ref(false)
 const pagination = ref({
   pageNo: 1,
   pageSize: 10,
@@ -177,7 +175,7 @@ function handleSelectionChange(selection: any[]) {
   selectedRows.value = selection
 }
 
-// 处理批量打印
+// 处理批量打印物流面单
 async function handleBatchPrint() {
   if (selectedRows.value.length === 0) {
     ElMessage.warning('请选择需要打印的订单')
@@ -189,15 +187,16 @@ async function handleBatchPrint() {
     text: '正在获取打印数据...',
     background: 'rgba(0, 0, 0, 0.7)'
   })
-  
+
   try {
     // 获取所有选中行的发货单号
     const deliveryNos = selectedRows.value.map(row => row.deliveryOrderSn)
     const res = await TemuCommonApi.printDeliveryLabel(deliveryNos.join(','))
+    // 获取到数据后立即关闭加载提示
+    loading.close()
     console.log('打印接口返回数据：', res)
     
     if (res && res.printUrl) {
-      loading.setText('正在准备打印...')
       console.log('加载打印链接：', res.printUrl)
       
       // 创建一个临时的 iframe
@@ -228,12 +227,21 @@ async function handleBatchPrint() {
           cleanup()
           // 给页面 1 秒时间初始化
           setTimeout(() => {
-            // 不要立即移除 iframe，等待 10 秒后再移除
-            // 这样给足够时间让打印窗口显示出来
-            setTimeout(() => {
-              document.body.removeChild(printFrame)
-            }, 10000)
-            resolve(true)
+            // 等待打印窗口完全关闭后再移除 iframe
+            const checkPrintInterval = setInterval(() => {
+              try {
+                const printWindow = printFrame.contentWindow
+                if (!printWindow || printWindow.closed) {
+                  clearInterval(checkPrintInterval)
+                  document.body.removeChild(printFrame)
+                  resolve(true)
+                }
+              } catch (e) {
+                clearInterval(checkPrintInterval)
+                document.body.removeChild(printFrame)
+                resolve(true)
+              }
+            }, 1000)
           }, 1000)
         }
 
@@ -250,27 +258,32 @@ async function handleBatchPrint() {
       ElMessage.error('获取打印链接失败')
     }
   } catch (error: any) {
+    loading.close()
     console.error('打印出错：', error)
     ElMessage.error('打印失败：' + (error.message || '未知错误'))
-  } finally {
-    loading.close()
   }
 }
 
-// 修改单个打印处理函数
+// 处理单个打印物流面单
 async function handlePrint(row: any) {
+  if (!row.deliveryOrderSn) {
+    ElMessage.warning('该订单没有发货单号')
+    return
+  }
+
   const loading = ElLoading.service({
     lock: true,
     text: '正在获取打印数据...',
     background: 'rgba(0, 0, 0, 0.7)'
   })
-  
+
   try {
     const res = await TemuCommonApi.printDeliveryLabel(row.deliveryOrderSn)
+    // 获取到数据后立即关闭加载提示
+    loading.close()
     console.log('打印接口返回数据：', res)
     
     if (res && res.printUrl) {
-      loading.setText('正在准备打印...')
       console.log('加载打印链接：', res.printUrl)
       
       // 创建一个临时的 iframe
@@ -301,12 +314,21 @@ async function handlePrint(row: any) {
           cleanup()
           // 给页面 1 秒时间初始化
           setTimeout(() => {
-            // 不要立即移除 iframe，等待 10 秒后再移除
-            // 这样给足够时间让打印窗口显示出来
-            setTimeout(() => {
-              document.body.removeChild(printFrame)
-            }, 10000)
-            resolve(true)
+            // 等待打印窗口完全关闭后再移除 iframe
+            const checkPrintInterval = setInterval(() => {
+              try {
+                const printWindow = printFrame.contentWindow
+                if (!printWindow || printWindow.closed) {
+                  clearInterval(checkPrintInterval)
+                  document.body.removeChild(printFrame)
+                  resolve(true)
+                }
+              } catch (e) {
+                clearInterval(checkPrintInterval)
+                document.body.removeChild(printFrame)
+                resolve(true)
+              }
+            }, 1000)
           }, 1000)
         }
 
@@ -323,10 +345,9 @@ async function handlePrint(row: any) {
       ElMessage.error('获取打印链接失败')
     }
   } catch (error: any) {
+    loading.close()
     console.error('打印出错：', error)
     ElMessage.error('打印失败：' + (error.message || '未知错误'))
-  } finally {
-    loading.close()
   }
 }
 
@@ -409,18 +430,30 @@ async function handlePrintBarcode() {
           cleanup()
           // 给页面 1 秒时间初始化
           setTimeout(() => {
-            // 不要立即移除 iframe，等待 10 秒后再移除
-            // 这样给足够时间让打印窗口显示出来
-            setTimeout(() => {
-              document.body.removeChild(printFrame)
-            }, 10000)
-            resolve(true)
+            // 等待打印窗口完全关闭后再移除 iframe
+            const checkPrintInterval = setInterval(() => {
+              try {
+                const printWindow = printFrame.contentWindow
+                if (!printWindow || printWindow.closed) {
+                  clearInterval(checkPrintInterval)
+                  document.body.removeChild(printFrame)
+                  loading.close() // 关闭加载提示
+                  resolve(true)
+                }
+              } catch (e) {
+                clearInterval(checkPrintInterval)
+                document.body.removeChild(printFrame)
+                loading.close() // 关闭加载提示
+                resolve(true)
+              }
+            }, 1000)
           }, 1000)
         }
 
         printFrame.onerror = () => {
           cleanup()
           document.body.removeChild(printFrame)
+          loading.close() // 关闭加载提示
           reject(new Error('加载打印页面失败'))
         }
 
@@ -434,7 +467,7 @@ async function handlePrintBarcode() {
     console.error('打印出错：', error)
     ElMessage.error('打印失败：' + (error.message || '未知错误'))
   } finally {
-    loading.close()
+    // 移除这里的 loading.close()，因为我们在打印窗口关闭时才关闭加载提示
   }
 }
 
@@ -458,16 +491,18 @@ async function handleSinglePrintBarcode(row: any) {
       .map((item: any) => Number(item.productSkuId))
 
     if (productSkuIds.length === 0) {
+      loading.close()
       ElMessage.warning('该订单没有可打印的商品信息')
       return
     }
 
     console.log('准备打印的商品ID：', productSkuIds)
     const res = await TemuCommonApi.printProductBarcode(productSkuIds)
+    // 获取到数据后立即关闭加载提示
+    loading.close()
     console.log('打印接口返回数据：', res)
     
     if (res && res.printUrl) {
-      loading.setText('正在准备打印...')
       console.log('加载打印链接：', res.printUrl)
       
       // 创建一个临时的 iframe
@@ -498,12 +533,21 @@ async function handleSinglePrintBarcode(row: any) {
           cleanup()
           // 给页面 1 秒时间初始化
           setTimeout(() => {
-            // 不要立即移除 iframe，等待 10 秒后再移除
-            // 这样给足够时间让打印窗口显示出来
-            setTimeout(() => {
-              document.body.removeChild(printFrame)
-            }, 10000)
-            resolve(true)
+            // 等待打印窗口完全关闭后再移除 iframe
+            const checkPrintInterval = setInterval(() => {
+              try {
+                const printWindow = printFrame.contentWindow
+                if (!printWindow || printWindow.closed) {
+                  clearInterval(checkPrintInterval)
+                  document.body.removeChild(printFrame)
+                  resolve(true)
+                }
+              } catch (e) {
+                clearInterval(checkPrintInterval)
+                document.body.removeChild(printFrame)
+                resolve(true)
+              }
+            }, 1000)
           }, 1000)
         }
 
@@ -520,10 +564,9 @@ async function handleSinglePrintBarcode(row: any) {
       ElMessage.error('获取打印链接失败')
     }
   } catch (error: any) {
+    loading.close()
     console.error('打印出错：', error)
     ElMessage.error('打印失败：' + (error.message || '未知错误'))
-  } finally {
-    loading.close()
   }
 }
 
@@ -554,16 +597,18 @@ async function handleBatchPrintBarcode() {
     })
 
     if (productSkuIds.length === 0) {
+      loading.close()
       ElMessage.warning('所选订单中没有可打印的商品信息')
       return
     }
 
     console.log('准备打印的商品ID：', productSkuIds)
     const res = await TemuCommonApi.printProductBarcode(productSkuIds)
+    // 获取到数据后立即关闭加载提示
+    loading.close()
     console.log('打印接口返回数据：', res)
     
     if (res && res.printUrl) {
-      loading.setText('正在准备打印...')
       console.log('加载打印链接：', res.printUrl)
       
       // 创建一个临时的 iframe
@@ -594,12 +639,21 @@ async function handleBatchPrintBarcode() {
           cleanup()
           // 给页面 1 秒时间初始化
           setTimeout(() => {
-            // 不要立即移除 iframe，等待 10 秒后再移除
-            // 这样给足够时间让打印窗口显示出来
-            setTimeout(() => {
-              document.body.removeChild(printFrame)
-            }, 10000)
-            resolve(true)
+            // 等待打印窗口完全关闭后再移除 iframe
+            const checkPrintInterval = setInterval(() => {
+              try {
+                const printWindow = printFrame.contentWindow
+                if (!printWindow || printWindow.closed) {
+                  clearInterval(checkPrintInterval)
+                  document.body.removeChild(printFrame)
+                  resolve(true)
+                }
+              } catch (e) {
+                clearInterval(checkPrintInterval)
+                document.body.removeChild(printFrame)
+                resolve(true)
+              }
+            }, 1000)
           }, 1000)
         }
 
@@ -616,10 +670,9 @@ async function handleBatchPrintBarcode() {
       ElMessage.error('获取打印链接失败')
     }
   } catch (error: any) {
+    loading.close()
     console.error('打印出错：', error)
     ElMessage.error('打印失败：' + (error.message || '未知错误'))
-  } finally {
-    loading.close()
   }
 }
 
@@ -675,7 +728,6 @@ function onCalendarChange(val) {
 }
 
 async function fetchOrders() {
-  loading.value = true
   try {
     // 处理多值输入为数组
     const parseList = (val: string) => val ? val.split(/[,\s\n]+/).filter(Boolean) : undefined
@@ -696,8 +748,6 @@ async function fetchOrders() {
     pagination.value.total = data.total || 0
   } catch (e) {
     ElMessage.error('获取物流发货单失败')
-  } finally {
-    loading.value = false
   }
 }
 
