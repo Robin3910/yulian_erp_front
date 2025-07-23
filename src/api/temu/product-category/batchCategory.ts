@@ -31,3 +31,17 @@ export function updateBatchCategoryId(batchCategoryId: string, categoryId: numbe
     params: { batchCategoryId, categoryId }
   })
 } 
+
+// 分页查询Temu订单批次类目
+export function getBatchCategoryPage(params: {
+  categoryName?: string
+  batchCategoryId?: string
+  categoryId?: string | number
+  pageNo?: number
+  pageSize?: number
+}) {
+  return request.post({
+    url: '/erp/temu-order-batch-category/page',
+    data: params
+  })
+}
