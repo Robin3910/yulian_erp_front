@@ -82,5 +82,20 @@ export const TemuCommonApi = {
       }
     })
     return res.data
-  }
+  },
+  // 获取备货单分页列表
+  getTemuStockPreparationPage: async (params: {
+    pageSize: number
+    pageNo: number
+    supplierIdList: number[] | null
+    productSkcIdList: number[] | null
+    subPurchaseOrderSnList: string[] | null
+    purchaseTimeFrom: number | null
+    purchaseTimeTo: number | null
+  }) => {
+    return await request.post({ 
+      url: `/temu/common/temu-open-api/stock-preparation/page`,
+      data: params 
+    })
+  },
 }
