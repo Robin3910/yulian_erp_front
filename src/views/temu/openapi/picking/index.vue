@@ -70,7 +70,7 @@
         height="calc(100vh - 280px)"
         fixed-header
       >
-        <el-table-column label="备货单号/时间" align="center" min-width="160" fixed="left">
+        <el-table-column label="备货单号/时间" align="center" min-width="140" fixed="left">
           <template #default="{ row }">
             <div class="flex flex-col items-center">
               <div class="font-bold mb-2">{{ row.subPurchaseOrderSn }}</div>
@@ -78,7 +78,7 @@
             </div>
           </template>
         </el-table-column>
-        <el-table-column label="供应商信息" align="center" min-width="140">
+        <el-table-column label="供应商信息" align="center" min-width="120">
           <template #default="{ row }">
             <div class="text-center">
               <div class="font-bold">{{ row.supplierName }}</div>
@@ -86,48 +86,47 @@
             </div>
           </template>
         </el-table-column>
-        <el-table-column label="产品图片" align="center" width="120">
+        <el-table-column label="商品信息" align="center" min-width="500">
           <template #default="{ row }">
-            <el-image 
-              class="w-80px h-80px" 
-              :src="row.thumbUrlList?.[0]" 
-              :preview-src-list="row.thumbUrlList"
-              fit="contain"
-              preview-teleported
-              hide-on-click-modal
-            />
-          </template>
-        </el-table-column>
-        <el-table-column label="商品信息" align="center" min-width="300">
-          <template #default="{ row }">
-            <div class="text-left">
+            <div class="text-left px-4">
               <div class="product-title mb-2">
                 <span class="font-bold">标题：</span>{{ row.productName }}
               </div>
               <div class="flex items-start mb-2">
-                <div><span class="font-bold">规格：</span>{{ row.className }}</div>
+                <span class="font-bold">SKC：</span>{{ row.productSkcId }}
               </div>
-              <div><span class="font-bold">数量：</span>{{ row.purchaseQuantity }}</div>
+              <div><span class="font-bold">类目：</span>{{ row.category }}</div>
             </div>
           </template>
         </el-table-column>
-        <el-table-column label="类目" align="center" min-width="120">
+        <el-table-column label="SKU信息" align="center" min-width="320">
           <template #default="{ row }">
-            <div class="text-center">{{ row.category }}</div>
-          </template>
-        </el-table-column>
-        <el-table-column label="SKU信息" align="center" min-width="200">
-          <template #default="{ row }">
-            <div class="sku-info">
-              <div class="sku-item">
-                <span class="label">商品SKU：</span>{{ row.productSkuId }}
+            <div v-for="(sku, index) in row.skuQuantityDetailList" :key="index" class="sku-info mb-2">
+              <div class="flex items-center justify-center mb-1">
+                <el-image 
+                  class="w-50px h-50px mr-3" 
+                  :src="sku.thumbUrlList?.[0]" 
+                  :preview-src-list="sku.thumbUrlList"
+                  fit="contain"
+                  preview-teleported
+                  hide-on-click-modal
+                />
+                <div class="flex-1" style="max-width: 220px;">
+                  <div class="sku-item">
+                    <span class="label">规格：</span>{{ sku.className }}
+                  </div>
+                  <div class="sku-item">
+                    <span class="label">商品SKU：</span>{{ sku.productSkuId }}
+                  </div>
+                  <div class="sku-item">
+                    <span class="label">定制SKU：</span>{{ sku.fulfilmentProductSkuId }}
+                  </div>
+                  <div class="sku-item">
+                    <span class="label">数量：</span>{{ sku.purchaseQuantity }}
+                  </div>
+                </div>
               </div>
-              <div class="sku-item">
-                <span class="label">商品SKC：</span>{{ row.productSkcId }}
-              </div>
-              <div class="sku-item">
-                <span class="label">定制SKU：</span>{{ row.fulfilmentProductSkuId }}
-              </div>
+              <el-divider v-if="index !== row.skuQuantityDetailList.length - 1" class="my-2" />
             </div>
           </template>
         </el-table-column>
@@ -160,19 +159,23 @@ interface QueryParams {
   purchaseTimeTo: number | null
 }
 
-interface ListItem {
+interface SkuDetail {
   className: string
   thumbUrlList: string[]
   productSkuId: string
-  purchaseTime: string
-  supplierId: string
-  subPurchaseOrderSn: string
-  supplierName: string
+  fulfilmentProductSkuId: string
   purchaseQuantity: number
+}
+
+interface ListItem {
+  subPurchaseOrderSn: string
   productName: string
   productSkcId: string
   category: string
-  fulfilmentProductSkuId: string
+  supplierId: string
+  supplierName: string
+  purchaseTime: string
+  skuQuantityDetailList: SkuDetail[]
 }
 
 interface ApiResponse {
@@ -301,20 +304,34 @@ onMounted(() => {
   background-color: var(--app-content-bg-color);
 }
 .sku-info {
-  padding: 8px;
+  padding: 4px;
   text-align: left;
+  margin: 0 auto; // 居中整个SKU信息块
+  max-width: 360px; // 限制最大宽度
   .sku-item {
-    font-size: 14px;
+    font-size: 13px;
     color: var(--el-text-color-regular);
-    margin-top: 4px;
-    line-height: 1.4;
+    margin-top: 2px;
+    line-height: 1.3;
     &:first-child { margin-top: 0; }
-    .label { color: var(--el-text-color-secondary); margin-right: 4px; }
+    .label { 
+      color: var(--el-text-color-secondary); 
+      margin-right: 4px;
+      font-weight: bold;
+      display: inline-block;
+      width: 75px; // 固定标签宽度
+      text-align: right; // 标签右对齐
+    }
   }
 }
 
+.product-title {
+  line-height: 1.5;
+  word-break: break-all;
+}
+
 :deep(.el-image-viewer__wrapper) {
-  z-index: 2100; // 确保图片预览在最上层
+  z-index: 2100;
 }
 
 :deep(.el-image) {
@@ -325,5 +342,9 @@ onMounted(() => {
   &:hover {
     cursor: pointer;
   }
+}
+
+:deep(.el-divider--horizontal) {
+  margin: 8px 0;
 }
 </style>
