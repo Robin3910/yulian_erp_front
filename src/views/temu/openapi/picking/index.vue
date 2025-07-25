@@ -31,6 +31,25 @@
               </el-form-item>
             </el-col>
             <el-col :span="24" :lg="6">
+              <el-form-item label="订单状态" prop="statusList" class="w-full">
+                <el-select
+                  v-model="selectedStatus"
+                  placeholder="请选择订单状态"
+                  clearable
+                  multiple
+                  collapse-tags
+                  collapse-tags-tooltip
+                >
+                  <el-option
+                    v-for="item in statusOptions"
+                    :key="item.value"
+                    :label="item.label"
+                    :value="item.value"
+                  />
+                </el-select>
+              </el-form-item>
+            </el-col>
+            <el-col :span="24" :lg="6">
               <el-form-item label="下单时间" prop="purchaseTimeFrom" class="w-full">
                 <el-date-picker
                   v-model="selectedDateRange"
@@ -74,6 +93,13 @@
           <template #default="{ row }">
             <div class="flex flex-col items-center">
               <div class="font-bold mb-2">{{ row.subPurchaseOrderSn }}</div>
+              <el-tag
+                :type="getStatusType(row.status)"
+                size="small"
+                class="mb-1"
+              >
+                {{ getStatusText(row.status) }}
+              </el-tag>
               <div class="text-gray-500 text-sm">{{ formatTime(row.purchaseTime) }}</div>
             </div>
           </template>
@@ -143,7 +169,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, watch } from 'vue'
 import { TemuCommonApi } from '@/api/temu/common'
 import dayjs from 'dayjs'
 import Pagination from '@/components/Pagination/index.vue'
@@ -157,6 +183,7 @@ interface QueryParams {
   subPurchaseOrderSnList: string | null
   purchaseTimeFrom: number | null
   purchaseTimeTo: number | null
+  statusList: number[] | null
 }
 
 interface SkuDetail {
@@ -175,6 +202,7 @@ interface ListItem {
   supplierId: string
   supplierName: string
   purchaseTime: string
+  status: number
   skuQuantityDetailList: SkuDetail[]
 }
 
@@ -185,11 +213,60 @@ interface ApiResponse {
   pageSize: number
 }
 
+/** 订单状态选项 */
+const statusOptions = [
+  { value: 0, label: '待接单' },
+  { value: 1, label: '已接单，待发货' },
+  { value: 2, label: '已送货' },
+  { value: 3, label: '已收货' },
+  { value: 4, label: '已拒收' },
+  { value: 5, label: '已验收，全部退回' },
+  { value: 6, label: '已验收' },
+  { value: 7, label: '已入库' },
+  { value: 8, label: '作废' },
+  { value: 9, label: '已超时' }
+]
+
+/** 获取订单状态标签类型 */
+const getStatusType = (status: number): 'success' | 'warning' | 'info' | 'primary' | 'danger' => {
+  switch (status) {
+    case 0: return 'info'
+    case 1: return 'warning'
+    case 2: return 'primary'
+    case 3: return 'info'
+    case 4: return 'danger'
+    case 5: return 'danger'
+    case 6: return 'success'
+    case 7: return 'success'
+    case 8: return 'info'
+    case 9: return 'danger'
+    default: return 'info'
+  }
+}
+
+/** 获取订单状态文本 */
+const getStatusText = (status: number) => {
+  switch (status) {
+    case 0: return '待接单'
+    case 1: return '已接单，待发货'
+    case 2: return '已送货'
+    case 3: return '已收货'
+    case 4: return '已拒收'
+    case 5: return '已验收，全部退回'
+    case 6: return '已验收'
+    case 7: return '已入库'
+    case 8: return '作废'
+    case 9: return '已超时'
+    default: return '未知状态'
+  }
+}
+
 // 使用any类型暂时绕过类型检查
 const selectedDateRange = ref<any>(null)
 const loading = ref(false)
 const list = ref<ListItem[]>([])
 const total = ref(0)
+const selectedStatus = ref<number[]>([])
 
 const queryParams = reactive<QueryParams>({
   pageSize: 10,
@@ -198,7 +275,13 @@ const queryParams = reactive<QueryParams>({
   productSkcIdList: null,
   subPurchaseOrderSnList: null,
   purchaseTimeFrom: null,
-  purchaseTimeTo: null
+  purchaseTimeTo: null,
+  statusList: null
+})
+
+/** 监听状态选择变化 */
+watch(selectedStatus, (val) => {
+  queryParams.statusList = val.length > 0 ? val : null
 })
 
 const queryFormRef = ref()
@@ -225,7 +308,8 @@ const getList = async () => {
       productSkcIdList: skcArray ? skcArray.map(Number) : null,
       subPurchaseOrderSnList: orderArray || null,
       purchaseTimeFrom: queryParams.purchaseTimeFrom,
-      purchaseTimeTo: queryParams.purchaseTimeTo
+      purchaseTimeTo: queryParams.purchaseTimeTo,
+      statusList: queryParams.statusList || null
     }
     console.log('请求参数:', params)
     const res = await TemuCommonApi.getTemuStockPreparationPage(params) as ApiResponse
@@ -280,6 +364,7 @@ const resetQuery = () => {
   selectedDateRange.value = null
   queryParams.purchaseTimeFrom = null
   queryParams.purchaseTimeTo = null
+  queryParams.statusList = null // 重置状态选择
   handleQuery()
 }
 
@@ -346,5 +431,18 @@ onMounted(() => {
 
 :deep(.el-divider--horizontal) {
   margin: 8px 0;
+}
+
+:deep(.el-tag) {
+  margin: 0 2px;
+  &.el-tag--small {
+    height: 22px;
+    padding: 0 6px;
+    font-size: 12px;
+  }
+}
+
+:deep(.el-select) {
+  width: 100%;
 }
 </style>
