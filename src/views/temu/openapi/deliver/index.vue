@@ -54,6 +54,8 @@
       </el-tabs>
     </div>
     <el-table 
+      v-loading="loading"
+      element-loading-text="加载中..."
       :data="orderList" 
       border 
       stripe 
@@ -134,12 +136,12 @@
           <div>收货：{{ formatTime(row.receiveTime) }}</div>
         </template>
       </el-table-column>
-      <el-table-column label="收货信息" min-width="180">
-        <template #default="{ row }">
-          <div>{{ row.receiveAddressInfo.receiverName }}，{{ row.receiveAddressInfo.phone }}</div>
-          <div>{{ row.receiveAddressInfo.provinceName }}{{ row.receiveAddressInfo.cityName }}{{ row.receiveAddressInfo.districtName }}{{ row.receiveAddressInfo.detailAddress }}</div>
-        </template>
-      </el-table-column>
+<!--      <el-table-column label="收货信息" min-width="180">-->
+<!--        <template #default="{ row }">-->
+<!--          <div>{{ row.receiveAddressInfo.receiverName }}，{{ row.receiveAddressInfo.phone }}</div>-->
+<!--          <div>{{ row.receiveAddressInfo.provinceName }}{{ row.receiveAddressInfo.cityName }}{{ row.receiveAddressInfo.districtName }}{{ row.receiveAddressInfo.detailAddress }}</div>-->
+<!--        </template>-->
+<!--      </el-table-column>-->
       <el-table-column label="操作" width="180" fixed="right">
         <template #default="{ row }">
           <el-button type="primary" link @click="handlePrint(row)">
@@ -170,6 +172,7 @@ import { ref, onMounted } from 'vue'
 import { ElMessage, ElLoading } from 'element-plus'
 import { TemuCommonApi } from '@/api/temu/common'
 
+const loading = ref(false)
 const orderList = ref<any[]>([])
 const pagination = ref({
   pageNo: 1,
@@ -177,6 +180,13 @@ const pagination = ref({
   total: 0
 })
 const selectedRows = ref<any[]>([])
+const filters = ref({
+  productSkcIdList: '',
+  subPurchaseOrderSnList: '',
+  expressDeliverySnList: '',
+  deliverTimeRange: [] as [number, number] | [],
+  status: ''
+})
 
 // 处理表格选择变化
 function handleSelectionChange(selection: any[]) {
@@ -684,14 +694,6 @@ async function handleBatchPrintBarcode() {
   }
 }
 
-const filters = ref({
-  productSkcIdList: '',
-  subPurchaseOrderSnList: '',
-  expressDeliverySnList: '',
-  deliverTimeRange: [] as [number, number] | [],
-  status: '' // 添加状态字段
-})
-
 function formatTime(ts: number|null) {
   if (!ts) return '-'
   const date = new Date(ts)
@@ -710,20 +712,25 @@ function getCountdown(targetTs: number|null) {
   return `${hours}小时${minutes}分`
 }
 
-function handleFilter() {
+// 优化handleFilter函数
+async function handleFilter() {
+  if (loading.value) return // 如果正在加载，则不重复请求
   pagination.value.pageNo = 1
-  fetchOrders()
+  await fetchOrders()
 }
-function handleReset() {
+
+// 优化重置函数
+async function handleReset() {
+  if (loading.value) return
   filters.value = {
     productSkcIdList: '',
     subPurchaseOrderSnList: '',
     expressDeliverySnList: '',
     deliverTimeRange: [],
-    status: '' // 重置时也重置状态
+    status: ''
   }
   pagination.value.pageNo = 1
-  fetchOrders()
+  await fetchOrders()
 }
 
 function onCalendarChange(val) {
@@ -737,7 +744,10 @@ function onCalendarChange(val) {
   }
 }
 
+// 优化fetchOrders函数
 async function fetchOrders() {
+  if (loading.value) return
+  loading.value = true
   try {
     // 处理多值输入为数组
     const parseList = (val: string) => val ? val.split(/[,\s\n]+/).filter(Boolean) : undefined
@@ -762,17 +772,23 @@ async function fetchOrders() {
     pagination.value.total = data.total || 0
   } catch (e) {
     ElMessage.error('获取物流发货单失败')
+  } finally {
+    loading.value = false
   }
 }
 
-function handleSizeChange(size: number) {
+// 优化分页处理函数
+async function handleSizeChange(size: number) {
+  if (loading.value) return
   pagination.value.pageSize = size
   pagination.value.pageNo = 1
-  fetchOrders()
+  await fetchOrders()
 }
-function handleCurrentChange(page: number) {
+
+async function handleCurrentChange(page: number) {
+  if (loading.value) return
   pagination.value.pageNo = page
-  fetchOrders()
+  await fetchOrders()
 }
 
 onMounted(() => {
