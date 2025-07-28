@@ -30,13 +30,13 @@
                   <!-- 添加定制图片标签 -->
                   <div class="custom-image-badge">定制图片</div>
                   <el-image
-                    v-for="(imgUrl, index) in item.customImages"
-                    :key="index"
+                    v-for="(imgUrl, imgIndex) in item.customImages"
+                    :key="imgIndex"
                     :hide-on-click-modal="true"
                     :preview-teleported="true"
                     :src="imgUrl"
                     :preview-src-list="item.customImages"
-                    :initial-index="index"
+                    :initial-index="imgIndex"
                     fit="cover"
                     loading="lazy"
                     class="custom-image"
