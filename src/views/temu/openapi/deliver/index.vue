@@ -45,6 +45,14 @@
         </el-form-item>
       </el-form>
     </div>
+    <!-- 状态Tab区域 -->
+    <div class="status-tabs">
+      <el-tabs v-model="filters.status" @tab-change="handleFilter">
+        <el-tab-pane label="全部" name=""/>
+        <el-tab-pane label="待仓库收货" name="1"/>
+        <el-tab-pane label="已收货" name="2"/>
+      </el-tabs>
+    </div>
     <el-table 
       :data="orderList" 
       border 
@@ -680,7 +688,8 @@ const filters = ref({
   productSkcIdList: '',
   subPurchaseOrderSnList: '',
   expressDeliverySnList: '',
-  deliverTimeRange: [] as [number, number] | []
+  deliverTimeRange: [] as [number, number] | [],
+  status: '' // 添加状态字段
 })
 
 function formatTime(ts: number|null) {
@@ -710,7 +719,8 @@ function handleReset() {
     productSkcIdList: '',
     subPurchaseOrderSnList: '',
     expressDeliverySnList: '',
-    deliverTimeRange: []
+    deliverTimeRange: [],
+    status: '' // 重置时也重置状态
   }
   pagination.value.pageNo = 1
   fetchOrders()
@@ -737,6 +747,10 @@ async function fetchOrders() {
       productSkcIdList: parseList(filters.value.productSkcIdList),
       subPurchaseOrderSnList: parseList(filters.value.subPurchaseOrderSnList),
       expressDeliverySnList: parseList(filters.value.expressDeliverySnList),
+    }
+    // 添加状态过滤
+    if (filters.value.status) {
+      params.status = Number(filters.value.status)
     }
     if (filters.value.deliverTimeRange && filters.value.deliverTimeRange.length === 2) {
       params.deliverTimeFrom = filters.value.deliverTimeRange[0]
@@ -771,7 +785,7 @@ onMounted(() => {
   padding: 24px;
   background: #f5f6fa;
   min-height: 100vh;
-  padding-bottom: 70px; /* 根据分页条高度调整 */
+  padding-bottom: 70px;
 }
 .time-block {
   background: #f7f7f7;
@@ -810,14 +824,27 @@ onMounted(() => {
   z-index: 10;
 }
 .filter-bar {
-  position: sticky;
-  top: 0;
-  z-index: 10;
   background: #fff;
   border-radius: 8px;
-  padding: 16px 24px 0 24px;
-  margin-bottom: 12px;
+  padding: 16px 24px;
+  margin-bottom: 16px;
   box-shadow: 0 2px 8px #0000000d;
+}
+.status-tabs {
+  background: #fff;
+  border-radius: 8px;
+  padding: 0 24px;
+  margin-bottom: 16px;
+  box-shadow: 0 2px 8px #0000000d;
+}
+.operation-bar {
+  background: #fff;
+  border-radius: 8px;
+  padding: 16px 24px;
+  margin-bottom: 16px;
+  box-shadow: 0 2px 8px #0000000d;
+  display: flex;
+  gap: 12px;
 }
 .filter-form {
   display: flex;
