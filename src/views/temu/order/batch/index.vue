@@ -5,7 +5,9 @@
       <el-row :gutter="20">
         <el-col :span="24" :lg="6">
           <el-form-item label="类目" prop="categoryId" class="w-full">
-            <el-select filterable v-model="queryParams.categoryId" placeholder="请选择类目" clearable multiple>
+            <el-select
+v-model="queryParams.categoryId" placeholder="请选择类目" clearable multiple filterable
+@input="handleCategorySearch" remote :remote-method="handleCategorySearch">
               <el-option
 v-for="(item, index) in categoryList" :key="index" :label="item.categoryName"
                 :value="item.id" />
@@ -2206,6 +2208,22 @@ const getSortedOrderList = (batch) => {
   return [...batch.orderList].sort((a, b) => 
     (a.isReturnOrder === 1 ? -1 : 0) - (b.isReturnOrder === 1 ? -1 : 0)
   );
+}
+
+// 在 script 部分添加处理函数
+const handleCategorySearch = (query: string) => {
+  if (!query) return;
+
+  // 找到所有匹配的类目
+  const matchedCategories = categoryList.value.filter(item =>
+    item.categoryName.toLowerCase().includes(query.toLowerCase())
+  );
+
+  // 获取匹配类目的 ID 列表
+  const matchedIds = matchedCategories.map(item => item.id);
+
+  // 将匹配的类目 ID 添加到已选中的列表中
+  queryParams.categoryId = Array.from(new Set([...queryParams.categoryId || [], ...matchedIds]));
 }
 
 </script>
