@@ -1,13 +1,21 @@
 <template>
   <ContentWrap>
     <!-- 搜索工作栏 -->
-    <el-form class="-mb-15px" :model="queryParams" ref="queryFormRef" :inline="true" label-width="68px">
+    <el-form class="-mb-15px" :model="queryParams" ref="queryFormRef" :inline="true" label-width="85px">
       <el-row :gutter="20">
         <el-col :span="24" :lg="6">
           <el-form-item label="类目" prop="categoryId" class="w-full">
-            <el-select filterable v-model="queryParams.categoryId" placeholder="请选择类目" clearable multiple>
+            <el-select 
+              filterable 
+              v-model="queryParams.manualCategoryId" 
+              placeholder="请选择类目" 
+              clearable 
+              multiple
+              @change="handleManualCategoryChange">
               <el-option
-v-for="(item, index) in categoryList" :key="index" :label="item.categoryName"
+                v-for="(item, index) in categoryList" 
+                :key="index" 
+                :label="item.categoryName"
                 :value="item.id" />
             </el-select>
           </el-form-item>
@@ -30,8 +38,22 @@ v-for="(item, index) in categoryList" :key="index" :label="item.categoryName"
           </el-form-item>
         </el-col>
         <el-col :span="24" :lg="6">
-          <el-form-item label="订单编号" prop="orderNo" class="w-full">
-            <el-input v-model="queryParams.orderNo" placeholder="请输入订单编号" clearable @keyup.enter="handleQuery" />
+          <el-form-item label="类目(多选)" prop="categoryId" class="w-full">
+            <el-select
+              v-model="queryParams.autoCategoryId" 
+              placeholder="请输入类目（自动多选）" 
+              clearable 
+              multiple 
+              filterable
+              @input="handleCategorySearch" 
+              remote 
+              :remote-method="handleCategorySearch">
+              <el-option
+                v-for="(item, index) in categoryList" 
+                :key="index" 
+                :label="item.categoryName"
+                :value="item.id" />
+            </el-select>
           </el-form-item>
         </el-col>
         <el-col :span="24" :lg="6">
@@ -58,6 +80,11 @@ v-for="dict in getStrDictOptions(DICT_TYPE.TEMU_ORDER_BATCH_DISPATCH_STATUS)" :k
 v-model="queryParams.createTime" value-format="YYYY-MM-DD HH:mm:ss" type="daterange"
               start-placeholder="开始日期" end-placeholder="结束日期"
               :default-time="[new Date('1 00:00:00'), new Date('1 23:59:59')]" class="!w-220px" />
+          </el-form-item>
+        </el-col>
+        <el-col :span="24" :lg="6">
+          <el-form-item label="订单编号" prop="orderNo" class="w-full">
+            <el-input v-model="queryParams.orderNo" placeholder="请输入订单编号" clearable @keyup.enter="handleQuery" />
           </el-form-item>
         </el-col>
         <el-col :span="24" :lg="6">
@@ -632,7 +659,9 @@ const queryParams = reactive({
   isDispatchTask: undefined as boolean | undefined,
   createTime: [] as string[],
   shopId: undefined,
-  categoryId: undefined,
+  categoryId: [] as number[], // 实际发送到后端的类目ID
+  manualCategoryId: [] as number[], // 手动选择的类目ID
+  autoCategoryId: [] as number[], // 自动选择的类目ID
 })
 const orderBatchTaskDispatchVisible = ref(false)
 
@@ -743,7 +772,9 @@ const getList = async () => {
       ...queryParams,
       groupByBatch: true,
       pageSize: queryParams.pageSize,
-      pageNo: queryParams.pageNo
+      pageNo: queryParams.pageNo,
+      // 使用 categoryId 作为最终的查询参数
+      categoryId: queryParams.categoryId.length > 0 ? queryParams.categoryId : undefined
     }
 
     const data = await OrderBatchApi.getOrderBatchPage(params)
@@ -2206,6 +2237,31 @@ const getSortedOrderList = (batch) => {
   return [...batch.orderList].sort((a, b) => 
     (a.isReturnOrder === 1 ? -1 : 0) - (b.isReturnOrder === 1 ? -1 : 0)
   );
+}
+
+// 在 script 部分添加处理函数
+const handleCategorySearch = (query: string) => {
+  if (!query) return;
+
+  // 找到所有匹配的类目
+  const matchedCategories = categoryList.value.filter(item =>
+    item.categoryName.toLowerCase().includes(query.toLowerCase())
+  );
+
+  // 获取匹配类目的 ID 列表
+  const matchedIds = matchedCategories.map(item => item.id);
+
+  // 更新自动选择的类目ID
+  queryParams.autoCategoryId = Array.from(new Set([...queryParams.autoCategoryId || [], ...matchedIds]));
+  queryParams.manualCategoryId = []; // 清空手动选择的类目
+  queryParams.categoryId = queryParams.autoCategoryId; // 更新实际的类目ID
+}
+
+// 处理手动选择类目的变化
+const handleManualCategoryChange = (value: number[]) => {
+  queryParams.manualCategoryId = value;
+  queryParams.autoCategoryId = []; // 清空自动选择的类目
+  queryParams.categoryId = value; // 更新实际的类目ID
 }
 
 </script>
