@@ -4,6 +4,9 @@
     <iframe id="printFrame" style="display: none;"></iframe>
     <div class="filter-bar">
       <el-form :inline="true" :model="filters" class="filter-form">
+        <el-form-item label="店铺">
+          <el-input v-model="filters.shopId" placeholder="请输入店铺ID" clearable />
+        </el-form-item>
         <el-form-item label="SKC">
           <el-input v-model="filters.productSkcIdList" placeholder="多个以逗号、空格或换行分隔" clearable />
         </el-form-item>
@@ -182,6 +185,7 @@ const pagination = ref({
 const selectedRows = ref<any[]>([])
 const filters = ref({
   productSkcIdList: '',
+  shopId: '',
   subPurchaseOrderSnList: '',
   expressDeliverySnList: '',
   deliverTimeRange: [] as [number, number] | [],
@@ -209,7 +213,7 @@ async function handleBatchPrint() {
   try {
     // 获取所有选中行的发货单号
     const deliveryNos = selectedRows.value.map(row => row.deliveryOrderSn)
-    const res = await TemuCommonApi.printDeliveryLabel(deliveryNos.join(','))
+    const res = await TemuCommonApi.printDeliveryLabel(deliveryNos.join(','), selectedRows.value[0]?.shopId)
     // 获取到数据后立即关闭加载提示
     loading.close()
     console.log('打印接口返回数据：', res)
@@ -296,7 +300,7 @@ async function handlePrint(row: any) {
   })
 
   try {
-    const res = await TemuCommonApi.printDeliveryLabel(row.deliveryOrderSn)
+    const res = await TemuCommonApi.printDeliveryLabel(row.deliveryOrderSn, row.shopId)
     // 获取到数据后立即关闭加载提示
     loading.close()
     console.log('打印接口返回数据：', res)
@@ -413,7 +417,7 @@ async function handlePrintBarcode() {
     // 只提取 productSkuId
     const productSkuIds = packageDetailList.map(item => Number(item.productSkuId))
     console.log('准备打印的商品ID：', productSkuIds)
-    const res = await TemuCommonApi.printProductBarcode(productSkuIds)
+    const res = await TemuCommonApi.printProductBarcode(productSkuIds, selectedRows.value[0]?.shopId)
     console.log('打印接口返回数据：', res)
     
     if (res && res.printUrl) {
@@ -515,7 +519,7 @@ async function handleSinglePrintBarcode(row: any) {
     }
 
     console.log('准备打印的商品ID：', productSkuIds)
-    const res = await TemuCommonApi.printProductBarcode(productSkuIds)
+    const res = await TemuCommonApi.printProductBarcode(productSkuIds, row.shopId)
     // 获取到数据后立即关闭加载提示
     loading.close()
     console.log('打印接口返回数据：', res)
@@ -621,7 +625,7 @@ async function handleBatchPrintBarcode() {
     }
 
     console.log('准备打印的商品ID：', productSkuIds)
-    const res = await TemuCommonApi.printProductBarcode(productSkuIds)
+    const res = await TemuCommonApi.printProductBarcode(productSkuIds, selectedRows.value[0]?.shopId)
     // 获取到数据后立即关闭加载提示
     loading.close()
     console.log('打印接口返回数据：', res)
@@ -724,6 +728,7 @@ async function handleReset() {
   if (loading.value) return
   filters.value = {
     productSkcIdList: '',
+    shopId: '',
     subPurchaseOrderSnList: '',
     expressDeliverySnList: '',
     deliverTimeRange: [],
@@ -755,6 +760,7 @@ async function fetchOrders() {
       pageNo: pagination.value.pageNo,
       pageSize: pagination.value.pageSize,
       productSkcIdList: parseList(filters.value.productSkcIdList),
+      shopId: filters.value.shopId,
       subPurchaseOrderSnList: parseList(filters.value.subPurchaseOrderSnList),
       expressDeliverySnList: parseList(filters.value.expressDeliverySnList),
     }

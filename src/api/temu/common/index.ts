@@ -64,21 +64,23 @@ export const TemuCommonApi = {
     })
   },
   // 打印物流面单
-  printDeliveryLabel: async (deliveryNo: string) => {
+  printDeliveryLabel: async (deliveryNo: string, shopId?: string) => {
     const res = await request.postOriginal({
       url: `/temuApi/delivery/boxmark/print`,
       data: {
-        deliveryOrderSnList: deliveryNo.split(',')
+        deliveryOrderSnList: deliveryNo.split(','),
+        shopId
       }
     })
     return res.data
   },
   // 打印商品条码
-  printProductBarcode: async (productSkuIds: number[]) => {
+  printProductBarcode: async (productSkuIds: number[], shopId?: string) => {
     const res = await request.postOriginal({
       url: `/temuApi/delivery/custom-label/print`,
       data: {
-        personalProductSkuIdList: productSkuIds
+        personalProductSkuIdList: productSkuIds,
+        shopId
       }
     })
     return res.data
