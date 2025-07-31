@@ -45,7 +45,8 @@
               clearable 
               multiple 
               filterable
-              @input="handleCategorySearch" 
+              @clear="handleCategoryClear"
+              @change="handleCategoryChange"
               remote 
               :remote-method="handleCategorySearch">
               <el-option
@@ -2255,6 +2256,20 @@ const handleCategorySearch = (query: string) => {
   queryParams.autoCategoryId = Array.from(new Set([...queryParams.autoCategoryId || [], ...matchedIds]));
   queryParams.manualCategoryId = []; // 清空手动选择的类目
   queryParams.categoryId = queryParams.autoCategoryId; // 更新实际的类目ID
+}
+
+// 添加清空事件处理函数
+const handleCategoryClear = () => {
+  queryParams.autoCategoryId = [];
+  queryParams.categoryId = [];
+  // 移除自动触发搜索，需要用户手动点击搜索按钮
+}
+
+// 添加change事件处理函数
+const handleCategoryChange = (value: number[]) => {
+  queryParams.autoCategoryId = value;
+  queryParams.manualCategoryId = []; // 清空手动选择的类目
+  queryParams.categoryId = value; // 更新实际的类目ID
 }
 
 // 处理手动选择类目的变化
