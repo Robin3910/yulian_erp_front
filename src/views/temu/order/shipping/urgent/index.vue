@@ -13,7 +13,8 @@
           </el-col>
           <el-col :span="24" :lg="6">
             <el-form-item label="物流单号" prop="trackingNumber" class="w-full">
-              <el-input v-model="queryParams.trackingNumber" placeholder="请输入物流单号" clearable
+              <el-input
+v-model="queryParams.trackingNumber" placeholder="请输入物流单号" clearable
                 @keyup.enter="handleQuery" />
             </el-form-item>
           </el-col>
@@ -45,16 +46,19 @@
           </el-col> -->
           <el-col :span="24" :lg="6">
             <el-form-item label="类目" prop="categoryIds" class="w-full">
-              <el-select v-model="queryParams.categoryIds" placeholder="请选择类目" clearable multiple filterable
+              <el-select
+v-model="queryParams.categoryIds" placeholder="请选择类目" clearable multiple filterable
                 @input="handleCategorySearch" remote :remote-method="handleCategorySearch">
-                <el-option v-for="(item, index) in categoryList" :key="index" :label="item.categoryName"
+                <el-option
+v-for="(item, index) in categoryList" :key="index" :label="item.categoryName"
                   :value="item.categoryId" />
               </el-select>
             </el-form-item>
           </el-col>
           <el-col :span="24" :lg="6">
             <el-form-item label="订单创建时间" prop="createTime">
-              <el-date-picker v-model="queryParams.createTime" type="daterange" range-separator="至"
+              <el-date-picker
+v-model="queryParams.createTime" type="daterange" range-separator="至"
                 start-placeholder="开始日期" end-placeholder="结束日期" value-format="YYYY-MM-DD"
                 :default-time="[new Date(2000, 1, 1, 0, 0, 0), new Date(2000, 1, 1, 23, 59, 59)]" />
             </el-form-item>
@@ -107,13 +111,15 @@
         <span class="info-item">{{ selectedStats.orderNos }}个订单编号</span>
         <span class="info-item">{{ selectedStats.total }}个订单</span>
       </div>
-      <el-table ref="tableRef" v-loading="loading" :data="list" :stripe="true" :show-overflow-tooltip="true"
+      <el-table
+ref="tableRef" v-loading="loading" :data="list" :stripe="true" :show-overflow-tooltip="true"
         @selection-change="handleSelectionChange" :span-method="handleSpanMethod" class="custom-table shipping-table"
         height="calc(100vh - 280px)" :header-cell-style="{ background: 'var(--el-bg-color)' }"
         :row-class-name="tableRowClassName" row-key="uniqueId" :virtual-scrolling="true" :scrollbar-always-on="true"
         :max-height="800">
         <!-- 复选框列 -->
-        <el-table-column type="selection" width="55" align="center" fixed="left"
+        <el-table-column
+type="selection" width="55" align="center" fixed="left"
           :selectable="(row, index) => isSelectable(row, index)" :reserve-selection="true" />
         <!-- 物流单号列 -->
         <el-table-column label="物流单号" align="center" min-width="170" fixed="left" class-name="tracking-column">
@@ -129,9 +135,11 @@
                     (row as any).trackingNumber || '-'
                   }}</span>
                 </div>
-                <el-tooltip effect="dark" content="进入专注模式" placement="top" popper-class="custom-tooltip"
+                <el-tooltip
+effect="dark" content="进入专注模式" placement="top" popper-class="custom-tooltip"
                   :show-after="100" :hide-after="200" :enterable="false" :offset="20">
-                  <el-button size="small" type="primary" plain class="action-button urgent-print-button"
+                  <el-button
+size="small" type="primary" plain class="action-button urgent-print-button"
                     @click.stop="handleFocus(row)">
                     <el-icon>
                       <Aim />
@@ -140,10 +148,12 @@
                   </el-button>
                 </el-tooltip>
 
-                <el-tooltip effect="dark" content="当前加急面单尚未上传，请联系相关人员及时上传！" placement="top"
+                <el-tooltip
+effect="dark" content="当前加急面单尚未上传，请联系相关人员及时上传！" placement="top"
                   :disabled="!!row.expressOutsideImageUrl" popper-class="custom-tooltip" :show-after="100"
                   :hide-after="200" :enterable="false" :offset="20">
-                  <el-button size="small" type="primary" plain class="action-button urgent-print-button"
+                  <el-button
+size="small" type="primary" plain class="action-button urgent-print-button"
                     :disabled="!row.expressOutsideImageUrl" @click.stop="handlePrint(row.expressOutsideImageUrl)">
                     <el-icon>
                       <Printer />
@@ -151,7 +161,8 @@
                     打印加急面单
                   </el-button>
                 </el-tooltip>
-                <el-button v-if="canShip(row)" size="small" type="success" class="action-button ship-button"
+                <el-button
+v-if="canShip(row)" size="small" type="success" class="action-button ship-button"
                   @click.stop="handleShip(row)">
                   <el-icon>
                     <Van />
@@ -191,10 +202,12 @@
                   </div>
                 </div>
                 <div class="mt-2 flex justify-center gap-2">
-                  <el-tooltip effect="dark" content="当前面单尚未上传，请联系相关人员及时上传！" placement="top"
+                  <el-tooltip
+effect="dark" content="当前面单尚未上传，请联系相关人员及时上传！" placement="top"
                     :disabled="!!row.expressImageUrl" popper-class="custom-tooltip" :show-after="100" :hide-after="200"
                     :enterable="false" :offset="20">
-                    <el-button size="small" type="primary" plain class="action-button urgent-print-button"
+                    <el-button
+size="small" type="primary" plain class="action-button urgent-print-button"
                       :disabled="!row.expressImageUrl" @click.stop="handlePrint(row.expressImageUrl)">
                       <el-icon>
                         <Printer />
@@ -202,10 +215,12 @@
                       打印面单
                     </el-button>
                   </el-tooltip>
-                  <el-tooltip effect="dark" content="当前商品条码尚未上传，请联系相关人员及时上传！" placement="top"
+                  <el-tooltip
+effect="dark" content="当前商品条码尚未上传，请联系相关人员及时上传！" placement="top"
                     :disabled="!!row.expressSkuImageUrl" popper-class="custom-tooltip" :show-after="100"
                     :hide-after="200" :enterable="false" :offset="20">
-                    <el-button size="small" type="info" plain class="action-button urgent-print-button"
+                    <el-button
+size="small" type="info" plain class="action-button urgent-print-button"
                       :disabled="!row.expressSkuImageUrl" @click.stop="handlePrint(row.expressSkuImageUrl)">
                       <el-icon>
                         <Printer />
@@ -234,7 +249,8 @@
         <!-- 产品图片 -->
         <el-table-column label="产品图片" align="center" prop="productImgUrl" min-width="110">
           <template #default="{ row }">
-            <el-image :hide-on-click-modal="true" :preview-teleported="true" :src="row.productImgUrl"
+            <el-image
+:hide-on-click-modal="true" :preview-teleported="true" :src="row.productImgUrl"
               :preview-src-list="[row.productImgUrl]" style="width: 80px; height: 80px" loading="lazy"
               :initial-index="0" fit="contain" :z-index="3000" :preview="false" />
           </template>
@@ -265,7 +281,8 @@
         </el-table-column>
 
         <!-- SKU信息 -->
-        <el-table-column label="SKU信息" align="center" min-width="275" class-name="text-left-column"
+        <el-table-column
+label="SKU信息" align="center" min-width="275" class-name="text-left-column"
           header-align="center">
           <template #default="{ row }">
             <div class="sku-info">
@@ -301,7 +318,8 @@
           <template #default="{ row }">
             <div class="custom-images-container" v-if="row.customImageUrls">
               <div v-for="(item, index) in row.customImageUrls.split(',')" :key="index" class="image-item">
-                <el-image :hide-on-click-modal="true" :preview-teleported="true" :src="item+ '?x-oss-process=image/resize,w_200'" :preview-src-list="[item]"
+                <el-image
+:hide-on-click-modal="true" :preview-teleported="true" :src="item+ '?x-oss-process=image/resize,w_200'" :preview-src-list="[item]"
                   style="width: 60px; height: 60px" fit="cover" loading="lazy" :initial-index="0" :preview="false" />
               </div>
             </div>
@@ -321,7 +339,8 @@
         <!-- 合成预览图 -->
         <el-table-column label="合成预览图" prop="effectiveImgUrl" align="center" min-width="110">
           <template #default="{ row }">
-            <el-image v-if="row.effectiveImgUrl" :hide-on-click-modal="true" :preview-teleported="true"
+            <el-image
+v-if="row.effectiveImgUrl" :hide-on-click-modal="true" :preview-teleported="true"
               :src="row.effectiveImgUrl+ '?x-oss-process=image/resize,w_200'" :preview-src-list="[row.effectiveImgUrl]" style="width: 80px; height: 80px"
               fit="cover" loading="lazy" :initial-index="0" :preview="false" />
             <span v-else>-</span>
@@ -340,13 +359,15 @@
         </el-table-column>
 
         <!-- 操作列 -->
-        <el-table-column label="操作" fixed="right" align="center" min-width="160">
+        <el-table-column label="操作" fixed="right" align="center" min-width="200">
           <template #default="{ row }">
             <div class="action-buttons">
-              <el-tooltip effect="dark" content="当前合规单尚未上传，请联系相关人员及时上传！" placement="left-start"
+              <el-tooltip
+effect="dark" content="当前合规单尚未上传，请联系相关人员及时上传！" placement="left-start"
                 :disabled="!!row.complianceImageUrl" popper-class="custom-tooltip custom-tooltip-left" :show-after="100"
                 :hide-after="200" :enterable="false" :offset="20">
-                <el-button size="small" type="warning" plain class="action-button" :disabled="!row.complianceImageUrl"
+                <el-button
+size="small" type="warning" plain class="action-button" :disabled="!row.complianceImageUrl"
                   @click.stop="handlePrint(row.complianceImageUrl, row.originalQuantity)">
                   <el-icon>
                     <Printer />
@@ -354,10 +375,12 @@
                   打印合规单
                 </el-button>
               </el-tooltip>
-              <el-tooltip effect="dark" content="当前合并文件尚未上传，请联系相关人员及时上传！" placement="left-start"
+              <el-tooltip
+effect="dark" content="当前合并文件尚未上传，请联系相关人员及时上传！" placement="left-start"
                 :disabled="!!row.complianceGoodsMergedUrl" popper-class="custom-tooltip custom-tooltip-left"
                 :show-after="100" :hide-after="200" :enterable="false" :offset="20">
-                <el-button size="small" type="warning" plain class="action-button"
+                <el-button
+size="small" type="warning" plain class="action-button"
                   :disabled="!row.complianceGoodsMergedUrl"
                   @click.stop="handlePrint(row.complianceGoodsMergedUrl, row.originalQuantity)">
                   <el-icon>
@@ -366,16 +389,30 @@
                   打印条码+合规单
                 </el-button>
               </el-tooltip>
+              <el-button
+                size="small"
+                type="danger"
+                plain
+                class="action-button"
+                @click.stop="handleRework(row)"
+              >
+                <el-icon>
+                  <Refresh />
+                </el-icon>
+                返工
+              </el-button>
             </div>
           </template>
         </el-table-column>
       </el-table>
       <!-- 分页 -->
-      <Pagination :total="total" v-model:page="queryParams.pageNo" v-model:limit="queryParams.pageSize"
+      <Pagination
+:total="total" v-model:page="queryParams.pageNo" v-model:limit="queryParams.pageSize"
         @pagination="getList" />
     </ContentWrap>
 
     <ShippingInfoPopup @confirm="handlerRemarkConfirm" ref="shippingInfoPopup" />
+    <ReworkPopup @success="handleReworkSuccess" ref="reworkPopup" />
 
   </div>
 </template>
@@ -385,15 +422,17 @@ import { ref, reactive, onMounted, onUnmounted, nextTick } from 'vue'
 import { OrderApi, OrderVO } from '@/api/temu/order'
 import { TemuCommonApi } from '@/api/temu/common'
 import { ElMessage, ElMessageBox, ElNotification, ElTable, ElLoading } from 'element-plus'
-import { Aim, Printer, Van } from '@element-plus/icons-vue'
+import { Aim, Printer, Van, Refresh } from '@element-plus/icons-vue'
 import { formatDate } from '@/utils/formatTime'
 import { COLOR_ARRAYS } from '@/utils/color'
 import printJS from 'print-js'
 import { PDFDocument } from 'pdf-lib'
 import ShippingInfoPopup from '../components/ShippingInfoPopup.vue'
 import { useUrgentOrderStore } from '@/store/modules/urgentOrder'
+import ReworkPopup from '../components/ReworkPopup.vue'
 // const tableRef = useTemplateRef<InstanceType<typeof ElTable>>('tableRef')
 const shippingInfoPopup = useTemplateRef('shippingInfoPopup')
+const reworkPopup = useTemplateRef('reworkPopup')
 
 declare global {
   interface Window {
@@ -2201,6 +2240,16 @@ const handleCategorySearch = (query: string) => {
 
 // 添加表格引用
 const tableRef = ref()
+
+// 返工处理函数
+const handleRework = (row: any) => {
+  if (reworkPopup.value) {
+    reworkPopup.value.open(row.orderNo, row.customSku)
+  }
+}
+const handleReworkSuccess = () => {
+  ElMessage.success('返工记录创建成功')
+}
 </script>
 <style lang="scss">
 $predefined-colors: (

@@ -408,7 +408,7 @@ v-if="row.effectiveImgUrl" :hide-on-click-modal="true" :preview-teleported="true
         </el-table-column>
 
         <!-- 操作列 -->
-        <el-table-column label="操作" fixed="right" align="center" min-width="160">
+        <el-table-column label="操作" fixed="right" align="center" min-width="200">
           <template #default="{ row }">
             <div class="action-buttons">
               <el-tooltip
@@ -438,6 +438,18 @@ size="small" type="warning" plain class="action-button"
                   打印条码+合规单
                 </el-button>
               </el-tooltip>
+              <el-button
+                size="small" 
+                type="danger" 
+                plain 
+                class="action-button"
+                @click.stop="handleRework(row)"
+              >
+                <el-icon>
+                  <Refresh />
+                </el-icon>
+                返工
+              </el-button>
             </div>
           </template>
         </el-table-column>
@@ -449,6 +461,7 @@ size="small" type="warning" plain class="action-button"
     </ContentWrap>
 
     <ShippingInfoPopup @confirm="handlerRemarkConfirm" ref="shippingInfoPopup" />
+    <ReworkPopup @success="handleReworkSuccess" ref="reworkPopup" />
 
   </div>
 </template>
@@ -458,16 +471,18 @@ import { ref, reactive, onMounted, onUnmounted, nextTick } from 'vue'
 import { OrderApi, OrderVO } from '@/api/temu/order'
 import { TemuCommonApi } from '@/api/temu/common'
 import { ElMessage, ElMessageBox, ElNotification, ElTable, ElLoading } from 'element-plus'
-import { Aim, Printer, Van } from '@element-plus/icons-vue'
+import { Aim, Printer, Van, Refresh } from '@element-plus/icons-vue'
 import { formatDate } from '@/utils/formatTime'
 import { COLOR_ARRAYS } from '@/utils/color'
 import printJS from 'print-js'
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib'
 import ShippingInfoPopup from '../components/ShippingInfoPopup.vue'
+import ReworkPopup from '../components/ReworkPopup.vue'
 import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf'
 pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js'
 // const tableRef = useTemplateRef<InstanceType<typeof ElTable>>('tableRef')
 const shippingInfoPopup = useTemplateRef('shippingInfoPopup')
+const reworkPopup = useTemplateRef('reworkPopup')
 
 declare global {
   interface Window {
@@ -1035,6 +1050,19 @@ const handleShip = async (row: ExtendedOrderVO) => {
       ElMessage.error('发货失败')
     }
   }
+}
+
+/** 返工处理函数 */
+const handleRework = (row: any) => {
+  if (reworkPopup.value) {
+    reworkPopup.value.open(row.orderNo, row.customSku)
+  }
+}
+
+/** 返工成功回调 */
+const handleReworkSuccess = () => {
+  ElMessage.success('返工记录创建成功')
+  // 可以在这里刷新列表或进行其他操作
 }
 
 /** 打印处理函数 */

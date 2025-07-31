@@ -316,6 +316,62 @@ const filterOrderQuantity = (list: any[]) => {
       return;
     }
 
+     // 针对LeZdz店铺的特殊处理逻辑  ---提高了LeZdz店铺优先级
+     if (shopName.includes("LeZdz")) {
+        // 匹配产品名称中形如"6pcs Personalized"或"6pcsPersonalized"的格式
+        const titlePcsMatch = productTitle.match(/^(\d+)pcs/i);
+        if (titlePcsMatch) {
+          const pcsQuantity = parseInt(titlePcsMatch[1], 10);
+          item.quantity = pcsQuantity * originalQuantity;
+          return;
+        }
+      
+      
+    // 匹配产品名称中形如"2pcs Crown"的格式
+      const pcsMatch2= productTitle.match(/^(\d+)\s*pcs/i);
+      if (pcsMatch2) {
+        const pcsQuantity = parseInt(pcsMatch2[1], 10);
+        item.quantity = pcsQuantity * originalQuantity;
+        return;
+      }
+
+      // 匹配产品名称中形如"定制4件"的格式
+      const customPieceMatch = productTitle.match(/定制(\d+)件/i);
+      if (customPieceMatch) {
+        const pieceQuantity = parseInt(customPieceMatch[1], 10);
+        item.quantity = pieceQuantity * originalQuantity;
+        return;
+      }
+      
+      // 匹配形如"10pcs-5cm/2in"的格式
+      const pcsMatch = properties.match(/(\d+)pcs-\d+cm\/\d+in/i);
+      if (pcsMatch) {
+        const propertyQuantity = parseInt(pcsMatch[1], 10);
+        item.quantity = propertyQuantity * originalQuantity;
+        return;
+      }
+      
+      // 匹配标题中形如"DIY 3件"的格式
+      const diyMatch = productTitle.match(/diy\s*(\d+)\s*件/i);
+      if (diyMatch) {
+        const diyQuantity = parseInt(diyMatch[1], 10);
+        item.quantity = diyQuantity * originalQuantity;
+        return;
+      }
+
+      // 当LeZdz店铺的属性描述包含"g Jar Label"或"kg Jar Label"格式时，使用官网数量
+      if (properties.match(/\d+g jar label/i) || properties.match(/\d+kg jar label/i)) {
+        item.quantity = originalQuantity;
+        return;
+      }
+      
+      // 当属性描述包含"Font size"时，使用官网数量，避免将字体大小误认为是制作数量
+      if (properties.match(/font\s+size\s+\d+/i)) {
+        item.quantity = originalQuantity;
+        return;
+      }
+    }
+
     // 特殊处理 Text 开头的情况
     if (properties.toLowerCase().startsWith('text')) {
       item.quantity = 1 * originalQuantity
@@ -358,57 +414,6 @@ const filterOrderQuantity = (list: any[]) => {
       item.quantity = 40 * originalQuantity
       return
     }
-
-    // 针对LeZdz店铺的特殊处理逻辑
-    if (shopName.includes("LeZdz")) {
-      // 当属性描述包含"Custom Photo & Text"或"Double-sided Photos"时，从产品名称中提取pcs前面的数字
-      if (properties.toLowerCase().includes("custom photo & text") || properties.toLowerCase().includes("double-sided photos")) {
-        // 匹配产品名称中形如"6pcs Personalized"的格式
-        const pcsMatch = productTitle.match(/^(\d+)pcs\s+/i);
-        if (pcsMatch) {
-          const pcsQuantity = parseInt(pcsMatch[1], 10);
-          item.quantity = pcsQuantity * originalQuantity;
-          return;
-        }
-      }
-      
-      // 匹配产品名称中形如"定制4件"的格式
-      const customPieceMatch = productTitle.match(/定制(\d+)件/i);
-      if (customPieceMatch) {
-        const pieceQuantity = parseInt(customPieceMatch[1], 10);
-        item.quantity = pieceQuantity * originalQuantity;
-        return;
-      }
-      
-      // 匹配形如"10pcs-5cm/2in"的格式
-      const pcsMatch = properties.match(/(\d+)pcs-\d+cm\/\d+in/i);
-      if (pcsMatch) {
-        const propertyQuantity = parseInt(pcsMatch[1], 10);
-        item.quantity = propertyQuantity * originalQuantity;
-        return;
-      }
-      
-      // 匹配标题中形如"DIY 3件"的格式
-      const diyMatch = productTitle.match(/diy\s*(\d+)\s*件/i);
-      if (diyMatch) {
-        const diyQuantity = parseInt(diyMatch[1], 10);
-        item.quantity = diyQuantity * originalQuantity;
-        return;
-      }
-
-      // 当LeZdz店铺的属性描述包含"g Jar Label"或"kg Jar Label"格式时，使用官网数量
-      if (properties.match(/\d+g jar label/i) || properties.match(/\d+kg jar label/i)) {
-        item.quantity = originalQuantity;
-        return;
-      }
-      
-      // 当属性描述包含"Font size"时，使用官网数量，避免将字体大小误认为是制作数量
-      if (properties.match(/font\s+size\s+\d+/i)) {
-        item.quantity = originalQuantity;
-        return;
-      }
-    }
-
     // 针对SJDZ店铺的特殊处理逻辑
     if (shopName.includes("SJDZ")) {
       // 匹配属性描述中形如"5.4in*2.12in-80pcs"的格式
@@ -465,6 +470,14 @@ const filterOrderQuantity = (list: any[]) => {
 
     // 针对BLDDZ店铺的特殊处理逻辑
     if (shopName.includes("BLDDZ")) {
+      // 匹配形如"1.97inch/30片"的格式
+      const inchPieceMatch = properties.match(/\d+\.?\d*inch\/(\d+)(片|pcs|个|张)/i);
+      if (inchPieceMatch) {
+        const pieceQuantity = parseInt(inchPieceMatch[1], 10);
+        item.quantity = pieceQuantity * originalQuantity;
+        return;
+      }
+
       // 匹配形如"3.15inch/24set"的格式
       const inchSetMatch = properties.match(/\d+\.\d+inch\/(\d+)set/i);
       if (inchSetMatch) {
@@ -534,6 +547,14 @@ const filterOrderQuantity = (list: any[]) => {
     
     // 针对QTLK店铺的特殊处理逻辑
     if (shopName.includes("QTLK")) {
+      // 匹配产品名称中形如"【客制化】20pcs"的格式
+      const customPcsMatch = productTitle.match(/【客制化】(\d+)pcs/i);
+      if (customPcsMatch) {
+        const pcsQuantity = parseInt(customPcsMatch[1], 10);
+        item.quantity = pcsQuantity * originalQuantity;
+        return;
+      }
+
       // 当属性描述为"19.7"时，使用官网数量
       if (properties.trim() === "19.7") {
         item.quantity = originalQuantity;
