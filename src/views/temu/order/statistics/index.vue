@@ -14,9 +14,16 @@
               <el-option v-for="(item, index) in shopList" :key="index" :label="item.shopName" :value="item.shopId" />
             </el-select>
           </el-form-item>
+          <!-- 类目 -->
+          <el-form-item label="类目">
+            <el-select filterable v-model="filterForm.categoryId" placeholder="请选择类目" clearable multiple>
+              <el-option v-for="(item, index) in categoryList" :key="index" :label="item.categoryName" :value="item.categoryId" />
+            </el-select>
+          </el-form-item>
           <!-- 时间范围 -->
           <el-form-item label="时间范围">
-            <el-date-picker v-model="filterForm.dateRange" type="daterange" range-separator="至" start-placeholder="开始日期"
+            <el-date-picker
+v-model="filterForm.dateRange" type="daterange" range-separator="至" start-placeholder="开始日期"
               end-placeholder="结束日期" />
           </el-form-item>
           <!-- 按钮 -->
@@ -51,6 +58,30 @@
         </div>
       </el-card>
     </div>
+    <!-- 返单统计图表 -->
+    <div class="chart-section">
+      <el-card>
+        <template #header>
+          <div class="chart-header">
+            <span>返单数量趋势</span>
+            <el-radio-group v-model="chartType" size="small">
+              <el-radio-button value="day">按天</el-radio-button>
+              <el-radio-button value="week">按周</el-radio-button>
+              <el-radio-button value="month">按月</el-radio-button>
+            </el-radio-group>
+          </div>
+        </template>
+        <div ref="returnChartRef" class="chart" style="width: 100%; height: 400px;"></div>
+        <div v-if="returnSummary && Object.keys(returnSummary).length" class="summary-info" style="margin-top: 16px;">
+          <el-descriptions title="返单汇总信息" :column="4" border>
+            <el-descriptions-item label="总返单数">{{ returnSummary.totalOrders }}</el-descriptions-item>
+            <el-descriptions-item label="均返单数">{{ returnSummary.averageDaily }}</el-descriptions-item>
+            <el-descriptions-item label="最高">{{ returnSummary.maxOrders }}</el-descriptions-item>
+            <el-descriptions-item label="最低">{{ returnSummary.minOrders }}</el-descriptions-item>
+          </el-descriptions>
+        </div>
+      </el-card>
+    </div>
   </div>
 </template>
 
@@ -64,21 +95,30 @@ import { ElMessage } from 'element-plus'
 const filterForm = ref<{
   dateRange: string[]
   shopId: (string | number)[]
+  categoryId: (string | number)[]
 }>({
   dateRange: [],
-  shopId: []
+  shopId: [],
+  categoryId: []
 })
 
 const chartType = ref('day')
 const chartRef = ref()
+const returnChartRef = ref()
 let chartInstance: echarts.ECharts | null = null
+let returnChartInstance: echarts.ECharts | null = null
 
 // 店铺列表
 const shopList = ref<any[]>([])
+// 类目列表
+const categoryList = ref<any[]>([])
 
 // 订单统计数据
 const chartData = ref<{ timePoints: string[]; values: number[] }>({ timePoints: [], values: [] })
 const summary = ref<any>({})
+// 返单统计数据
+const returnChartData = ref<{ timePoints: string[]; values: number[] }>({ timePoints: [], values: [] })
+const returnSummary = ref<any>({})
 const loading = ref(false)
 
 // 获取店铺列表
@@ -88,6 +128,17 @@ async function getShopList() {
   // 默认选中第一个店铺
   if (shopList.value.length) {
     filterForm.value.shopId = [shopList.value[0].shopId]
+  }
+}
+
+// 获取类目列表
+async function getCategoryList() {
+  try {
+    const data = await TemuOrderApi.getCategoryList()
+    categoryList.value = data.list || data
+  } catch (error) {
+    console.error('获取类目列表失败:', error)
+    ElMessage.error('获取类目列表失败')
   }
 }
 
@@ -103,9 +154,12 @@ async function handleSearch() {
       shopIds: filterForm.value.shopId.map(Number), // 保证是 number[]
       startDate: formatDate(filterForm.value.dateRange[0]),
       endDate: formatDate(filterForm.value.dateRange[1]),
-      granularity: chartType.value
+      granularity: chartType.value,
+      categoryIds: filterForm.value.categoryId.length ? filterForm.value.categoryId.map(Number) : undefined
     }
     console.log('请求参数:', params)
+    
+    // 查询订单统计
     const res = await TemuOrderApi.getOrderStatistics(params)
     console.log('订单统计接口响应:', res)
     if (res) {
@@ -120,6 +174,22 @@ async function handleSearch() {
       console.log('chartData.value', chartData.value)
       updateChart()
     }
+
+    // 查询返单统计
+    const returnRes = await TemuOrderApi.getReturnOrderStatistics(params)
+    console.log('返单统计接口响应:', returnRes)
+    if (returnRes) {
+      if (!returnRes.timePoints?.length || !returnRes.values?.length) {
+        console.warn('返单接口返回数据为空，无法绘制折线图')
+      }
+      returnChartData.value = {
+        timePoints: returnRes.timePoints,
+        values: returnRes.values
+      }
+      returnSummary.value = returnRes.summary
+      console.log('returnChartData.value', returnChartData.value)
+      updateReturnChart()
+    }
   } finally {
     loading.value = false
   }
@@ -132,11 +202,15 @@ async function handleSearch() {
 function handleReset() {
   filterForm.value = {
     dateRange: [],
-    shopId: []
+    shopId: [],
+    categoryId: []
   }
   chartData.value = { timePoints: [], values: [] }
   summary.value = {}
+  returnChartData.value = { timePoints: [], values: [] }
+  returnSummary.value = {}
   updateChart()
+  updateReturnChart()
 }
 
 // formatDate 保证返回 string
@@ -165,6 +239,20 @@ function formatDate(date: any) {
 }
 
 /**
+ * 初始化返单图表实例
+ */
+function initReturnChart() {
+  console.log('returnChartRef.value =', returnChartRef.value)
+  if (returnChartRef.value) {
+    returnChartInstance = echarts.init(returnChartRef.value)
+    console.log('returnChartInstance 已创建', returnChartInstance)
+    updateReturnChart()
+  } else {
+    console.error('DOM 没找到，returnChartRef 为 null')
+  }
+}
+
+/**
  * 更新 ECharts 图表数据和配置
  * 每次查询或重置后调用
  */
@@ -184,10 +272,29 @@ function updateChart() {
   console.log('已写入图表', option)               // 确认写进去了
 }
 
+/**
+ * 更新返单图表数据和配置
+ */
+function updateReturnChart() {
+  if (!returnChartInstance) return
+  console.log('返单数据准备写入图表', returnChartData.value)
+  const option = {
+    title: { text: '返单数量趋势图' },
+    tooltip: { trigger: 'axis' },
+    xAxis: { type: 'category', data: returnChartData.value.timePoints },
+    yAxis: { type: 'value' },
+    series: [{ name: '返单数量', type: 'line', data: returnChartData.value.values }]
+  }
+  returnChartInstance.setOption(option, true)
+  console.log('已写入返单图表', option)
+}
+
 onMounted(async () => {
   await getShopList()
+  await getCategoryList()
   await nextTick()
   initChart()
+  initReturnChart()
   // 默认日期
   const today = new Date()
   const lastWeek = new Date()
