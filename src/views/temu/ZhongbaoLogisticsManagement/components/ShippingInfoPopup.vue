@@ -11,6 +11,9 @@
       <div class="package-info-panel">
         <div class="panel-header">
           <h3>物流单号：{{ formData.trackingNumber || '-' }}</h3>
+          <div v-if="formData.sortingSequence" class="sorting-sequence">
+            中包序号：<span class="sequence-value">{{ formData.sortingSequence }}</span>
+          </div>
         </div>
       </div>
 
@@ -21,7 +24,27 @@
             <div class="image-wrapper">
               <!-- 多件标签 -->
               <div v-if="item.isMultiple" class="multiple-badge">多件</div>
+              <!-- 根据是否为动漫肖像贺卡显示不同的图片布局 -->
+              <template v-if="item.isAnimeCard && item.customImages.length > 0">
+                <div class="custom-images-grid" :class="getCustomImagesGridClass(item.customImages.length)">
+                  <!-- 添加定制图片标签 -->
+                  <div class="custom-image-badge">定制图片</div>
+                  <el-image
+                    v-for="(imgUrl, imgIndex) in item.customImages"
+                    :key="imgIndex"
+                    :hide-on-click-modal="true"
+                    :preview-teleported="true"
+                    :src="imgUrl"
+                    :preview-src-list="item.customImages"
+                    :initial-index="imgIndex"
+                    fit="cover"
+                    loading="lazy"
+                    class="custom-image"
+                  />
+                </div>
+              </template>
               <el-image
+                v-else
                 :hide-on-click-modal="true"
                 :preview-teleported="true"
                 :src="item.imageUrl"
@@ -37,24 +60,37 @@
                 <div class="info-row">
                   <div class="custom-text" v-if="item.customTextList">
                     <span class="custom-text-label">定制文字：</span>
-                    <span class="custom-text-value">{{ item.customTextList }}</span>
+                    <span class="custom-text-value">{{ item.customTextList.startsWith(',') ? item.customTextList.substring(1) : item.customTextList }}</span>
                   </div>
                   <div class="product-props" v-if="item.productProperties">
                     <span class="props-label">属性：</span>
                     <span class="props-value">{{ item.productProperties }}</span>
                   </div>
                 </div>
+                  <!-- 添加SKU信息行 -->
+                  <div class="info-row sku-info-row">
+                    <div class="sku-info">
+                      <div class="sku-item">
+                        <span class="sku-label">定制SKU：</span>
+                        <span class="sku-value custom-sku">{{ item.customSku || '-' }}</span>
+                      </div>
+                    </div>
                   </div>
-              <div class="quantity-info">
-                <div class="quantity-item original">
-                  <span class="label">官网数量：</span>
-                  <span class="value">{{ item.originalQuantity }}</span>
                 </div>
-                <div class="quantity-item">
-                  <span class="label">制作数量：</span>
-                  <span class="value">{{ item.quantity }}</span>
+                <div class="quantity-info">
+                  <div class="quantity-item original">
+                    <span class="label">官网数量：</span>
+                    <span class="value">{{ item.originalQuantity }}</span>
+                  </div>
+                  <div class="quantity-item">
+                    <span class="label">制作数量：</span>
+                    <span class="value">{{ item.quantity }}</span>
+                  </div>
+                  <div class="quantity-item">
+                    <span class="label">所属类目：</span>
+                    <span class="value">{{ item.categoryName || '-' }}</span>
+                  </div>
                 </div>
-              </div>
             </div>
           </div>
         </div>
@@ -79,15 +115,20 @@ const dialogVisible = ref(false)
 const formData = reactive({
   orderId: '',
   trackingNumber: '',
+  sortingSequence: '',
   previewData: [] as Array<{
     imageUrl: string,
+    customImages: string[],
+    isAnimeCard: boolean,
     originalQuantity: number,
     quantity: number,
     orderNo: string,
     customSku: string,
     customTextList: string,
     productProperties: string,
-    isMultiple?: boolean
+    isMultiple?: boolean,
+    categoryId?: string,
+    categoryName?: string
   }>
 })
 
@@ -104,6 +145,14 @@ defineExpose({
   setVisible,
   formData
 })
+
+// 根据图片数量返回对应的网格类名
+const getCustomImagesGridClass = (count: number) => {
+  if (count <= 1) return 'grid-1'
+  if (count <= 2) return 'grid-2'
+  if (count <= 4) return 'grid-4'
+  return 'grid-6'
+}
 </script>
 
 <style lang="scss" scoped>
@@ -122,6 +171,18 @@ defineExpose({
     font-size: 18px;
     color: #303133;
     margin: 0;
+    margin-bottom: 10px;
+  }
+
+  .sorting-sequence {
+    font-size: 16px;
+    color: #606266;
+    
+    .sequence-value {
+      color: #409EFF;
+      font-weight: bold;
+      font-size: 18px;
+    }
   }
 }
 
@@ -265,6 +326,29 @@ defineExpose({
           line-height: 1.4;
         }
       }
+
+      .sku-info-row {
+        margin-top: 10px;
+        .sku-info {
+          display: flex;
+          gap: 20px;
+          .sku-item {
+            .sku-label {
+              font-size: 14px;
+              color: #606266;
+              font-weight: 500;
+            }
+            .sku-value {
+              font-size: 14px;
+              color: #303133;
+              font-weight: 500;
+            }
+            .custom-sku {
+              color: #409EFF;
+            }
+          }
+        }
+      }
     }
     
     .quantity-info {
@@ -305,5 +389,72 @@ defineExpose({
   justify-content: center;
   align-items: center;
   height: 300px;
+}
+
+.custom-images-grid {
+  width: 300px;
+  height: 300px;
+  display: grid;
+  gap: 4px;
+  padding: 4px;
+  background: #f5f7fa;
+  border-radius: 4px;
+  position: relative; // 添加相对定位
+
+  // 添加定制图片标签样式
+  .custom-image-badge {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: linear-gradient(45deg, #409EFF, #36D1DC);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: bold;
+    z-index: 2;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(4px);
+  }
+
+  &.grid-1 {
+    grid-template-columns: 1fr;
+    .custom-image {
+      width: 100%;
+      height: 100%;
+    }
+  }
+
+  &.grid-2 {
+    grid-template-columns: repeat(2, 1fr);
+    .custom-image {
+      width: 100%;
+      height: 100%;
+    }
+  }
+
+  &.grid-4 {
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+    .custom-image {
+      width: 100%;
+      height: 100%;
+    }
+  }
+
+  &.grid-6 {
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+    .custom-image {
+      width: 100%;
+      height: 100%;
+    }
+  }
+
+  .custom-image {
+    border-radius: 2px;
+    overflow: hidden;
+    object-fit: cover;
+  }
 }
 </style>

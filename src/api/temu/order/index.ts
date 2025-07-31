@@ -122,4 +122,12 @@ export const OrderApi = {
       // 可以根据需要显示错误消息给用户
     }
   },
+  // 批量分配打包人
+  batchInsert: async (data: { sortingSequenceList: string[], senderId: number, conditionFlag: boolean }) => {
+    return await request.post({ url: `/temu/order/batch-insert`, data })
+  },
+  // 获取最近批次列表
+  getRecentBatches: async () => {
+    return await request.get({ url: `/temu/order-shipping/recent-batches` })
+  }
 }

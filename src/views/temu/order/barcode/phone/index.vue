@@ -5,6 +5,22 @@
       <span class="title">条码识别</span>
     </div>
 
+    <!-- 物流序号搜索框 -->
+    <div class="search-box">
+      <el-input
+        v-model="dailySequence"
+        placeholder="请输入物流序号"
+        clearable
+        @keyup.enter="handleSearchByDailySequence"
+      >
+        <template #append>
+          <el-button @click="handleSearchByDailySequence">
+            <el-icon><Search /></el-icon>
+          </el-button>
+        </template>
+      </el-input>
+    </div>
+
     <!-- 上传区域 -->
     <div class="upload-section" v-if="!result && !searchResults.length">
       <div class="preview-container" v-if="imageUrl">
@@ -227,13 +243,23 @@
       :formatDate="formatDate"
       @update:active-order-index="val => activeOrderIndex = val"
     />
+
+    <!-- 物流单号列表对话框 -->
+    <ShippingListDialog
+      v-model="shippingListVisible"
+      :shipping-list="shippingList"
+      :total-count="totalCount"
+      :loading="loading"
+      @select="handleSelectShipping"
+      @load-all="loadAllShippingData"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { ElMessage } from 'element-plus';
-import { Camera, Picture, Back, SuccessFilled, WarningFilled, CopyDocument, Van, Document } from '@element-plus/icons-vue';
+import { Camera, Picture, Back, SuccessFilled, WarningFilled, CopyDocument, Van, Document, Search } from '@element-plus/icons-vue';
 import Quagga from 'quagga';
 import { BrowserMultiFormatReader } from '@zxing/library';
 import BarcodeCameraView from './components/BarcodeCameraView.vue';
@@ -243,6 +269,7 @@ import type { OrderResult, ShippingOrder } from '@/api/temu/order/types';
 import ShippingDetailsDrawer from '@/views/temu/order/image-search/phone/components/ShippingDetailsDrawer.vue';
 import OrderListDrawer from './components/OrderListDrawer.vue';
 import { useRoute } from 'vue-router'
+import ShippingListDialog from './components/ShippingListDialog.vue';
 
 const defaultAvatar = 'https://img.yzcdn.cn/vant/cat.jpeg';
 
@@ -260,6 +287,9 @@ const showAllOrdersDialog = ref(false);
 const activeOrderIndex = ref(-1); // 默认无高亮
 const currentClickedOrder = ref<OrderResult | null>(null); // 新增：当前点击的订单
 const shippingCache = ref<Record<string, ShippingOrder | null>>({});
+const dailySequence = ref('');
+const shippingListVisible = ref(false);
+const shippingList = ref<ShippingOrder[]>([]);
 
 const route = useRoute()
 
@@ -590,6 +620,64 @@ const showShippingDetail = async (order: OrderResult) => {
   }
 };
 
+// 根据物流序号搜索
+const handleSearchByDailySequence = async () => {
+  if (!dailySequence.value) {
+    ElMessage.warning('请输入物流序号');
+    return;
+  }
+  
+  try {
+    loading.value = true;
+    const res = await OrderApi.getShippingOrderPage({
+      dailySequence: dailySequence.value,
+      pageNo: 1,
+      pageSize: 20
+    });
+    
+    if (res?.list?.length > 0) {
+      shippingList.value = res.list;
+      shippingListVisible.value = true;
+    } else {
+      ElMessage.warning('未找到相关物流信息');
+    }
+  } catch (error) {
+    console.error('搜索失败:', error);
+    ElMessage.error('搜索失败，请重试');
+  } finally {
+    loading.value = false;
+  }
+};
+
+// 选择物流单号
+const handleSelectShipping = (item: ShippingOrder) => {
+  shippingData.value = item;
+  shippingDrawerVisible.value = true;
+};
+
+// 加载所有物流数据
+const loadAllShippingData = async () => {
+  if (!dailySequence.value) {
+    ElMessage.warning('请先输入物流序号');
+    return;
+  }
+  try {
+    loading.value = true;
+    const res = await OrderApi.getShippingOrderPage({
+      dailySequence: dailySequence.value,
+      pageNo: 1,
+      pageSize: 100 // 假设最多加载100条
+    });
+    shippingList.value = res.list;
+    ElMessage.success('加载完成');
+  } catch (error) {
+    console.error('加载所有物流数据失败:', error);
+    ElMessage.error('加载所有物流数据失败，请重试');
+  } finally {
+    loading.value = false;
+  }
+};
+
 function truncateProductProperties(val: string) {
   if (!val) return '';
   return val.length > 13 ? val.slice(0, 13) + '...' : val;
@@ -630,6 +718,28 @@ function truncateCustomText(val: string) {
     font-size: 17px;
     font-weight: 600;
     color: #fff;
+  }
+}
+
+.search-box {
+  padding: 16px;
+  background: #fff;
+  margin-bottom: 8px;
+
+  :deep(.el-input-group__append) {
+    padding: 0 12px;
+    background-color: var(--el-color-primary);
+    border-color: var(--el-color-primary);
+    color: #fff;
+    
+    .el-icon {
+      font-size: 18px;
+    }
+  }
+
+  .el-input {
+    --el-input-height: 44px;
+    font-size: 16px;
   }
 }
 
