@@ -129,5 +129,13 @@ export const OrderApi = {
   // 获取最近批次列表
   getRecentBatches: async () => {
     return await request.get({ url: `/temu/order-shipping/recent-batches` })
+  },
+  // 查询返单分页
+  getOrderReturnPage: async (params: any) => {
+    return await request.get({ url: '/temu/order-return/page', params })
+  },
+  // 更新返单原因
+  updateOrderReturnReason: async (data: { id: number; repeatReason: number }) => {
+    return await request.put({ url: '/temu/order-return/update-reason', data })
   }
 }
