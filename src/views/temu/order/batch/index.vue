@@ -422,6 +422,23 @@ type="success" @click="handlerCompleteOrderTask(scope.row, row, 2)"
 
               <!--  备注-->
               <el-table-column label="备注" align="center" prop="remark" min-width="150" show-overflow-tooltip />
+              <!-- 操作列 -->
+              <el-table-column label="操作" align="center" min-width="120">
+                <template #default="{ row }">
+                  <el-button
+                    size="small"
+                    type="danger"
+                    plain
+                    class="action-button"
+                    @click.stop="handleOrderRework(row)"
+                  >
+                    <el-icon>
+                      <Refresh />
+                    </el-icon>
+                    返工
+                  </el-button>
+                </template>
+              </el-table-column>
             </el-table>
           </div>
         </template>
@@ -585,6 +602,8 @@ v-if="row.status === 0" type="primary" plain size="small" @click="handlerHandleU
   <OrderBatchTaskDispatchPopup
 v-if="orderBatchTaskDispatchVisible" ref="orderBatchTaskDispatchPopup"
     @confirm="handlerDispatchTaskConfirm" @close="orderBatchTaskDispatchVisible = false" />
+  <!-- 返工弹窗 -->
+  <ReworkPopup @success="handleReworkSuccess" ref="reworkPopup" />
 </template>
 
 <script setup lang="ts">
@@ -598,7 +617,8 @@ import { OrderApi, OrderVO } from '@/api/temu/order'
 import printJS from 'print-js'
 import OrderRemarkPopup from '@/views/temu/order/batch/components/OrderRemarkPopup.vue'
 import OrderBatchTaskDispatchPopup from '@/views/temu/order/batch/components/OrderBatchTaskDispatchPopup.vue'
-import { CopyDocument, Printer, ArrowDown } from '@element-plus/icons-vue'
+import ReworkPopup from '@/views/temu/order/shipping/components/ReworkPopup.vue'
+import { CopyDocument, Printer, ArrowDown, Refresh } from '@element-plus/icons-vue'
 import { PDFDocument } from 'pdf-lib'
 import dayjs from 'dayjs'
 import { ElImageViewer } from 'element-plus'
@@ -671,6 +691,8 @@ const queryFormRef = ref() // 搜索的表单
 const orderRemarkPopup = useTemplateRef('orderRemarkPopup')
 // 分配任务引用
 const orderBatchTaskDispatchPopup = useTemplateRef('orderBatchTaskDispatchPopup')
+// 返工弹窗引用
+const reworkPopup = useTemplateRef('reworkPopup')
 /** 选中行 */
 const handlerSelectionChange = (val: any) => {
   selectedRows.value = val
@@ -2277,6 +2299,19 @@ const handleManualCategoryChange = (value: number[]) => {
   queryParams.manualCategoryId = value;
   queryParams.autoCategoryId = []; // 清空自动选择的类目
   queryParams.categoryId = value; // 更新实际的类目ID
+}
+
+/** 处理订单返工 */
+const handleOrderRework = (row: any) => {
+  if (reworkPopup.value) {
+    reworkPopup.value.open(row.orderNo, row.customSku)
+  }
+}
+
+/** 返工成功回调 */
+const handleReworkSuccess = () => {
+  // 可以在这里添加刷新列表或其他操作
+  ElMessage.success('返工申请提交成功')
 }
 
 </script>

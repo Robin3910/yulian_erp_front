@@ -50,6 +50,11 @@ export const TemuOrderReworkApi = {
     return await request.post({ url: `/temu/rework/create-from-shipping`, data })
   },
 
+  // 从发货管理页面创建订单返工记录
+  createFromShipping: async (data: TemuOrderReworkCreateReqVO) => {
+    return await request.post({ url: `/temu/rework/create-from-shipping`, data })
+  },
+
   // 查询订单返工记录分页 - 确保返回包含rework_initiator_name、rework_draw_user_name、is_finished等字段
   getReworkPage: async (params: any) => {
     return await request.get({ url: `/temu/rework/page`, params })
